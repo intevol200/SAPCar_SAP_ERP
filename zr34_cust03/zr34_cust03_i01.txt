@@ -1,0 +1,100 @@
+*&---------------------------------------------------------------------*
+*& Include          ZR34_CUST03_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+
+
+  DATA : lv_03.
+  lv_03 = 'X'.
+
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+
+    WHEN 'SEARCH' OR 'ENTER'.
+      CLEAR gv_subrc.
+      PERFORM get_alv_data CHANGING gv_subrc.
+      IF gv_subrc = 4.
+        MESSAGE i011.
+      ENDIF.
+*      PERFORM refresh.
+
+    WHEN 'CREATE'.
+      PERFORM check_manager.
+      CALL TRANSACTION 'ZM34_CUST01_01'.
+      PERFORM get_alv_data CHANGING gv_subrc.
+*      PERFORM refresh.
+
+    WHEN 'CHANGE'.
+      PERFORM check_manager.
+      PERFORM get_selected_list CHANGING gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ENDIF.
+
+      IF gs_list-dflag = 'X'.
+        MESSAGE i014.
+        RETURN.
+      ENDIF.
+
+      PERFORM set_memory.
+      CALL TRANSACTION 'ZM34_CUST01_02'.
+      PERFORM get_alv_data CHANGING gv_subrc.
+*      PERFORM refresh.
+
+
+    WHEN 'DELETE'.
+      PERFORM check_manager.
+      PERFORM get_selected_list CHANGING gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ENDIF.
+
+      IF gs_list-dflag IS NOT INITIAL.
+        MESSAGE i014.
+        RETURN.
+      ENDIF.
+
+      PERFORM set_memory.
+      CALL TRANSACTION 'ZM34_CUST01_03'.
+      PERFORM get_alv_data CHANGING gv_subrc.
+*      PERFORM refresh.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE exit INPUT.
+  CASE ok_code.
+    WHEN 'EXIT'.
+      LEAVE PROGRAM.
+    WHEN 'CANC'.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0101  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0101 INPUT.
+  CASE ok_code.
+    WHEN 'ENTER'.
+      LEAVE TO SCREEN 0.
+    WHEN 'CANC'.
+      LEAVE TO SCREEN 0.
+
+  ENDCASE.
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

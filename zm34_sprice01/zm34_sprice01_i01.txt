@@ -1,0 +1,103 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SPRICE01_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+
+  PERFORM move_cond_data.
+
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+
+    WHEN 'SEARCH' OR 'ENTER'.
+      CLEAR gv_subrc.
+      PERFORM get_sprice_data CHANGING gv_subrc.
+      IF gv_subrc = 4.
+        MESSAGE i011.
+      ENDIF.
+
+    WHEN 'CREATE'.
+      CLEAR zs34_sprice.
+      CALL SCREEN 200.
+
+    WHEN 'CHANGE'.
+      CLEAR zs34_sprice.
+      PERFORM get_selected_list CHANGING gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ENDIF.
+      IF gs_list-dflag = 'X'.
+        MESSAGE i014.
+      ELSE.
+        CALL SCREEN 300.
+      ENDIF.
+
+    WHEN 'DELETE'.
+      PERFORM delete_selected_list CHANGING gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ENDIF.
+
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE exit INPUT.
+
+  CASE ok_code.
+    WHEN 'EXIT'.
+      LEAVE PROGRAM.
+    WHEN 'CANC'.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+    WHEN 'SAVE'.
+      PERFORM create_sprice.
+  ENDCASE.
+
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0300  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0300 INPUT.
+
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+    WHEN 'SAVE'.
+      IF
+      gs_list-pname = zs34_sprice-pname AND
+      gs_list-srental = zs34_sprice-srental AND
+      gs_list-sdrive = zs34_sprice-sdrive.
+        MESSAGE i018.
+      ELSE.
+        PERFORM change_sprice.
+      ENDIF.
+  ENDCASE.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

@@ -1,0 +1,32 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_EMP01_TOP                           - Module Pool      ZM34_EMP01
+*&---------------------------------------------------------------------*
+PROGRAM ZM34_EMP01 MESSAGE-ID ME.
+
+DATA: OK_CODE   TYPE SY-UCOMM,
+      GV_SUBRC  TYPE SY-SUBRC,
+      GV_OKCODE TYPE SY-UCOMM.
+
+TABLES: ZT34_EMP.
+"1-display 2-change
+DATA: GS_EMP1 TYPE ZT34_EMP,
+      GT_EMP1 LIKE TABLE OF GS_EMP1,
+      GS_EMP2 TYPE ZT34_EMP,
+      GT_EMP2 LIKE TABLE OF GS_EMP2.
+
+DATA: GS_STABLE TYPE LVC_S_STBL.
+
+*DATA: GS_EMPLIST TYPE ZT34_EMP,
+*      GT_EMPLIST LIKE TABLE OF GS_EMPLIST.
+DATA: BEGIN OF gs_emplist.
+      INCLUDE TYPE zt34_emp.
+      DATA: linecolor(4) TYPE c,
+      END OF gs_emplist,
+      gt_emplist LIKE TABLE OF gs_emplist.
+
+DATA:GT_INDEX TYPE LVC_T_ROW,
+     GS_INDEX LIKE LINE OF GT_INDEX,
+     GD_LINES TYPE I.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

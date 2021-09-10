@@ -1,0 +1,33 @@
+*&---------------------------------------------------------------------*
+*& Report ZM34_INVENT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE ZM34_INVENTTOP.
+INCLUDE ZM34_INVENTC01.
+INCLUDE ZM34_INVENTO01.
+INCLUDE ZM34_INVENTI01.
+INCLUDE ZM34_INVENTF01.
+
+START-OF-SELECTION.
+
+  PERFORM GET_INIT_DISPLAY_DATA CHANGING GT_HSORDER.
+  PERFORM GET_STOCK CHANGING GT_STOCK.
+
+  CALL SCREEN 0100.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Inventory Management
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: ZM34_MESSAGE
+*004   You must select single row.
+*022   Success
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

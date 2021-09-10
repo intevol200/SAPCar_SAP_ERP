@@ -1,0 +1,48 @@
+*&---------------------------------------------------------------------*
+*& Include          ZBCD34_EMP_C01
+*&---------------------------------------------------------------------*
+CLASS lcl_alv_event_handler DEFINITION.
+
+  PUBLIC SECTION.
+
+    METHODS : handle_toolbar
+      FOR EVENT toolbar OF cl_gui_alv_grid
+      IMPORTING e_object e_interactive.
+
+    METHODS : handle_user_command
+      FOR EVENT user_command OF cl_gui_alv_grid
+      IMPORTING e_ucomm.
+
+
+ENDCLASS.
+
+
+*---------------------------------------------------------------------*
+*       CLASS LCL_ALV_EVENT_HANDLER IMPLEMENTATION
+*---------------------------------------------------------------------*
+CLASS lcl_alv_event_handler IMPLEMENTATION.
+
+*---------------------------------------------------------------------*
+*- ToolBar
+*---------------------------------------------------------------------*
+  METHOD handle_toolbar.
+*    CASE GO_OBJECT_NAME.
+*      WHEN 'GRID200'.
+    PERFORM toolbar_pros   USING e_object e_interactive.
+*    ENDCASE.
+  ENDMETHOD.
+*---------------------------------------------------------------------*
+*- Usercommand
+*---------------------------------------------------------------------*
+  METHOD handle_user_command.
+*    CASE GO_OBJECT_NAME.
+*      WHEN 'GRID200'.
+    PERFORM user_command_pros   USING e_ucomm.
+*    ENDCASE.
+  ENDMETHOD.
+
+
+ENDCLASS.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

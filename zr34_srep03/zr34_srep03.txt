@@ -1,0 +1,55 @@
+*&---------------------------------------------------------------------*
+*& Report ZR34_SREP01
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE zr34_srep03_top.
+*INCLUDE zr34_srep01_top                         .  " Global Data
+
+INCLUDE zr34_srep03_o01.
+*INCLUDE zr34_srep01_o01                         .  " PBO-Modules
+INCLUDE zr34_srep03_i01.
+*INCLUDE zr34_srep01_i01                         .  " PAI-Modules
+INCLUDE zr34_srep03_f01.
+*INCLUDE zr34_srep01_f01                         .  " FORM-Routines
+
+START-OF-SELECTION.
+
+*  "ALV FLAG
+*  gv_alv_flag = 'X'.
+
+  PERFORM get_info.
+  CALL SCREEN 100.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Requesting SAP Car Repair
+* T101 --> Change The Repair Request States
+
+*Text elements
+*--------------------------------------
+* H01 Repair Condition
+
+
+*Selection texts
+*--------------------------------------
+* PA_CARID         SAP Car Number
+* PA_FS1         Requested
+* PA_FS2         Repairing
+* PA_FS3         Complete
+* PA_REPNO         Repair Request Number
+* PA_VENNO         Repair Vendor
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: ZM34_MESSAGE
+*001   & Data changed.
+*004   You must select single row.
+*009   Failed to change data.
+*011   Data is not found.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

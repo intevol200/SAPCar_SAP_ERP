@@ -1,0 +1,42 @@
+*&---------------------------------------------------------------------*
+*& Module Pool      ZM34_GR01
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE ZM34_GR01_TOP                           .    " Global Data
+ INCLUDE ZM34_GR01_C01                           .  " class
+ INCLUDE ZM34_GR01_O01                           .  " PBO-Modules
+ INCLUDE ZM34_GR01_I01                           .  " PAI-Modules
+ INCLUDE ZM34_GR01_F01                           .  " FORM-Routines
+
+ LOAD-OF-PROGRAM.
+"ALV FLAG
+ gv_alv_flag = 'X'.
+PERFORM get_gr_list.
+ "GET G/R DATE
+* PERFORM GET_GR_LIST.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Goods Receipt: Car
+* T101 --> Information: Invoice
+* T200 --> Crate: Goods Receipt
+* T300 --> Change: Goods Receipt
+* T100 --> Goods Receipt: Car
+* T101 --> Information: Invoice
+* T200 --> Crate: Goods Receipt
+* T300 --> Change: Goods Receipt
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+*
+* Message class: ZM34_MESSAGE
+*018   Data is same as current version.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

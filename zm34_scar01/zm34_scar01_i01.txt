@@ -1,0 +1,158 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SCAR01_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE exit INPUT.
+  CASE sy-ucomm.
+    WHEN 'EXIT'.
+      LEAVE PROGRAM.
+    WHEN 'CANC'.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+  CLEAR gs_cond.
+  MOVE-CORRESPONDING zm34_sapcar_s03 TO gs_cond.
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+    WHEN 'SEARCH' OR 'ENTER'.
+      PERFORM search_sapcar_list USING gs_cond
+                                 CHANGING gt_list gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ENDIF.
+    WHEN 'CHANGE'.
+      gv_mode = 'C'.
+      IF gs_cond-dflag = 'X'.
+        MESSAGE i002.
+        gv_title = 'Display Mode : SAP car'.
+        RETURN.
+      ENDIF.
+      PERFORM alv_mode_change.
+    WHEN 'DISPLAY'.
+      gv_mode = ''.
+      IF gs_cond-dflag = 'X'.
+        MESSAGE i002.
+        gv_title = 'Edit Mode : SAP car'.
+        RETURN.
+      ENDIF.
+      PERFORM alv_mode_change.
+
+    WHEN 'DELETE'.
+      PERFORM get_selected_list USING 'DELETE' CHANGING gv_subrc.
+      IF gv_subrc = 4.
+        RETURN.
+      ENDIF.
+    WHEN 'SAVE'.
+      CALL METHOD go_alv->check_changed_data
+        IMPORTING
+          e_valid = gv_valid.
+      CHECK gv_valid = 'X'.
+      "## ##
+      PERFORM popup USING 'Update confirm'
+                          'Do you want to update Data?'
+                    CHANGING gv_subrc.
+      IF gv_subrc <> 0.
+        MESSAGE i011.
+      ENDIF.
+      PERFORM update_sapcar_list CHANGING gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ENDIF.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0101  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0101 INPUT.
+  CASE ok_code.
+    WHEN 'CLOSE'.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+    WHEN 'SAVE'.
+      PERFORM update_sapcar USING zm34_sapcar_s01.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Form search_sapcar_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> ZM34_SAPCAR_S01
+*&      <-- GT_LIST
+*&      <-- GV_SUBRC
+*&---------------------------------------------------------------------*
+FORM search_sapcar_list  USING VALUE(ps_cond) LIKE zm34_sapcar_s03
+                         CHANGING pt_list LIKE gt_list
+                                  p_subrc.
+  DATA : ls_emp  TYPE zt34_emp,
+         lt_emp  LIKE TABLE OF ls_emp,
+         ls_list LIKE LINE OF pt_list.
+
+  PERFORM search_range USING gs_hprice ps_cond-hprice_b ps_cond-hprice_e ps_cond
+                       CHANGING gt_hprice.
+  PERFORM search_range USING gs_dprice ps_cond-dprice_b ps_cond-dprice_e ps_cond
+                       CHANGING gt_dprice.
+
+  CLEAR pt_list.
+
+  SELECT *
+    FROM zt34_emp
+    INTO CORRESPONDING FIELDS OF TABLE lt_emp.
+
+  SELECT *
+    FROM zt34_sapcar
+    INTO CORRESPONDING FIELDS OF TABLE pt_list
+    WHERE hprice IN gt_hprice
+      AND dprice IN gt_dprice
+      AND dflag = ps_cond-dflag.
+
+  LOOP AT pt_list INTO ls_list.
+    CLEAR ls_emp.
+    READ TABLE lt_emp WITH KEY pernr = ls_list-ernam
+      INTO ls_emp.
+    ls_list-ctext = ls_emp-ename.
+
+    CLEAR ls_emp.
+    READ TABLE lt_emp WITH KEY pernr = ls_list-aenam
+      INTO ls_emp.
+    ls_list-atext = ls_emp-ename.
+
+    MODIFY pt_list FROM ls_list.
+    CLEAR ls_list.
+  ENDLOOP.
+
+  IF sy-subrc <> 0.
+    MESSAGE i011.
+    p_subrc = 4.
+    RETURN.
+  ENDIF.
+
+  PERFORM get_display_data CHANGING pt_list.
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

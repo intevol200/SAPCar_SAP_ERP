@@ -1,0 +1,49 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_VENDOR01_TOP                        - Module Pool      ZM34_VENDOR01
+*&---------------------------------------------------------------------*
+PROGRAM zm34_vendor01 MESSAGE-ID ZM34_MESSAGE.
+
+* Common
+DATA: ok_code  TYPE sy-ucomm,
+      gv_subrc TYPE sy-subrc.
+
+* Condition
+TABLES zs34_vendor_01.                " Screen#
+DATA: gs_cond    TYPE zs34_vendor_01,
+      gs_changed TYPE zs34_vendor_02.    " ABAP Program#
+
+* Display
+*DATA: gs_list TYPE zt34_vendor,
+*      gt_list LIKE TABLE OF gs_list.
+
+DATA: BEGIN OF gs_list.
+        INCLUDE TYPE zs34_vendor_01.
+DATA:   " light TYPE c LENGTH 1,
+        color TYPE c LENGTH 4,
+      END OF gs_list,
+      gt_list LIKE TABLE OF gs_list.
+
+** Dockinng Container
+*DATA: go_docking TYPE REF TO cl_gui_docking_container.
+
+* ALV
+DATA: go_alv      TYPE REF TO cl_gui_alv_grid,
+      go_con      TYPE REF TO cl_gui_custom_container,
+      gv_alv_flag TYPE c.
+
+* Layout
+DATA: gv_layo   TYPE lvc_s_layo.
+
+* Field Catalog
+DATA: gt_fcat TYPE lvc_t_fcat,
+      gs_fcat TYPE lvc_s_fcat.
+
+* Sort
+DATA: gs_sort TYPE LINE OF lvc_t_sort,
+      gt_sort LIKE TABLE OF gs_sort.
+
+* Create (Screen 200)
+TABLES zs34_vendor_02.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

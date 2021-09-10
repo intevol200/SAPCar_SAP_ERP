@@ -1,0 +1,187 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SREQ03I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+MODULE USER_COMMAND_0100 INPUT.
+
+  CASE GV_OKCODE.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+
+    WHEN 'EXEC'.
+      PERFORM RANGE_DATA.
+      PERFORM INIT_DISPLAY_DATA USING GS_CONDI
+                                CHANGING GT_DISP.
+
+      PERFORM INIT_INVOICE_DATA CHANGING GT_INVO.
+
+      PERFORM INIT_PODATA CHANGING GT_DISP102.
+
+      PERFORM CHECK_INITIAL_DATA USING GT_DISP GT_INVO GT_DISP102.
+
+      PERFORM ALV_REFRESH.
+
+    WHEN 'PRCR'.
+      CALL TRANSACTION 'ZM34_SREQ01'.
+
+      PERFORM INIT_DISPLAY_DATA USING GS_CONDI
+                                CHANGING GT_DISP.
+      PERFORM ALV_REFRESH.
+      .
+    WHEN 'PRCH'.
+      PERFORM CHECK_PRCHANGE.
+      CHECK GV_SUBRC EQ 0.
+      GV_EDIT = 'X'.
+      CALL SCREEN 200 STARTING AT 10 1.
+
+    WHEN 'PRDE'.
+      PERFORM CHECK_PRDELETE.
+
+    WHEN 'POCR'.
+      CALL TRANSACTION 'ZM34_SORD01'.
+
+      PERFORM INIT_PODATA CHANGING GT_DISP102.
+
+      PERFORM ALV_REFRESH_102.
+
+      PERFORM INIT_DISPLAY_DATA USING GS_CONDI
+                                CHANGING GT_DISP.
+
+      PERFORM ALV_REFRESH.
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  EXIT_COMMAND  INPUT
+*&---------------------------------------------------------------------*
+MODULE EXIT_COMMAND INPUT.
+
+  CASE OK_CODE.
+    WHEN 'EXIT' OR 'CANC'.
+      CLEAR: GS_CAR, GS_CAR300.
+      PERFORM OBJECT_FREE.
+      LEAVE TO SCREEN 0.
+
+    WHEN 'SAVE'.
+      PERFORM SAVE_MODI_DATA.
+  ENDCASE.
+
+ENDMODULE.
+
+*&---------------------------------------------------------------------*
+*&      Module  TC_100_ACTIVE_TAB_GET  INPUT
+*&---------------------------------------------------------------------*
+MODULE TC_100_ACTIVE_TAB_GET INPUT.
+
+  CASE GV_OKCODE.
+    WHEN C_TC_100-TAB1.
+      G_TC_100-PRESSED_TAB = C_TC_100-TAB1.
+    WHEN C_TC_100-TAB2.
+      G_TC_100-PRESSED_TAB = C_TC_100-TAB2.
+    WHEN C_TC_100-TAB3.
+      G_TC_100-PRESSED_TAB = C_TC_100-TAB3.
+    WHEN OTHERS.
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  SAVE_OKCODE  INPUT
+*&---------------------------------------------------------------------*
+MODULE SAVE_OKCODE INPUT.
+
+  GV_OKCODE = OK_CODE.
+
+  CLEAR: OK_CODE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  F4_DATE_LOW  INPUT
+*&---------------------------------------------------------------------*
+MODULE F4_DATE_LOW INPUT.
+
+  PERFORM SEARCH_HELP_DATE CHANGING GR_RQDAT-LOW.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  F4_DATE_HIGH  INPUT
+*&---------------------------------------------------------------------*
+MODULE F4_DATE_HIGH INPUT.
+
+  PERFORM SEARCH_HELP_DATE CHANGING GR_RQDAT-HIGH.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  EXIT_COMMAND301  INPUT
+*&---------------------------------------------------------------------*
+MODULE EXIT_COMMAND301 INPUT.
+
+  CASE OK_CODE.
+    WHEN 'EXIT' OR 'CANC'.
+      CLEAR: GS_REQINFO, GS_CAR300.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_200  INPUT
+*&---------------------------------------------------------------------*
+MODULE USER_COMMAND_200 INPUT.
+
+  CASE OK_CODE.
+    WHEN 'SAVE'.
+      PERFORM CHECK_MODI_DATA.
+      CHECK GV_SUBRC EQ 0.
+      PERFORM SAVE_MODI_DATA.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0101  INPUT
+*&---------------------------------------------------------------------*
+MODULE USER_COMMAND_0101 INPUT.
+
+  CASE GV_OKCODE.
+    WHEN 'CH1'.
+
+      PERFORM RANGE_DATA.
+      PERFORM INIT_DISPLAY_DATA USING GS_CONDI
+                                CHANGING GT_DISP.
+      PERFORM ALV_REFRESH.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0103  INPUT
+*&---------------------------------------------------------------------*
+MODULE USER_COMMAND_0103 INPUT.
+
+  CASE GV_OKCODE.
+    WHEN 'CH3'.
+
+      PERFORM RANGE_DATA.
+      PERFORM INIT_INVOICE_DATA CHANGING GT_INVO.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0102  INPUT
+*&---------------------------------------------------------------------*
+MODULE USER_COMMAND_0102 INPUT.
+
+  CASE GV_OKCODE.
+    WHEN 'CH2'.
+
+      PERFORM RANGE_DATA.
+      PERFORM INIT_PODATA CHANGING GT_DISP102.
+
+  ENDCASE.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

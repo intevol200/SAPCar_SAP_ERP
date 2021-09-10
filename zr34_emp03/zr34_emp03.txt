@@ -1,0 +1,56 @@
+*&---------------------------------------------------------------------*
+*& Report ZM34_EMP03
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE ZR34_EMP03_TOP.                         .    " Global Data
+INCLUDE ZR34_EMP03_C01.
+INCLUDE ZR34_EMP03_ALV.
+INCLUDE ZR34_EMP03_O01.                         .  " PBO-Modules
+INCLUDE ZRM34_EMP03_I01.                         .  " PAI-Modules
+INCLUDE ZR34_EMP03_F01.                        .  " FORM-Routines
+
+INITIALIZATION. "1000# ### ## ##
+*  PERFORM INITIALIZATION.
+
+AT SELECTION-SCREEN OUTPUT."PBO
+
+AT SELECTION-SCREEN."PAI
+
+START-OF-SELECTION."selection ##
+  PERFORM init_data.
+
+END-OF-SELECTION."Selection ## ### ##
+  CALL SCREEN 0100.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Search Employee List
+
+*Text elements
+*--------------------------------------
+* S01 Employee Condition
+
+
+*Selection texts
+*--------------------------------------
+* P_DFLAG         Deleted
+* S_BEGDA         Join Date
+* S_ENDDA         Retire Date
+* S_EPOSI         Position
+* S_PERNR         Employee Number
+* S_VKORG         Department Code
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: Hard coded
+*   No data.
+*
+* Message class: PN
+*016   & & & &
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

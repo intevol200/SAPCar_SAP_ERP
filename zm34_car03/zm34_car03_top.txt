@@ -1,0 +1,63 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_CAR03_TOP                           - Module Pool      ZM34_CAR03
+*&---------------------------------------------------------------------*
+PROGRAM ZM34_CAR03.
+
+"COMMON USE
+DATA: OK_CODE   TYPE SY-UCOMM,
+      GV_OKCODE TYPE SY-UCOMM,
+      GV_SUBRC  TYPE SY-SUBRC.
+
+**## ## ## ## ## flag.
+DATA: GV_CMFLAG TYPE C LENGTH 1,
+      GV_DELETE.
+
+**RANGE ## ##.
+RANGES: GR_MANU  FOR ZT34_CAR-MANU,
+        GR_CARNO FOR ZT34_CAR-CARNO,
+        GR_CAPA  FOR ZT34_CAR-CAPA,
+        GR_CLASS FOR ZT34_CAR-CLASS.
+
+"## ##
+DATA: BEGIN OF GS_CAR.
+        INCLUDE TYPE ZT34_CAR.
+DATA:   LIGHT   TYPE C LENGTH 1,
+        CTEXT   TYPE ZT34_CAR_T-CTEXT,
+        MANU_T  TYPE ZT34_MANU-MANU_T,
+        FUEL_T  TYPE C LENGTH 10,
+        CLASS_T TYPE C LENGTH 10,
+        SHIFT_T TYPE C LENGTH 5,
+      END OF GS_CAR,
+      GS_SEARCH LIKE GS_CAR,
+      GT_CAR    LIKE TABLE OF GS_CAR.
+
+**## FIELD STRUCTURE ##.
+DATA: GS_CINFO   LIKE GS_CAR,
+      GS_CINFO_H LIKE GS_CINFO.
+
+**CURRENCY CODE FIELD
+DATA: GV_CURRENCY TYPE WAERS.
+
+**FCODE ##.
+TYPES: BEGIN OF GTY_FCODE,
+         FCODE TYPE SY-UCOMM,
+       END OF GTY_FCODE.
+
+DATA: GS_FCODE TYPE GTY_FCODE,
+      GT_FCODE TYPE TABLE OF GTY_FCODE.
+
+"ALV ## ##
+DATA: GO_CON TYPE REF TO CL_GUI_CUSTOM_CONTAINER,
+      GO_ALV TYPE REF TO CL_GUI_ALV_GRID.
+
+DATA: GT_FCAT TYPE LVC_T_FCAT,
+      GS_FCAT LIKE LINE OF GT_FCAT.
+
+DATA: GS_SORT TYPE LINE OF LVC_T_SORT,
+      GT_SORT LIKE TABLE OF GS_SORT.
+
+DATA: GS_LAYO    TYPE LVC_S_LAYO,
+      GS_REFRESH TYPE LVC_S_STBL.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

@@ -1,0 +1,91 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SCAR01_O01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Module STATUS_0100 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE status_0100 OUTPUT.
+  DATA : lt_code TYPE TABLE OF sy-ucomm WITH HEADER LINE.
+  CLEAR : lt_code, lt_code[].
+
+  IF gv_mode = 'C'.
+    lt_code = 'CHANGE'.
+    APPEND lt_code.
+  ELSE.
+    lt_code = 'DISPLAY'.
+    APPEND lt_code.
+  ENDIF.
+
+
+
+
+  SET PF-STATUS 'S100' EXCLUDING lt_code.
+  SET TITLEBAR 'T100' WITH gv_title.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module STATUS_0200 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE status_0200 OUTPUT.
+  SET PF-STATUS 'S200'.
+  SET TITLEBAR 'T200'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module STATUS_0101 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE status_0101 OUTPUT.
+  SET PF-STATUS 'S101'.
+  SET TITLEBAR 'T101'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module CLEAR_OKCODE OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE clear_okcode OUTPUT.
+  CLEAR ok_code.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_ALV_0100 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE set_alv_0100 OUTPUT.
+  IF go_con IS INITIAL.
+    PERFORM set_alv_0100.
+    PERFORM set_default_value CHANGING gs_layo gt_sort.
+    PERFORM field_catalog.
+    PERFORM display_alv_0100.
+  ELSE.
+    PERFORM refresh.
+  ENDIF.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_INIT OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+*MODULE set_init OUTPUT.
+*  PERFORM get_sapcar_info CHANGING gt_list gv_subrc.
+*    IF gv_subrc <> 0.
+*        MESSAGE i016(pn) WITH '## ## ## ######'.
+*        RETURN.
+*    ENDIF.
+*ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module MOVE_TO_SCREEN_0100 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE move_to_screen_0100 OUTPUT.
+  CLEAR zm34_sapcar_s01.
+  MOVE-CORRESPONDING gs_cond TO zm34_sapcar_s01.
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

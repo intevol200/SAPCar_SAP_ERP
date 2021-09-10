@@ -1,0 +1,97 @@
+*&---------------------------------------------------------------------*
+*& Include          ZR34_SREP01_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE exit INPUT.
+
+  CASE sy-ucomm.
+
+    WHEN 'EXIT'.
+*      CALL METHOD go_alv->free.
+*      CALL METHOD go_con->free.
+*
+*      FREE: go_alv, go_con.
+
+      CALL METHOD go_alv->refresh_table_display.
+      LEAVE TO SCREEN 100.
+
+    WHEN 'CANC'.
+*      CALL METHOD go_alv->free.
+*      CALL METHOD go_con->free.
+*
+*      FREE: go_alv, go_con.
+
+      CALL METHOD go_alv->refresh_table_display.
+      LEAVE PROGRAM.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+
+  CASE ok_code.
+
+    WHEN 'BACK'.
+*      CALL METHOD go_alv->free.
+*      CALL METHOD go_con->free.
+*
+*      FREE: go_alv, go_con.
+
+      CALL METHOD go_alv->refresh_table_display.
+      LEAVE TO SCREEN 0.
+
+    WHEN 'CREATE'.
+      CALL TRANSACTION 'ZM34_SREPAIR'.
+
+    WHEN 'CHANGE'.
+      PERFORM get_select_list CHANGING gv_subrc.      " # ##
+
+      IF gv_subrc = 0.
+        CALL SCREEN 101 STARTING AT 10 10.
+      ENDIF.
+
+    WHEN 'ENTER' OR 'SEARCH'.
+
+*      CALL METHOD go_alv->free.
+*      CALL METHOD go_con->free.
+*
+*      FREE: go_alv, go_con.
+
+      PERFORM get_info.
+
+*      CALL METHOD go_alv->refresh_table_display.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0101  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0101 INPUT.
+
+  CASE ok_code.
+
+    WHEN 'ENTER'.
+*      PERFORM change_repair_state.
+      PERFORM update_states.
+
+    WHEN 'CANC'.
+      LEAVE TO SCREEN 0.
+
+  ENDCASE.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

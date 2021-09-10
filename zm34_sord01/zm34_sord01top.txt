@@ -1,0 +1,48 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SORD01TOP
+*&---------------------------------------------------------------------*
+
+**OKCODE ## ##.
+DATA: OK_CODE   TYPE SY-UCOMM,
+      GV_OKCODE TYPE SY-UCOMM,
+      GV_SUBRC  TYPE SY-SUBRC,
+      GV_STATUS TYPE C LENGTH 1.
+
+**PRNUMBER DDLB ##.
+DATA: VALUES TYPE VRM_VALUES,
+      VALUE  LIKE LINE OF VALUES.
+
+**PR NUMBER ## ## ##.
+DATA: GV_PRNUM TYPE ZT34_HSREQ-PRNUM.
+
+**PR DISPLAY# ## ## ##.
+DATA: GS_PRCONDI TYPE ZT34_HSREQ.
+
+DATA: BEGIN OF GS_DISP100.
+        INCLUDE TYPE ZT34_ISORDER.
+DATA:   COLOR  TYPE C  LENGTH 4,
+        FUEL_T TYPE C LENGTH 10,
+        B_MEIN TYPE ZT34_ISORDER-MEINM,
+      END OF GS_DISP100,
+      GT_DISP100 LIKE TABLE OF GS_DISP100.
+
+**CAR PRICE# ## ## ##.
+DATA: GT_CAR TYPE TABLE OF ZT34_CAR.
+
+**#### ##  ALV GRID DATA ##.
+DATA: GO_CON100 TYPE REF TO CL_GUI_CUSTOM_CONTAINER,
+      GO_ALV100 TYPE REF TO CL_GUI_ALV_GRID.
+
+**ALV TOOL BAR.
+DATA: GT_EXCLUDE TYPE UI_FUNCTIONS.
+
+**ALV FIEDL CAT
+DATA: GT_FCAT100 TYPE LVC_T_FCAT,
+      GS_FCAT100 LIKE LINE OF GT_FCAT100.
+
+**ALV SORT
+DATA: GS_SORT100 TYPE LINE OF LVC_T_SORT,
+      GT_SORT100 LIKE TABLE OF GS_SORT100.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

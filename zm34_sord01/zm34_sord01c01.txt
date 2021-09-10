@@ -1,0 +1,45 @@
+**&---------------------------------------------------------------------*
+**& Include          ZM34_SORD01C01
+**&---------------------------------------------------------------------*
+CLASS LCL_HANDLER DEFINITION.
+
+  PUBLIC SECTION.
+
+    METHODS : HANDLER_TOOLBAR
+      FOR EVENT TOOLBAR OF CL_GUI_ALV_GRID
+      IMPORTING E_OBJECT E_INTERACTIVE.
+
+    METHODS : HANDLER_DATA_CHANGED FOR EVENT DATA_CHANGED
+      OF CL_GUI_ALV_GRID
+      IMPORTING ER_DATA_CHANGED E_UCOMM.
+
+    METHODS : HANDLE_DATA_CHANGED_FINISHED
+      FOR EVENT DATA_CHANGED_FINISHED OF CL_GUI_ALV_GRID
+      IMPORTING E_MODIFIED
+                ET_GOOD_CELLS.
+
+ENDCLASS.
+
+CLASS LCL_HANDLER IMPLEMENTATION.
+
+  METHOD HANDLER_TOOLBAR.
+*    PERFORM TOOLBAR_SET USING E_OBJECT E_INTERACTIVE.
+  ENDMETHOD.                    "handler_toolbar
+
+  METHOD HANDLER_DATA_CHANGED.
+    PERFORM DATA_CHANGED  USING ER_DATA_CHANGED E_UCOMM.
+  ENDMETHOD.                    "handler_data_changed
+
+  METHOD HANDLE_DATA_CHANGED_FINISHED.
+    PERFORM DATA_CHANGED_FINISHED  USING E_MODIFIED
+                                           ET_GOOD_CELLS.
+  ENDMETHOD.                    "HANDLE_DATA_CHANGED_FINISHED
+
+ENDCLASS.
+
+
+
+DATA GO_HANDLER TYPE REF TO LCL_HANDLER.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

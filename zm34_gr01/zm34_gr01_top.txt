@@ -1,0 +1,58 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_GR01_TOP                            - Module Pool      ZM34_GR01
+*&---------------------------------------------------------------------*
+PROGRAM zm34_gr01 MESSAGE-ID ZM34_MESSAGE.
+CLASS lcl_event DEFINITION DEFERRED.
+DATA go_hot TYPE REF TO lcl_event.
+
+"SYSTEM##
+DATA: gv_subrc TYPE sy-subrc,
+      ok_code  TYPE sy-ucomm.
+
+"TABLES ####
+TABLES: zm34_gr01_s01, zm34_gr01_s02, zm34_gr01_s03, zm34_gr01_s04.
+
+"####
+DATA: gs_cond          TYPE zm34_gr01_s04,
+      gs_create        TYPE zm34_gr01_s01,
+      gs_change        TYPE zm34_gr01_s01,
+      gs_invoice       TYPE zm34_gr01_s02,
+      gs_create_sapcar TYPE zm34_gr01_s03,
+      gs_create_smove  TYPE zm34_tord01_s03.
+
+"## CONTAINER
+DATA: go_con TYPE REF TO cl_gui_custom_container.
+
+"ALV GRID
+DATA: go_alv      TYPE REF TO cl_gui_alv_grid,
+      gv_alv_flag TYPE c.
+
+"LAYOUT
+DATA: gs_layout TYPE lvc_s_layo.
+
+"FACT
+DATA : gs_fcat TYPE lvc_s_fcat.
+DATA : gt_fcat TYPE lvc_t_fcat.
+
+"SORT
+DATA : gs_sort TYPE lvc_s_sort.
+DATA : gt_sort TYPE lvc_t_sort.
+
+"LIST
+DATA: BEGIN OF gs_list.
+        INCLUDE TYPE zm34_gr01_s01.
+DATA:   color TYPE c LENGTH 4,
+      END OF gs_list,
+      gt_list LIKE TABLE OF gs_list.
+
+TYPES: BEGIN OF gs_count,
+         invno TYPE zt34_invoice-invno,
+         count TYPE i,
+       END OF gs_count.
+DATA gt_count TYPE TABLE OF gs_count WITH EMPTY KEY.
+
+data: gs_scarzone type zt34_scarzone,
+      gt_scarzone like table of gs_scarzone.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

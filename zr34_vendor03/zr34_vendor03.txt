@@ -1,0 +1,49 @@
+*&---------------------------------------------------------------------*
+*& Report ZR34_VENDOR03
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE zr34_vendor03_top                       .    " Global Data
+
+INCLUDE zr34_vendor03_o01                       .  " PBO-Modules
+INCLUDE zr34_vendor03_i01                       .  " PAI-Modules
+INCLUDE zr34_vendor03_f01                       .  " FORM-Routines
+
+START-OF-SELECTION.
+
+*  "ALV FLAG
+*  gv_alv_flag = 'X'.
+
+  PERFORM get_info.
+  CALL SCREEN 100.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Search Vendor List
+
+*Text elements
+*--------------------------------------
+* H01 Vendor Condition
+
+
+*Selection texts
+*--------------------------------------
+* PA_CITY                                (City)
+* PA_STATE         Address          (State)
+* PA_STRT                             (Street)
+* PA_VENNO         Vendor Code
+* PA_VNAME         Vendor Name
+* PA_VT1         Vendor Type :  Purchase Vendor
+* PA_VT2         Repair Vendor
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: ZM34_MESSAGE
+*005   You are not a manager.
+*011   Data is not found.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

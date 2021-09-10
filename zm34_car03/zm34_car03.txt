@@ -1,0 +1,51 @@
+*&---------------------------------------------------------------------*
+*& Module Pool      ZM34_CAR03
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE ZM34_CAR03_TOP.
+INCLUDE ZM34_CAR03_C01.
+INCLUDE ZM34_CAR03_O01.
+INCLUDE ZM34_CAR03_I01.
+INCLUDE ZM34_CAR03_F01.
+
+**### ##.
+LOAD-OF-PROGRAM.
+
+  PERFORM INIT_DATA.
+  PERFORM GET_CAR_DATA CHANGING GT_CAR.
+
+*  CALL SCREEN 100.
+
+*GUI Texts
+*--------------------------------------
+* S100 --> ### ## ##
+* T100 --> Maintain Car Information
+* T200 --> Car Model Information
+* T300 --> ###### ##
+
+*Text elements
+*--------------------------------------
+* 001 #### ##
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: ZM34_MESSAGE
+*001   & Data changed.
+*002   & Data deleted.
+*004   You must select single row.
+*012   You can not select two or more data at a same time
+*014   Data already deleted.
+*015   & Data Created.
+*016   Wrong data detected. Please check the input field.
+*017   All input field must be filled.
+*018   Data is same as current version.
+*019   ALV Container Creation ERROR!
+*020   ALV Grid Creation ERROR!
+*021   Canceled
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

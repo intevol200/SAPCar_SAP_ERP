@@ -1,0 +1,80 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_SRENT03_TOP                         - Module Pool      ZM34_SRENT03
+*&---------------------------------------------------------------------*
+PROGRAM zm34_srent03 MESSAGE-ID ZM34_MESSAGE.
+
+"Event Handler Object
+CLASS lcl_event DEFINITION DEFERRED.
+DATA go_hot TYPE REF TO lcl_event.
+
+
+
+" Common
+DATA: ok_code  TYPE sy-ucomm,
+      gv_subrc TYPE sy-subrc.
+
+TABLES : zt34_srent,
+         zs34_srent,
+         zs34_srent_info.
+
+
+DATA: BEGIN OF gs_list.
+        INCLUDE TYPE zs34_srent.
+DATA:   color TYPE c LENGTH 4,
+      END OF gs_list,
+      gt_list LIKE TABLE OF gs_list.
+
+"Condition range
+DATA: gt_rentno LIKE RANGE OF zs34_srent-rentno,
+      gs_rentno LIKE LINE OF gt_rentno,
+      gt_CUSTNO LIKE RANGE OF zs34_srent-custno,
+      gs_CUSTNO LIKE LINE OF gt_CUSTNO,
+      gt_SCARNO LIKE RANGE OF zs34_srent-scarno,
+      gs_SCARNO LIKE LINE OF gt_SCARNO,
+      gt_RDATE  LIKE RANGE OF zs34_srent-rdate,
+      gs_RDATE  LIKE LINE OF gt_RDATE.
+
+
+
+DATA: BEGIN OF gs_srent.
+        INCLUDE TYPE zt34_srent.
+DATA:   szname_b  TYPE ze34_szname,
+        szname_e  TYPE ze34_szname,
+        rtime_tot TYPE ze34_rendzet,
+        rtype_t   TYPE ddtext,
+      END OF gs_srent,
+      gt_srent LIKE TABLE OF gs_srent.
+
+
+"cond info
+DATA : gs_cond TYPE zs34_srent_info,
+       gt_cond LIKE TABLE OF gs_cond.
+
+"cust info
+DATA : gs_cust type zs34_cust,
+      gt_cust LIKE TABLE OF gs_cust.
+
+"Sapcar info
+DATA : BEGIN OF gs_sapcar.
+         INCLUDE TYPE zm34_sapcar_s02.
+DATA :   hprice TYPE ze34_hprice,
+         dprice TYPE ze34_dprice,
+       END OF gs_sapcar,
+       gt_sapcar LIKE TABLE OF gs_sapcar.
+
+
+"ALV
+DATA: go_con      TYPE REF TO cl_gui_custom_container,
+      go_alv      TYPE REF TO cl_gui_alv_grid,
+      gv_alv_flag TYPE c,
+      gs_layo     TYPE lvc_s_layo.
+
+
+DATA: gt_fcat TYPE lvc_t_fcat,
+      gs_fcat LIKE LINE OF gt_fcat.
+
+DATA: gs_sort TYPE LINE OF lvc_t_sort,
+      gt_sort LIKE TABLE OF gs_sort.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

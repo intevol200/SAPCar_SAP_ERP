@@ -1,0 +1,118 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_DEP01_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+    WHEN 'SEARCH'.
+      IF zt34_org-dflag = abap_true.
+        PERFORM search_data.
+      ELSE.
+        PERFORM init_data.
+      ENDIF.
+
+    WHEN 'CREATE'.
+      CLEAR zt34_org.
+      CALL SCREEN 200.
+
+    WHEN 'CHANGE'.
+      PERFORM select_data.
+      IF gd_lines <> 1.
+        MESSAGE 'Please choose one data.' TYPE 'I'.
+      ELSEIF zt34_org-dflag = abap_true.
+        MESSAGE 'Already deleted data.' TYPE 'I'.
+      ELSE.
+         CALL SCREEN 300.
+      ENDIF.
+
+    WHEN 'DELETE'.
+      PERFORM select_data.
+      IF gt_index IS INITIAL.
+        MESSAGE 'Select data.' TYPE 'I'.
+      ELSE.
+        IF ZT34_org-dflag = abap_true.
+          MESSAGE 'Already delete data.' TYPE 'I'.
+        ELSE.
+          PERFORM del_msg.
+          PERFORM search_data.
+        ENDIF.
+      ENDIF.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE exit INPUT.
+  CASE ok_code.
+    WHEN 'EXIT'.
+      LEAVE TO SCREEN 0.
+    WHEN 'CANC'.
+      LEAVE PROGRAM.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+    WHEN 'SAVE'.
+      IF zt34_org-vkorg IS INITIAL.
+        MESSAGE 'Please enter the data.' TYPE 'I'.
+      ELSE.
+      PERFORM save.
+      LEAVE TO SCREEN 0.
+      ENDIF.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0300  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0300 INPUT.
+CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+    WHEN 'SAVE'.
+*      PERFORM init_data.
+      IF zt34_org-vtext IS INITIAL.
+        MESSAGE 'Please insert data.' TYPE 'I'.
+      ELSEIF   zt34_org-vtext = gs_deplist-vtext.
+        MESSAGE 'Please change data.' TYPE 'I'.
+      ELSE.
+        PERFORM change.
+        MESSAGE 'Data change successfully.' type 'I'.
+        PERFORM init_data.
+        LEAVE TO SCREEN 0.
+      ENDIF.
+*      LEAVE TO SCREEN 0.
+
+*         PERFORM change.
+*         IF zt34_org-dflag = abap_true.
+*
+*         ELSEIF gs_deplist-vtext IS INITIAL.
+*           MESSAGE 'Please insert data' TYPE 'I'.
+*         ELSEIF gs_deplist-vtext = zt34_org-vtext.
+*           MESSAGE 'Please change data' TYPE 'I'.
+*         ELSE.
+*         PERFORM init_data.
+*         LEAVE TO SCREEN 0.
+*         ENDIF.
+
+  ENDCASE.
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

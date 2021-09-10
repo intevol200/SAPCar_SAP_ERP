@@ -1,0 +1,29 @@
+*&---------------------------------------------------------------------*
+*& Module Pool      ZM34_SORD01
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+PROGRAM ZM34_SORD01.
+
+INCLUDE ZM34_SORD01TOP.
+INCLUDE ZM34_SORD01C01.
+INCLUDE ZM34_SORD01O01.
+INCLUDE ZM34_SORD01I01.
+INCLUDE ZM34_SORD01F01.
+
+LOAD-OF-PROGRAM.
+  GV_STATUS = 'X'.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Create New Purchase Order
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

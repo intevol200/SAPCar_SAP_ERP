@@ -1,0 +1,47 @@
+
+*&---------------------------------------------------------------------*
+*& Report ZR34_CPOI03
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE ZR34_CPOI03_TOP                         .    " Global Data
+
+ INCLUDE ZR34_CPOI03_O01                         .  " PBO-Modules
+ INCLUDE ZR34_CPOI03_I01                         .  " PAI-Modules
+ INCLUDE ZR34_CPOI03_F01                         .  " FORM-Routines
+
+ START-OF-SELECTION.
+ PERFORM set_default_value .
+  gv_alv_flag = 'X'.
+  CALL SCREEN 100.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Search Customer Point History
+
+*Text elements
+*--------------------------------------
+* H01 Customer Point Condition
+
+
+*Selection texts
+*--------------------------------------
+* PA_STATE         State
+* S_CITY         City
+* S_CPDATE         Collected Date
+* S_CUSTNO         Cust. No
+* S_PCODE         Point Code
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+*
+* Message class: ZM34_MESSAGE
+*011   Data is not found.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

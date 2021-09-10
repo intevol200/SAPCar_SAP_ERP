@@ -1,0 +1,35 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_DEP01_TOP                           - Module Pool      ZM34_DEP01
+*&---------------------------------------------------------------------*
+PROGRAM zm34_dep01 MESSAGE-ID me.
+
+*&---------------------------------------------------------------------*
+*& common vartable
+*&---------------------------------------------------------------------*
+DATA: ok_code  TYPE sy-ucomm,
+      gv_subrc TYPE sy-subrc.
+
+*&---------------------------------------------------------------------*
+*& table, structure
+*&---------------------------------------------------------------------*
+TABLES: zt34_org.
+
+*DATA: gs_deplist TYPE zt34_org.
+*DATA: gt_deplist LIKE TABLE OF gs_deplist.
+
+DATA: BEGIN OF gs_deplist.
+      INCLUDE TYPE zt34_org.
+      data: linecolor(4) type c,
+      END OF gs_deplist,
+      gt_deplist like table of gs_deplist.
+
+"REFRESH## ##
+DATA: gs_stable TYPE lvc_s_stbl.
+
+"# ##
+DATA:gt_index TYPE lvc_t_row,
+     gs_index LIKE LINE OF gt_index,
+     gd_lines TYPE i.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

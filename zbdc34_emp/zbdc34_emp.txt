@@ -1,0 +1,28 @@
+*&---------------------------------------------------------------------*
+*& Report ZBDC34_EMP
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE ZBDC34_EMP_TOP                          .    " Global Data
+INCLUDE ZBCD34_EMP_C01.
+ INCLUDE ZBDC34_EMP_O01                          .  " PBO-Modules
+ INCLUDE ZBDC34_EMP_I01                          .  " PAI-Modules
+ INCLUDE ZBDC34_EMP_F01                         .  " FORM-Routines
+
+ START-OF-SELECTION.
+  CALL SCREEN 0100.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Employee BDC Program
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

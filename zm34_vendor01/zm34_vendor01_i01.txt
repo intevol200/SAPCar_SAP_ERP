@@ -1,0 +1,162 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_VENDOR01_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE exit INPUT.
+
+  CASE sy-ucomm.
+
+    WHEN 'EXIT'.
+*      CALL METHOD go_alv->free.
+*      CALL METHOD go_con->free.
+*
+*      FREE: go_alv, go_con.
+
+      CALL METHOD go_alv->refresh_table_display.
+
+      LEAVE TO SCREEN 100.
+
+    WHEN 'CANC'.
+*      CALL METHOD go_alv->free.
+*      CALL METHOD go_con->free.
+*
+*      FREE: go_alv, go_con.
+
+      CALL METHOD go_alv->refresh_table_display.
+
+      LEAVE PROGRAM.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+
+* MOVE (Screen -> ABAP)
+  CLEAR gs_cond.
+  MOVE-CORRESPONDING zs34_vendor_01 TO gs_cond.
+
+  CASE ok_code.
+
+    WHEN 'BACK'.
+*      CALL METHOD go_alv->free.
+*      CALL METHOD go_con->free.
+*
+*      FREE: go_alv, go_con.
+
+      CALL METHOD go_alv->refresh_table_display.
+
+      LEAVE TO SCREEN 0.
+
+    WHEN 'ENTER' OR 'SEARCH'.
+
+*      CALL METHOD go_alv->free.
+*      CALL METHOD go_con->free.
+*
+*      FREE: go_alv, go_con.
+
+      PERFORM get_info.
+
+*      CALL METHOD go_alv->refresh_table_display.
+
+    WHEN 'CREATE'.
+      CLEAR zs34_vendor_02.
+      CALL SCREEN 200.
+
+*      CALL METHOD go_alv->refresh_table_display.
+
+    WHEN 'CHANGE'.
+      PERFORM get_select_list CHANGING gv_subrc.      " # ##
+
+      IF gv_subrc = 0.
+        CALL SCREEN 0300.
+      ENDIF.
+
+*      CALL METHOD go_alv->refresh_table_display.
+
+    WHEN 'DELETE'.
+*      PERFORM get_select_list CHANGING gv_subrc.      " # ##
+
+*      IF gv_subrc EQ 0.
+*      PERFORM delete_vendor.
+*      ELSE.
+*        gv_subrc = 4.
+*        RETURN.
+*      ENDIF.
+
+      PERFORM delete_vendor.
+
+*      CALL METHOD go_alv->refresh_table_display.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+
+  CASE ok_code.
+
+    WHEN 'BACK'.
+      gs_cond-vtype_c1 = 'X'.
+      gs_cond-vtype_c2 = 'X'.
+      gs_cond-dflag    = ''.
+      PERFORM get_info.
+
+      CALL SCREEN 100.
+
+*      LEAVE TO SCREEN 0.
+
+    WHEN 'SAVE'.
+      PERFORM create_vendor.
+      CLEAR zs34_vendor_02.
+
+
+*    WHEN 'CLEAR'.
+*      CLEAR zs34_vendor_02.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0300  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0300 INPUT.
+
+  CASE ok_code.
+
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+
+    WHEN 'SAVE'.
+      PERFORM update_vendor.
+
+*      gs_cond-vtype_c1 = 'X'.
+*      gs_cond-vtype_c2 = 'X'.
+*      gs_cond-dflag    = ''.
+*      PERFORM get_info.
+*
+*      CALL SCREEN 100.
+
+*    WHEN 'CLEAR'.
+*      CLEAR zs34_vendor_02.
+
+  ENDCASE.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

@@ -1,0 +1,74 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_SZONE03_V3TOP                       - Report ZM34_SZONE03_V3
+*&---------------------------------------------------------------------*
+REPORT ZM34_SZONE03_V3 MESSAGE-ID ZM34_MESSAGE.
+
+"TREE
+TYPES: NODE_TABLE_TYPE LIKE STANDARD TABLE OF MTREESNODE WITH DEFAULT KEY.
+DATA: GO_CON_TREE TYPE REF TO cl_gui_custom_container,
+      GO_TREE     TYPE REF TO CL_GUI_SIMPLE_TREE.
+
+TABLES: zt34_szone, zt34_scarzone.
+
+DATA: BEGIN OF gs_list.
+        INCLUDE TYPE zt34_scarzone.
+DATA:   light TYPE c LENGTH 1,
+        color TYPE c LENGTH 4,
+      END OF gs_list,
+      gt_list     LIKE TABLE OF gs_list,
+      GS_TREE TYPE zt34_szone,
+      GT_TREE LIKE TABLE OF gs_tree.
+
+DATA: OK_CODE TYPE SY-UCOMM.
+
+SELECTION-SCREEN BEGIN OF SCREEN 1100 AS SUBSCREEN.
+  SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-h01.
+
+    SELECTION-SCREEN BEGIN OF LINE.
+      SELECTION-SCREEN COMMENT 2(10) FOR FIELD pa_st01.
+      PARAMETERS: pa_st01 TYPE zt34_scarzone-scstat AS LISTBOX VISIBLE LENGTH 20 DEFAULT ' '.
+    SELECTION-SCREEN END OF LINE.
+
+  SELECTION-SCREEN END OF BLOCK b1.
+SELECTION-SCREEN END OF SCREEN 1100.
+
+"ALV
+DATA: GO_CON_ALV TYPE REF TO cl_gui_custom_container,
+      GO_ALV     TYPE REF TO cl_gui_alv_grid.
+
+"LAYOUT
+DATA: gs_layout TYPE lvc_s_layo.
+
+"FACT
+DATA : gs_fcat TYPE lvc_s_fcat.
+DATA : gt_fcat TYPE lvc_t_fcat.
+
+"SORT
+DATA : gs_sort TYPE lvc_s_sort.
+DATA : gt_sort TYPE lvc_t_sort.
+
+"ETC
+DATA: GS_FUNCTIONS TYPE ui_functions,
+      GS_REFTO     TYPE REF TO DATA,
+      GS_POS       TYPE I.
+
+FIELD-SYMBOLS <fcat> TYPE lvc_t_fcat.
+
+CLASS lcl_app DEFINITION.
+  PUBLIC SECTION.
+   METHODS: HANDLE_NODE_DOUBLE_CLICK FOR EVENT NODE_DOUBLE_CLICK OF cl_gui_simple_tree
+                                      IMPORTING node_key.
+ENDCLASS.
+
+CLASS lcl_app IMPLEMENTATION.
+
+  METHOD handle_node_double_click.
+    PERFORM NODE_DOUBLE_CLICK_0100 USING NODE_KEY.
+  ENDMETHOD.
+
+ENDCLASS.
+
+DATA: GO_APP TYPE REF TO lcl_app.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

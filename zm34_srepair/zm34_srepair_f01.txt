@@ -1,0 +1,787 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SREPAIR_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form create_repair
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM create_repair .
+*
+*  DATA: ls_zt34_hsrepair TYPE zt34_hsrepair,
+*        ls_zt34_isrepair TYPE zt34_isrepair.
+*
+*  ls_zt34_hsrepair-repno  = zs34_hsrepair_01-repno.
+*  ls_zt34_hsrepair-venno  = zs34_hsrepair_01-venno.
+*  ls_zt34_hsrepair-scarid = zs34_hsrepair_01-scarid.
+*  ls_zt34_hsrepair-fstats = zs34_hsrepair_01-fstats.
+*  ls_zt34_hsrepair-erdat  = zs34_hsrepair_01-erdat.
+*  ls_zt34_hsrepair-erzet  = zs34_hsrepair_01-erzet.
+*  ls_zt34_hsrepair-ernam  = zs34_hsrepair_01-ernam.
+*
+*  ls_zt34_isrepair-repno = zs34_isrepair_01-repno.
+*  ls_zt34_isrepair-itmno = zs34_isrepair_01-itmno.
+*  ls_zt34_isrepair-rinfo = zs34_isrepair_01-rinfo.
+*  ls_zt34_isrepair-price = zs34_isrepair_01-price.
+*  ls_zt34_isrepair-waers = zs34_isrepair_01-waers.
+*
+*  INSERT zt34_hsrepair FROM ls_zt34_hsrepair.
+*  INSERT zt34_isrepair FROM ls_zt34_isrepair.
+*
+*  IF sy-subrc = 0.
+*    COMMIT WORK.
+*    MESSAGE i016(pn) WITH 'Requesting Success'.
+*
+*    LEAVE TO SCREEN 0.
+*
+*  ELSE.
+*    ROLLBACK WORK.
+*    MESSAGE i016(pn) WITH 'Requesting Fail'.
+*
+*  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CREATE_ALV_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM create_alv_0100 .
+
+  CREATE OBJECT go_con
+    EXPORTING
+      container_name              = 'MYCON'
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+*    MESSAGE e016(pn) WITH 'ALV Container Creation ERROR!'.
+    MESSAGE e019.
+  ENDIF.
+
+
+  IF go_alv IS INITIAL.
+    CREATE OBJECT go_alv
+      EXPORTING
+        i_appl_events     = 'X'
+        i_parent          = go_con
+      EXCEPTIONS
+        error_cntl_create = 1
+        error_cntl_init   = 2
+        error_cntl_link   = 3
+        error_dp_create   = 4
+        OTHERS            = 5.
+    IF sy-subrc <> 0.
+*      MESSAGE e016(pn) WITH 'ALV Grid Creation ERROR!'.
+      MESSAGE e020.
+    ENDIF.
+
+    CREATE OBJECT go_toolbar.
+    SET HANDLER go_toolbar->handler_toolbar FOR go_alv.
+    SET HANDLER go_toolbar->handler_user_command FOR go_alv.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv_0100 .
+
+
+  CLEAR: gt_fcat, gt_sort.
+
+  PERFORM set_layout CHANGING gs_layo.
+  PERFORM set_fieldcat CHANGING gs_fcat gt_fcat.
+  PERFORM set_sort CHANGING gs_sort gt_sort.
+  PERFORM exclude_toolbar CHANGING gt_functions.
+
+
+  CALL METHOD go_alv->set_table_for_first_display
+    EXPORTING
+      i_structure_name              = 'ZS34_SREPAIR'
+      is_layout                     = gs_layo
+      it_toolbar_excluding          = gt_functions
+    CHANGING
+      it_outtab                     = gt_icond
+      it_fieldcatalog               = gt_fcat
+      it_sort                       = gt_sort
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+  IF sy-subrc <> 0.
+*   Implement suitable error handling here
+  ENDIF.
+
+
+*  " layo refresh
+*  CALL METHOD go_alv->set_frontend_layout
+*    EXPORTING
+*      is_layout = gs_layo.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_layout
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GS_LAYO
+*&---------------------------------------------------------------------*
+FORM set_layout  CHANGING ps_layo LIKE gs_layo.
+
+  "## ## ##
+  ps_layo-cwidth_opt = 'X'.
+
+  "ALV ## ##
+  ps_layo-grid_title = 'Item Request'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fieldcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fieldcat  CHANGING ps_fcat LIKE gs_fcat
+                            pt_fcat LIKE gt_fcat.
+
+  "Field Catalog ## ## # ### ##
+  PERFORM reuse_fieldcat USING 'REPNO' 'Repair Number' 'C' '' ''
+                         CHANGING ps_fcat pt_fcat.
+  PERFORM reuse_fieldcat USING 'VENNO' 'Vendor Code' 'C' '' ''
+                         CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'VNAME' 'Vendor Name' 'C' '' ''
+                         CHANGING ps_fcat pt_fcat.
+  PERFORM reuse_fieldcat USING 'SCARID' 'Car Number' 'C' '' ''
+                         CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'ITMNO' 'Repair Item' 'C' 'X' ''
+                         CHANGING ps_fcat pt_fcat.
+  PERFORM reuse_fieldcat USING 'RINFO' 'Repair Detail Information' 'C' 'X' ''
+                         CHANGING ps_fcat pt_fcat.
+  PERFORM reuse_fieldcat USING 'PRICE' 'Price' 'R' 'X' ''
+                         CHANGING ps_fcat pt_fcat.
+  PERFORM reuse_fieldcat USING 'WAERS' 'Currency' 'C' '' ''
+                         CHANGING ps_fcat pt_fcat.
+  PERFORM reuse_fieldcat USING 'ERDAT' 'Request Date' 'C' '' ''
+                         CHANGING gs_fcat gt_fcat.
+*  PERFORM reuse_fieldcat USING 'ERZET' 'Request Time' 'C' '' ''
+*                         CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'ERNAM' 'Requested By' 'C' '' ''
+                         CHANGING gs_fcat gt_fcat.
+*  PERFORM reuse_fieldcat USING 'FSTATS_T' 'Status' 'C' '' '2'
+*                         CHANGING gs_fcat gt_fcat.
+*  PERFORM reuse_fieldcat USING 'ITMNO_T' 'Repair Part' 'C' '' '5'
+*                         CHANGING gs_fcat gt_fcat.
+
+
+  " Field ##
+  gs_fcat-fieldname = 'DFLAG'.
+  gs_fcat-no_out = 'X'.
+  APPEND gs_fcat TO gt_fcat.
+
+  gs_fcat-fieldname = 'FSTATS'.
+  gs_fcat-no_out = 'X'.
+  APPEND gs_fcat TO gt_fcat.
+
+  gs_fcat-fieldname = 'FSTATS_T'.
+  gs_fcat-no_out = 'X'.
+  APPEND gs_fcat TO gt_fcat.
+
+  gs_fcat-fieldname = 'ITMNO_T'.
+  gs_fcat-no_out = 'X'.
+  APPEND gs_fcat TO gt_fcat.
+
+  gs_fcat-fieldname = 'LINENO'.
+  gs_fcat-no_out = 'X'.
+  APPEND gs_fcat TO gt_fcat.
+
+  gs_fcat-fieldname = 'ERZET'.
+  gs_fcat-no_out = 'X'.
+  APPEND gs_fcat TO gt_fcat.
+
+
+
+
+*  PERFORM reuse_fieldcat USING 'VKORG' 'Reqest Org.' 'C' '' ''
+*                         CHANGING ps_fcat pt_fcat.
+*  PERFORM reuse_fieldcat USING 'RQDAT' 'Reqest Date' 'C' '' ''
+*                         CHANGING ps_fcat pt_fcat.
+*  PERFORM reuse_fieldcat USING 'VENNO' 'Vendor Code' 'C' '' ''
+*                         CHANGING ps_fcat pt_fcat.
+*  PERFORM reuse_fieldcat USING 'VNAME' 'Vendor Name' 'C' '' 10
+*                         CHANGING ps_fcat pt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form reuse_fieldcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- PS_FCAT
+*&      <-- PT_FCAT
+*&---------------------------------------------------------------------*
+FORM reuse_fieldcat  USING VALUE(p_field)
+                           VALUE(p_col)
+                           VALUE(p_just)
+                           VALUE(p_edit)
+                           VALUE(p_pos)
+                     CHANGING ps_fcat LIKE gs_fcat
+                              pt_fcat LIKE gt_fcat.
+  CLEAR: ps_fcat.
+
+  ps_fcat-fieldname = p_field.
+  ps_fcat-coltext = p_col.
+  ps_fcat-just = p_just.
+  ps_fcat-edit = p_edit.
+  ps_fcat-col_pos = p_pos.
+  APPEND ps_fcat TO pt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_sort
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GS_SORT
+*&      <-- GT_SORT
+*&---------------------------------------------------------------------*
+FORM set_sort  CHANGING ps_sort LIKE gs_sort
+                        pt_sort LIKE gt_sort.
+
+  CLEAR: ps_sort.
+
+  "#### #### #### ##
+  ps_sort-fieldname = 'REPNO'.
+  ps_sort-up = 'X'.
+  APPEND ps_sort TO pt_sort.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form exclude_toolbar
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GT_FUNCTIONS
+*&---------------------------------------------------------------------*
+FORM exclude_toolbar CHANGING p_bar LIKE gt_functions.
+
+  CLEAR p_bar.
+
+  PERFORM add_exclude_toolbar_button USING cl_gui_alv_grid=>mc_fc_excl_all
+                                     CHANGING p_bar.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form add_exclude_toolbar_button
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> CL_GUI_ALV_GRID=>MC_FC_EXCL_AL
+*&      <-- P_BAR
+*&---------------------------------------------------------------------*
+FORM add_exclude_toolbar_button  USING VALUE(p_value)
+                                 CHANGING pt_func LIKE gt_functions.
+
+  DATA: l_exclude TYPE ui_func.
+
+  l_exclude = p_value.
+  APPEND l_exclude TO pt_func.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form TOOLBAR_SET
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> E_OBJECT
+*&      --> E_INTERACTIVE
+*&---------------------------------------------------------------------*
+FORM toolbar_set USING r_object  TYPE REF TO cl_alv_event_toolbar_set
+                       r_interactive.
+
+  DATA: ls_toolbar  TYPE stb_button.
+
+  CLEAR ls_toolbar.
+  MOVE 3                 TO ls_toolbar-butn_type.
+  APPEND ls_toolbar      TO r_object->mt_toolbar.
+
+  CLEAR ls_toolbar.
+  MOVE 'ADD'             TO ls_toolbar-function. "INT# APPEND
+  MOVE icon_insert_row   TO ls_toolbar-icon.
+  MOVE 'Request Items'   TO ls_toolbar-quickinfo.
+  MOVE 'Add New Row'     TO ls_toolbar-text.
+  MOVE ' '               TO ls_toolbar-disabled.
+  APPEND ls_toolbar TO r_object->mt_toolbar.
+
+  MOVE 'DEL'             TO ls_toolbar-function. "INT# APPEND
+  MOVE icon_delete_row   TO ls_toolbar-icon.
+  MOVE 'Delete Items'    TO ls_toolbar-quickinfo.
+  MOVE 'Delete Selected Row'    TO ls_toolbar-text.
+  MOVE ' '               TO ls_toolbar-disabled.
+  APPEND ls_toolbar TO r_object->mt_toolbar.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form USER_COMMAND_GRID
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> E_UCOMM
+*&---------------------------------------------------------------------*
+FORM user_command_grid  USING pv_ucomm.
+
+  DATA: l_scroll TYPE lvc_s_stbl.
+
+  CASE pv_ucomm.
+    WHEN 'ADD'. "ALV # ##
+      PERFORM insert_row.
+*--------------------------------------------------------------------*
+    WHEN 'DEL'. "ALV # ##
+      PERFORM delete_row.
+
+  ENDCASE.
+
+  l_scroll-row = 'X'.
+  l_scroll-col = 'X'.
+
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      i_soft_refresh = ''
+      is_stable      = l_scroll.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_header_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GS_HCOND
+*&---------------------------------------------------------------------*
+FORM get_header_data  CHANGING ps_cond LIKE gs_cond.
+
+  "## #### ##
+  PERFORM repair_number CHANGING gs_cond-repno.
+
+  "## ## ##
+  gs_cond-erdat = sy-datum.
+  gs_cond-erzet = sy-uzeit.
+  gs_cond-ernam = sy-uname.
+
+***####
+*  SELECT SINGLE vkorg
+*    FROM zt34_emp
+*    INTO gs_user-vkorg
+*    WHERE pernr EQ gs_user-pernr.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GT_ICOND
+*&---------------------------------------------------------------------*
+FORM get_data  CHANGING pt_icond LIKE gt_icond.
+
+  "####H# ####I ##
+  SELECT a~repno a~scarid b~itmno b~rinfo a~venno b~price b~waers
+    FROM zt34_hsrepair AS a JOIN zt34_isrepair AS b
+      ON a~repno = b~repno
+    INTO CORRESPONDING FIELDS OF TABLE pt_icond
+   WHERE a~repno EQ gs_cond-repno.
+
+  "#### ##
+*  SORT pt_icond BY itmno.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form repair_number
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GS_USER_PRNUM
+*&---------------------------------------------------------------------*
+FORM repair_number CHANGING p_number.
+
+  "####
+
+  DATA: lv_num TYPE c LENGTH 2.
+*--------------------------------------------------------------------*
+
+  SELECT MAX( repno )
+    INTO p_number
+    FROM zt34_hsrepair.
+
+  lv_num = p_number+8(2) + 1.
+
+*  p_number = p_number+0(7) && '0' && lv_num.
+
+
+  IF p_number IS INITIAL.
+    p_number = 'REP' && sy-datum+2(4).
+  ENDIF.
+
+  IF lv_num < 10.
+    p_number = p_number+0(7) && '00' && lv_num.
+  ELSEIF lv_num >= 10 AND lv_num < 100.
+    p_number = p_number+0(7) && '0' && lv_num.
+  ELSEIF lv_num >= 100 AND lv_num < 1000.
+    p_number = p_number+0(7) && '0' && lv_num.
+  ELSE.
+    MESSAGE i016(pn) WITH 'Repair Number creation error.'
+                          'Please contact system administrator.'.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_changed_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_changed_data .
+
+  DATA : lv_valid, lv_refresh.
+
+  CALL METHOD go_alv->check_changed_data
+    IMPORTING
+      e_valid   = lv_valid
+    CHANGING
+      c_refresh = lv_refresh.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form check_alv_blank
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_DISP
+*&      --> GT_DISP
+*&      <-- P_SUBRC
+*&---------------------------------------------------------------------*
+FORM check_alv_blank  USING VALUE(ps_icond) LIKE gs_icond
+                            VALUE(pt_icond) LIKE gt_icond
+                      CHANGING p_subrc.
+
+  CLEAR p_subrc.
+
+  LOOP AT pt_icond INTO ps_icond.
+    IF ps_icond-itmno IS INITIAL OR
+       ps_icond-rinfo IS INITIAL OR
+       ps_icond-price IS INITIAL.
+
+      p_subrc = 4.
+    ENDIF.
+  ENDLOOP.
+
+  IF p_subrc EQ 4.
+*    MESSAGE i016(pn) WITH 'Fill the input field properly.' DISPLAY LIKE 'W'.
+    MESSAGE i023.
+    RETURN.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form insert_request
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_HCOND
+*&---------------------------------------------------------------------*
+FORM insert_request USING VALUE(ps_cond) LIKE gs_cond.
+
+  DATA: ls_insert LIKE ps_cond.
+
+**## ## ##
+  MOVE-CORRESPONDING ps_cond TO ls_insert.
+
+  ls_insert-fstats = '1'.
+  ls_insert-erdat = sy-datum.
+  ls_insert-erzet = sy-uzeit.
+  ls_insert-ernam = sy-uname.
+
+  INSERT zt34_hsrepair FROM ls_insert.
+
+**### ## ##
+  INSERT zt34_isrepair FROM TABLE gt_icond.
+
+  CLEAR: ls_insert.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form number_range
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GS_HCOND
+*&---------------------------------------------------------------------*
+FORM number_range CHANGING ps_cond LIKE gs_cond.
+
+  DATA: lv_nr    TYPE inri-nrrangenr VALUE '01',
+        lv_repno LIKE gs_cond-repno.
+
+  CALL FUNCTION 'NUMBER_GET_NEXT'
+    EXPORTING
+      nr_range_nr             = lv_nr
+      object                  = 'ZP34_REPNO'
+    IMPORTING
+      number                  = ps_cond-repno
+    EXCEPTIONS
+      interval_not_found      = 1
+      number_range_not_intern = 2
+      object_not_found        = 3
+      quantity_is_0           = 4
+      quantity_is_not_1       = 5
+      interval_overflow       = 6
+      buffer_overflow         = 7.
+
+  lv_repno = 'REP' && sy-datum+2(4) && ps_cond-repno.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form INSERT_ROW
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM insert_row .
+
+  DATA: lv_seq LIKE gs_icond-gv_lineno.
+  DATA: lv_rd  LIKE gs_cond-erdat,
+        lv_rt  LIKE gs_cond-erzet,
+        lv_re  LIKE gs_cond-ernam,
+
+        lv_car LIKE gs_cond-scarid.
+
+
+
+  lv_car = gs_cond-scarid.
+
+  IF lv_car IS INITIAL.
+    MESSAGE i016(pn) WITH 'You must select a car.' DISPLAY LIKE 'W'.
+    RETURN.
+
+  ELSEIF gv_vendor IS INITIAL.
+*    MESSAGE i016(pn) WITH 'Select vendor code.' DISPLAY LIKE 'W'.
+    MESSAGE i026.
+    RETURN.
+
+  ENDIF.
+
+
+  " ### ## ##
+  SELECT COUNT(*)
+    INTO sy-subrc
+    FROM zt34_sapcar
+   UP TO 1 ROWS
+   WHERE scarno = gs_cond-scarid.
+
+
+  IF sy-subrc = 0.
+
+    MOVE-CORRESPONDING gs_cond TO gs_icond.
+
+    DESCRIBE TABLE gt_icond LINES lv_seq.
+    ADD 1 TO lv_seq.
+
+
+    DESCRIBE TABLE gt_icond LINES lv_seq.
+    DESCRIBE TABLE gt_icond LINES lv_rd.
+    DESCRIBE TABLE gt_icond LINES lv_rt.
+    DESCRIBE TABLE gt_icond LINES lv_re.
+
+    gs_icond-venno  = gv_vendor.
+    gs_icond-vname  = gs_vendor-gv_vname.
+    gs_icond-scarid = gs_cond-scarid.
+    gs_icond-waers  = 'KRW'.
+
+
+    "### ## ALV ##
+    SELECT SINGLE vname
+      FROM zt34_vendor
+      INTO gs_icond-vname
+      WHERE venno EQ gs_icond-venno.
+
+    APPEND gs_icond TO gt_icond.
+    RETURN.
+
+    PERFORM refresh_alv .
+
+  ELSE.
+    MESSAGE i016(pn) WITH 'Select' DISPLAY LIKE 'W'.
+    RETURN.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DELETE_ROW
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM delete_row .
+
+  DATA : lt_rows TYPE lvc_t_roid,
+         ls_rows LIKE LINE OF lt_rows,
+         lv_row  TYPE i.
+
+  DATA ls_del LIKE gs_icond.
+
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+      et_row_no = lt_rows.
+
+  lv_row = lines( lt_rows ).
+
+  IF lv_row IS INITIAL.
+*    MESSAGE i016(pn) WITH 'Please select rows to delete'.
+    MESSAGE i027.
+    EXIT.
+
+  ELSE. "## # ##
+    LOOP AT lt_rows INTO ls_rows.
+      READ TABLE gt_icond INTO gs_icond INDEX ls_rows-row_id.
+      gs_icond-dflag = 'X'.
+
+      MODIFY gt_icond FROM gs_icond INDEX ls_rows-row_id TRANSPORTING dflag.
+
+*      MOVE-CORRESPONDING gs_icond TO ls_del.
+*      APPEND ls_del TO gt_icond.
+
+    ENDLOOP.
+  ENDIF.
+
+  DELETE gt_icond WHERE dflag = 'X'.
+
+  CLEAR: gs_icond.
+
+**### ## ## ##
+  PERFORM set_sequence_number.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_sequence_number
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_sequence_number .
+
+  DATA: lv_line TYPE i.
+
+  FIELD-SYMBOLS: <lfs_icond> LIKE gs_icond.
+*--------------------------------------------------------------------*
+
+  LOOP AT gt_icond ASSIGNING <lfs_icond>.
+    ADD 1 TO lv_line.
+    <lfs_icond>-gv_lineno = lv_line.
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FRONTED_LAYOUT
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_fronted_layout .
+
+  DATA: lv_scroll TYPE lvc_s_stbl,
+        ls_layout TYPE lvc_s_layo.         "ALV ###
+*--------------------------------------------------------------------*
+
+  CHECK go_alv IS NOT INITIAL.
+
+  lv_scroll-row = 'X'.
+  lv_scroll-col = 'X'.
+
+  CALL METHOD go_alv->get_frontend_layout
+    IMPORTING
+      es_layout = ls_layout.
+
+  ls_layout-cwidth_opt = 'X'.
+
+  CALL METHOD go_alv->set_frontend_layout
+    EXPORTING
+      is_layout = ls_layout.
+
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      i_soft_refresh = 'X'
+      is_stable      = lv_scroll.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form refresh_alv
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM refresh_alv .
+
+  " layout refresh
+  CALL METHOD go_alv->set_frontend_layout
+    EXPORTING
+      is_layout = gs_layo.
+
+  DATA: ls_stable      TYPE lvc_s_stbl,
+        i_soft_refresh TYPE char01.
+  ls_stable-col = 'X'.
+  ls_stable-row = 'X'.
+  i_soft_refresh = 'X'.
+
+  " refresh display
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      is_stable      = ls_stable
+      i_soft_refresh = ' '
+    EXCEPTIONS
+      finished       = 1
+      OTHERS         = 2.
+
+  IF sy-subrc <> 0.
+*      Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

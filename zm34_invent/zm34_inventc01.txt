@@ -1,0 +1,33 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_INVENTC01
+*&---------------------------------------------------------------------*
+CLASS LCL_ALV_EVENT_HANDLER DEFINITION.
+
+  PUBLIC SECTION.
+
+    METHODS: HANDLE_BUTTON_CLICK
+      FOR EVENT BUTTON_CLICK OF CL_GUI_ALV_GRID
+      IMPORTING ES_COL_ID ES_ROW_NO.
+
+ENDCLASS.
+
+*---------------------------------------------------------------------*
+*       CLASS LCL_ALV_EVENT_HANDLER IMPLEMENTATION
+*---------------------------------------------------------------------*
+CLASS LCL_ALV_EVENT_HANDLER IMPLEMENTATION.
+
+
+*---------------------------------------------------------------------*
+*- BUTTON
+*---------------------------------------------------------------------*
+  METHOD HANDLE_BUTTON_CLICK.
+
+    PERFORM BUTTON_CLICK USING ES_COL_ID ES_ROW_NO.
+    PERFORM REFRESH_ALV.
+
+  ENDMETHOD.
+
+ENDCLASS.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

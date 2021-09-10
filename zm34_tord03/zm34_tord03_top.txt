@@ -1,0 +1,69 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_TORD03_TOP                          - Report ZM34_TORD03
+*&---------------------------------------------------------------------*
+REPORT zm34_tord03 MESSAGE-ID ZM34_MESSAGE.
+
+CLASS lcl_event DEFINITION DEFERRED.
+DATA go_hot TYPE REF TO lcl_event.
+
+DATA: gv_subrc TYPE sy-subrc,
+      ok_code  TYPE sy-ucomm.
+
+"### ####
+TABLES: zm34_smove_s01.
+
+"##
+DATA: gs_emp TYPE zt34_emp,
+      gt_emp LIKE TABLE OF gs_emp.
+
+"## ###
+DATA: BEGIN OF gs_list.
+        INCLUDE TYPE zm34_smove_s01.
+DATA:   light(1) TYPE c,
+        color(4) TYPE c,
+      END OF gs_list,
+      gt_list LIKE TABLE OF gs_list.
+
+DATA: BEGIN OF gs_srent.
+        INCLUDE TYPE zt34_srent.
+DATA:   szname_b  TYPE ze34_szname,
+        szname_e  TYPE ze34_szname,
+        rtime_tot TYPE ze34_rendzet,
+        rtype_t   TYPE ddtext,
+      END OF gs_srent,
+      gt_srent LIKE TABLE OF gs_srent.
+
+"## ##
+SELECTION-SCREEN BEGIN OF SCREEN 1100 AS SUBSCREEN.
+  SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-h01.
+    SELECT-OPTIONS: pa_ret FOR zm34_smove_s01-rentno NO-EXTENSION NO INTERVALS,
+                pa_car FOR zm34_smove_s01-scarno NO-EXTENSION NO INTERVALS,
+                pa_emp FOR zm34_smove_s01-mvemp NO-EXTENSION NO INTERVALS.
+    SELECT-OPTIONS so_dat FOR zm34_smove_s01-mvdat.
+
+    SELECTION-SCREEN BEGIN OF LINE.
+      SELECTION-SCREEN COMMENT 2(10) FOR FIELD pa_st01.
+      PARAMETERS: pa_st01 AS CHECKBOX DEFAULT 'X'.
+      SELECTION-SCREEN COMMENT 20(10) FOR FIELD pa_st02.
+      PARAMETERS: pa_st02 AS CHECKBOX DEFAULT 'X'.
+      SELECTION-SCREEN COMMENT 38(10) FOR FIELD pa_st03.
+      PARAMETERS: pa_st03 AS CHECKBOX DEFAULT 'X'.
+    SELECTION-SCREEN END OF LINE.
+
+    PARAMETERS pa_dflag AS CHECKBOX.
+
+  SELECTION-SCREEN END OF BLOCK b1.
+SELECTION-SCREEN END OF SCREEN 1100.
+
+"ALV
+DATA: go_con TYPE REF TO cl_gui_custom_container,
+      go_alv TYPE REF TO cl_gui_alv_grid.
+"ALV Setting
+DATA : gs_layo TYPE lvc_s_layo,
+       gs_fcat TYPE lvc_s_fcat,
+       gt_fcat TYPE lvc_t_fcat,
+       gs_sort TYPE LINE OF lvc_t_sort,
+       gt_sort LIKE TABLE OF gs_sort.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

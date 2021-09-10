@@ -1,0 +1,307 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_EMP03_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form set_alv0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM SET_ALV0100 .
+  CREATE OBJECT GO_CON
+    EXPORTING
+*     parent                      =
+      CONTAINER_NAME              = 'CON'
+*     style                       =
+*     lifetime                    = lifetime_default
+*     repid                       =
+*     dynnr                       =
+*     no_autodef_progid_dynnr     =
+    EXCEPTIONS
+      CNTL_ERROR                  = 1
+      CNTL_SYSTEM_ERROR           = 2
+      CREATE_ERROR                = 3
+      LIFETIME_ERROR              = 4
+      LIFETIME_DYNPRO_DYNPRO_LINK = 5
+      OTHERS                      = 6.
+  IF SY-SUBRC <> 0.
+    MESSAGE A016(PN) WITH 'Create Continar Object Error'.
+  ENDIF.
+
+  CREATE OBJECT GO_ALV
+    EXPORTING
+*     i_shellstyle      = 0
+*     i_lifetime        =
+      I_PARENT          = GO_CON
+*     i_appl_events     = SPACE
+*     i_parentdbg       =
+*     i_applogparent    =
+*     i_graphicsparent  =
+*     i_name            =
+*     i_fcat_complete   = SPACE
+*     o_previous_sral_handler =
+    EXCEPTIONS
+      ERROR_CNTL_CREATE = 1
+      ERROR_CNTL_INIT   = 2
+      ERROR_CNTL_LINK   = 3
+      ERROR_DP_CREATE   = 4
+      OTHERS            = 5.
+  IF SY-SUBRC <> 0.
+    MESSAGE A016(PN) WITH 'Create ALV Object Error'.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form display_alv0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV0100 .
+  PERFORM SET_FCAT CHANGING GS_FCAT GT_FCAT.
+
+  GS_LAYO-CWIDTH_OPT = 'X'.
+  GS_LAYO-INFO_FNAME = 'LINECOLOR'.
+
+  CALL METHOD GO_ALV->SET_TABLE_FOR_FIRST_DISPLAY
+    EXPORTING
+*     i_buffer_active               =
+*     i_bypassing_buffer            =
+*     i_consistency_check           =
+      I_STRUCTURE_NAME              = 'ZT34_EMP'
+*     is_variant                    =
+*     i_save                        =
+      I_DEFAULT                     = 'X'
+      IS_LAYOUT                     = GS_LAYO
+*     is_print                      =
+*     it_special_groups             =
+      IT_TOOLBAR_EXCLUDING          = GT_UI_EXCLUDING
+*     it_hyperlink                  =
+*     it_alv_graphics               =
+*     it_except_qinfo               =
+*     ir_salv_adapter               =
+    CHANGING
+      IT_OUTTAB                     = GT_EMPLIST
+      IT_FIELDCATALOG               = GT_FCAT
+*     it_sort                       =
+*     it_filter                     =
+    EXCEPTIONS
+      INVALID_PARAMETER_COMBINATION = 1
+      PROGRAM_ERROR                 = 2
+      TOO_MANY_LINES                = 3
+      OTHERS                        = 4.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form Search
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM SEARCH .
+  IF P_DFLAG = ABAP_FALSE.
+    SELECT *
+      FROM ZT34_EMP
+      INTO CORRESPONDING FIELDS OF TABLE GT_EMPLIST
+     WHERE PERNR IN S_PERNR
+       AND VKORG IN S_VKORG
+       AND EPOSI IN S_EPOSI
+       AND BEGDA IN S_BEGDA
+       AND ENDDA IN S_ENDDA
+       AND DFLAG = ABAP_FALSE.
+  ELSE.
+    SELECT *
+     FROM ZT34_EMP
+     INTO CORRESPONDING FIELDS OF TABLE GT_EMPLIST
+    WHERE PERNR IN S_PERNR
+      AND VKORG IN S_VKORG
+      AND EPOSI IN S_EPOSI
+      AND BEGDA IN S_BEGDA
+      AND ENDDA IN S_ENDDA
+      AND DFLAG = ABAP_TRUE.
+
+    PERFORM SELECT_DEL.
+  ENDIF.
+
+
+  IF GT_EMPLIST IS INITIAL.
+    MESSAGE 'No data.' TYPE 'I'.
+  ELSE.
+    PERFORM DIS_REFRESH.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DIS_REFRESH
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM DIS_REFRESH .
+  GS_STABLE-ROW = ABAP_TRUE. "Row
+  GS_STABLE-COL = ABAP_TRUE. "column
+
+  CALL METHOD GO_ALV->REFRESH_TABLE_DISPLAY
+    EXPORTING
+      IS_STABLE      = GS_STABLE
+      I_SOFT_REFRESH = ABAP_TRUE
+    EXCEPTIONS
+      FINISHED       = 1
+      OTHERS         = 2.
+  IF SY-SUBRC <> 0.
+    MESSAGE I016(PN) WITH 'ALV REFRESH ERROR!'.
+*       Implement suitable error handling here
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM SET_FCAT CHANGING CS_FCAT LIKE GS_FCAT
+                       CT_FCAT LIKE GT_FCAT.
+
+  IF CT_FCAT IS INITIAL.
+    PERFORM REUSE_FIELDCAT USING 'PERNR' 'Emp. Number' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'VKORG' 'Dep. Code' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ENAME' 'Emp. Name' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'EPOSI' 'Position Code' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'GESCH' 'Gender Type' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'TELNR' 'Telephone Number' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'EMAIL' 'E-Mail' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'BEGDA' 'Join Date' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ENDDA' 'Retire Date' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'SALARY' 'Salary' '' '' '' '' 'WAERS'
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'WAERS' 'Currency' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+*--------------------------------------------------------------------*
+    PERFORM REUSE_FIELDCAT USING 'DFLAG' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ERDAT' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ERZET' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ERNAM' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'AEDAT' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'AEZET' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'AENAM' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+  ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form init_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM INIT_DATA .
+  SELECT *
+    FROM ZT34_EMP
+    INTO CORRESPONDING FIELDS OF TABLE GT_EMPLIST
+    WHERE DFLAG  = ABAP_FALSE.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form select_del
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM SELECT_DEL .
+  LOOP AT GT_EMPLIST INTO GS_EMPLIST.
+    CASE GS_EMPLIST-DFLAG.
+      WHEN ABAP_TRUE.
+        GS_EMPLIST-LINECOLOR = 'C600'.
+    ENDCASE.
+
+    MODIFY GT_EMPLIST FROM GS_EMPLIST.
+  ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form Admin_mode
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM ADMIN_MODE .
+  DATA: LV_UNAME    TYPE SY-UNAME,
+        LV_EPOSI(3) TYPE C.
+
+  SELECT *
+    FROM ZT34_EMP
+    INTO CORRESPONDING FIELDS OF GS_EMPLIST
+    WHERE PERNR = SY-UNAME.
+  ENDSELECT.
+
+  LV_UNAME = SY-UNAME.
+  LV_EPOSI = GS_EMPLIST-EPOSI.
+
+  IF LV_EPOSI = 'HOD' OR LV_EPOSI = 'TLD'.
+    CALL TRANSACTION 'ZEMP01'.
+
+  ELSE.
+    MESSAGE I016(PN) WITH 'Staff Only.'.
+    RETURN.
+
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form REUSE_FIELDCAT
+*&---------------------------------------------------------------------*
+FORM REUSE_FIELDCAT  USING VALUE(P_FIELD)
+                           VALUE(P_COL)
+                           VALUE(P_JUST)
+                           VALUE(P_HOTSPOT)
+                           VALUE(P_POS)
+                           VALUE(P_OUT)
+                           VALUE(P_CFIELD)
+
+                     CHANGING PS_FCAT LIKE GS_FCAT
+                              PT_FCAT LIKE GT_FCAT.
+  CLEAR: PS_FCAT.
+
+  PS_FCAT-FIELDNAME = P_FIELD.
+  PS_FCAT-COLTEXT = P_COL.
+  PS_FCAT-JUST = P_JUST.
+  PS_FCAT-HOTSPOT = P_HOTSPOT.
+  PS_FCAT-COL_POS = P_POS.
+  PS_FCAT-NO_OUT = P_OUT.
+  PS_FCAT-CFIELDNAME = P_CFIELD.
+
+  APPEND PS_FCAT TO PT_FCAT.
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

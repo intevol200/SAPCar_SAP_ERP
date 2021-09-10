@@ -1,0 +1,75 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SREQ01_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+MODULE USER_COMMAND_0100 INPUT.
+
+  CASE OK_CODE.
+**DROPDOWN ### ### ALV# ##
+    WHEN 'SEL'.
+      GS_USER-VENNO = GV_VENDOR.
+
+    WHEN 'CREATE'.
+      DATA: LV_VALUE TYPE C LENGTH 1.
+
+      IF GV_VENDOR IS INITIAL.
+        MESSAGE I026(ZM34_MESSAGE) DISPLAY LIKE 'E'.
+        RETURN.
+
+      ELSEIF GT_DISP IS INITIAL.
+        MESSAGE I025(ZM34_MESSAGE) DISPLAY LIKE 'E'.
+        RETURN.
+
+      ELSE.
+        PERFORM CHECK_CHANGED_DATA.
+        "ALV ### ##
+        PERFORM CHECK_ALV_BLANK USING GS_DISP GT_DISP
+                                CHANGING P_SUBRC.
+
+        CHECK P_SUBRC NE 4 AND
+              P_SUBRC NE 8.
+        PERFORM INSERT_REQUEST USING GS_USER.
+
+        MESSAGE I015(ZM34_MESSAGE) WITH 'Purchase Request' DISPLAY LIKE 'S' .
+
+**P/R ## 1# ##, ALV ###.
+        PERFORM SET_FRONTED_LAYOUT.
+        PERFORM PR_NUMBER CHANGING GS_USER-PRNUM.
+        CLEAR: GS_DISP, GT_DISP.
+      ENDIF.
+
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+MODULE EXIT INPUT.
+  CASE OK_CODE.
+    WHEN 'BACK'.
+      DATA LV_ANSWER.
+
+      IF GT_DISP IS NOT INITIAL.
+        CALL FUNCTION 'POPUP_TO_CONFIRM'
+          EXPORTING
+            TITLEBAR      = 'Exit without saving'
+            TEXT_QUESTION = 'Do you really want to exit without saving?'
+            TEXT_BUTTON_1 = 'Yes'
+          IMPORTING
+            ANSWER        = LV_ANSWER.
+
+        CHECK LV_ANSWER EQ '1'.
+        LEAVE TO SCREEN 0.
+
+      ELSE.
+        LEAVE TO SCREEN 0.
+      ENDIF.
+
+    WHEN 'EXIT' OR 'CANC'.
+      LEAVE PROGRAM.
+  ENDCASE.
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

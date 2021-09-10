@@ -1,0 +1,53 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SORD01I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+MODULE USER_COMMAND_0100 INPUT.
+
+  CASE GV_OKCODE.
+
+    WHEN 'BACK'.
+      CLEAR: GS_PRCONDI, GT_DISP100, GV_PRNUM.
+      LEAVE TO SCREEN 0.
+
+    WHEN 'CB1'.
+      PERFORM GET_PRDATA.
+      PERFORM GET_PRITEM_DATA.
+      PERFORM GET_DOMAIN_VAL.
+      PERFORM ALV_REFRESH.
+
+    WHEN 'EXEC'.
+      PERFORM CHECK_ERROR.
+      CHECK GV_SUBRC EQ 0.
+      PERFORM SAVE_PO_DATA.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  EXIT_COMMAND  INPUT
+*&---------------------------------------------------------------------*
+MODULE EXIT_COMMAND INPUT.
+
+  CASE SY-UCOMM.
+    WHEN 'EXIT' OR 'CANC'.
+      CLEAR: GS_PRCONDI, GT_DISP100, GV_PRNUM.
+      LEAVE TO SCREEN 0.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  SAVE_OKCODE  INPUT
+*&---------------------------------------------------------------------*
+MODULE SAVE_OKCODE INPUT.
+
+  GV_OKCODE = OK_CODE.
+  CLEAR: OK_CODE.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

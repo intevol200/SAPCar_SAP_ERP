@@ -1,0 +1,114 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SZONE01_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+  CLEAR gs_cond.
+  MOVE-CORRESPONDING zm34_szone_s03 TO gs_cond.
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+    WHEN 'SEARCH' OR 'ENTER'.
+      PERFORM search_szone_list USING gs_cond
+                                CHANGING gt_list gv_subrc.
+      IF gv_subrc <> 0.
+        MESSAGE i011.
+        RETURN.
+      ENDIF.
+    WHEN 'CREATE'.
+      CLEAR zm34_szone_s01.
+      zm34_szone_s01-erdat = sy-datum.
+      zm34_szone_s01-erzet = sy-uzeit.
+      zm34_szone_s01-ernam = sy-uname.
+      CALL SCREEN 200.
+    WHEN 'CHANGE'.
+      CLEAR zm34_szone_s01.
+      PERFORM get_selected_list CHANGING gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ENDIF.
+      CALL SCREEN 300.
+    WHEN 'DELETE'.
+      PERFORM delete_selected_list CHANGING gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ENDIF.
+      PERFORM search_szone_list USING gs_cond
+                                CHANGING gt_list gv_subrc.
+      IF gv_subrc <> 0.
+        MESSAGE i011.
+        RETURN.
+      ENDIF.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE exit INPUT.
+  CASE sy-ucomm.
+    WHEN 'EXIT'.
+      LEAVE PROGRAM.
+    WHEN 'CANC'.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0101  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0101 INPUT.
+  CASE sy-ucomm.
+    WHEN 'CLOSE'.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+  CASE ok_code.
+    WHEN 'BACK'.
+      PERFORM search_szone_list USING gs_cond
+                                CHANGING gt_list gv_subrc.
+      IF gv_subrc <> 0.
+        MESSAGE i011.
+        RETURN.
+      ENDIF.
+      LEAVE TO SCREEN 0.
+    WHEN 'ENTER'.
+    WHEN 'SAVE'.
+      PERFORM create_szone.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0300  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0300 INPUT.
+  CASE ok_code.
+    WHEN 'BACK'.
+      PERFORM search_szone_list USING gs_cond
+                                CHANGING gt_list gv_subrc.
+      IF gv_subrc <> 0.
+        MESSAGE i011.
+        RETURN.
+      ENDIF.
+      LEAVE TO SCREEN 0.
+    WHEN 'ENTER'.
+    WHEN 'SAVE'.
+      PERFORM change_szone.
+  ENDCASE.
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

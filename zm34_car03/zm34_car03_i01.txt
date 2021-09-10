@@ -1,0 +1,152 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_CAR03_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+MODULE EXIT INPUT.
+  CASE OK_CODE.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+    WHEN 'EXIT' OR 'CANC'.
+      LEAVE PROGRAM.
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+MODULE  USER_COMMAND_0100 INPUT.
+
+  CLEAR: GV_CMFLAG.
+
+  CASE OK_CODE.
+    WHEN 'CREATE'.
+      GV_CMFLAG = 'C'.
+      GV_CURRENCY = 'KRW'.
+      CALL SCREEN 200 STARTING AT 10 3.
+
+    WHEN 'CHANGE'.
+      GV_CMFLAG = 'M'.
+      PERFORM CHECK_LINE  USING 'C'.
+      CHECK GV_SUBRC EQ 0.
+      PERFORM DATA_CHECK.
+      MOVE-CORRESPONDING GS_CAR TO GS_CINFO_H.
+      GV_CURRENCY = 'KRW'.
+      CALL SCREEN 200 STARTING AT 10 3.
+
+    WHEN 'DELETE'.
+      PERFORM CHECK_LINE USING 'D'.
+
+      CHECK GV_SUBRC EQ 0.
+      PERFORM GET_CAR_DATA CHANGING GT_CAR.
+
+    WHEN 'EXEC'.
+      PERFORM RANGE_DATA.
+      PERFORM GET_CAR_DATA CHANGING GT_CAR.
+      PERFORM GET_DOMAIN_DATA.
+
+    WHEN 'DS1'.
+      PERFORM GET_CAR_DATA CHANGING GT_CAR.
+
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+MODULE USER_COMMAND_0200 INPUT.
+
+  DATA: LV_ANSWER TYPE C LENGTH 1.
+*--------------------------------------------------------------------*
+
+  CASE GV_OKCODE.
+    WHEN 'CANC'.
+      IF GS_CAR IS NOT INITIAL AND GV_CMFLAG EQ 'C'.
+
+        PERFORM POPUP_FUNCTION  USING 'Abort creating a new Data'
+                                      'Do you want to exit without creating data?'
+                                CHANGING LV_ANSWER.
+
+      ELSEIF GS_CAR NE GS_CINFO_H AND GV_CMFLAG EQ 'M'.
+
+        PERFORM POPUP_FUNCTION USING 'Abort changing a Data'
+                                     'Do you want to exit without changing data?'
+                               CHANGING LV_ANSWER.
+
+      ENDIF.
+
+      CASE LV_ANSWER.
+        WHEN '1'.
+          LEAVE TO SCREEN 0.
+        WHEN '2' OR 'A'.
+          MESSAGE S021(ZM34_MESSAGE) DISPLAY LIKE 'E'.
+        WHEN OTHERS.
+          LEAVE TO SCREEN 0.
+      ENDCASE.
+
+    WHEN 'SAVE'.
+
+      PERFORM CHECK_FIELD USING GV_CMFLAG.
+
+      IF GV_CMFLAG EQ 'M' AND GS_CAR EQ GS_CINFO_H.
+
+        MESSAGE S018(ZM34_MESSAGE) DISPLAY LIKE 'E'.
+        RETURN.
+
+      ENDIF.
+
+
+      CHECK GV_SUBRC EQ 0.
+
+      PERFORM SAVE_CAR_DATA.
+
+      PERFORM GET_CAR_DATA CHANGING GT_CAR.
+
+      LEAVE TO SCREEN 0.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  SAVE_OKCODE  INPUT
+*&---------------------------------------------------------------------*
+MODULE SAVE_OKCODE INPUT.
+
+  GV_OKCODE = OK_CODE.
+  CLEAR: OK_CODE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0300  INPUT
+*&---------------------------------------------------------------------*
+MODULE USER_COMMAND_0300 INPUT.
+
+  CASE GV_OKCODE.
+
+    WHEN 'CANCEL'.
+      LEAVE TO SCREEN 0.
+
+    WHEN 'MODIFY'.
+
+      IF GS_CINFO EQ GS_CINFO_H.
+        MESSAGE S018(ZM34_MESSAGE) DISPLAY LIKE 'E'.
+
+      ELSE.
+
+        PERFORM CHECK_FIELD USING 'M'.
+
+        CHECK GV_SUBRC EQ 0.
+
+        PERFORM MODIFY_CAR_DATA.
+
+        PERFORM GET_CAR_DATA CHANGING GT_CAR.
+        LEAVE TO SCREEN 0.
+
+      ENDIF.
+
+  ENDCASE.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

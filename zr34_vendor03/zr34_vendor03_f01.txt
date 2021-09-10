@@ -1,0 +1,475 @@
+*&---------------------------------------------------------------------*
+*& Include          ZR34_VENDOR03_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form set_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv_0100 .
+
+  CREATE OBJECT go_con
+    EXPORTING
+*     parent                      =
+      container_name              = 'MYCON'
+*     style                       =
+*     lifetime                    = lifetime_default
+*     repid                       =
+*     dynnr                       =
+*     no_autodef_progid_dynnr     =
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+*  ENDIF.
+
+
+  IF go_alv IS INITIAL.
+    CREATE OBJECT go_alv
+      EXPORTING
+*       i_shellstyle      = 0
+*       i_lifetime        =
+        i_parent          = go_con
+*       i_appl_events     = SPACE
+*       i_parentdbg       =
+*       i_applogparent    =
+*       i_graphicsparent  =
+*       i_name            =
+*       i_fcat_complete   = SPACE
+*       o_previous_sral_handler =
+      EXCEPTIONS
+        error_cntl_create = 1
+        error_cntl_init   = 2
+        error_cntl_link   = 3
+        error_dp_create   = 4
+        OTHERS            = 5.
+    IF sy-subrc <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+    ENDIF.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form display_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv_0100 .
+
+*  "## ALV ##
+*  IF gv_alv_flag = 'X'.
+
+  CALL METHOD go_alv->set_table_for_first_display
+    EXPORTING
+*     i_buffer_active               =
+*     i_bypassing_buffer            =
+*     i_consistency_check           =
+      i_structure_name              = 'ZT34_VENDOR'
+*     is_variant                    =
+*     i_save                        =
+*     i_default                     = 'X'
+      is_layout                     = gv_layo
+*     is_print                      =
+*     it_special_groups             =
+*     it_toolbar_excluding          =
+*     it_hyperlink                  =
+*     it_alv_graphics               =
+*     it_except_qinfo               =
+*     ir_salv_adapter               =
+    CHANGING
+      it_outtab                     = gt_list
+      it_fieldcatalog               = gt_fcat
+*     it_sort                       =
+*     it_filter                     =
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+  IF sy-subrc <> 0.
+*   Implement suitable error handling here
+  ENDIF.
+
+
+*  "ALV FALG #####
+*  CLEAR gv_alv_flag.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form modify_fcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM modify_fcat .
+
+  IF gt_fcat IS NOT INITIAL. RETURN. ENDIF.
+
+  CLEAR: gs_fcat.
+  gs_fcat-fieldname = 'DFLAG'.
+  gs_fcat-no_out = 'X'.
+  APPEND gs_fcat TO gt_fcat.
+
+* ## ##
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'DFLAG'
+                            CHANGING gs_fcat gt_fcat,
+                            USING 'E' 'NO_OUT' 'X'
+                            CHANGING gs_fcat gt_fcat.
+
+* ## ##, fixed value# ##
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'STATE'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'NO_OUT' 'X'
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'STATE_T'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'COLTEXT' 'State'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'JUST' 'C'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'COL_POS' 7
+                          CHANGING gs_fcat gt_fcat.
+
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'VTYPE'
+                        CHANGING gs_fcat gt_fcat,
+                        USING 'E' 'NO_OUT' 'X'
+                        CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'VTYPE_T'
+                        CHANGING gs_fcat gt_fcat,
+                        USING '' 'COLTEXT' 'Vendor Type'
+                        CHANGING gs_fcat gt_fcat,
+                        USING '' 'JUST' 'C'
+                        CHANGING gs_fcat gt_fcat,
+                        USING 'E' 'COL_POS' 4
+                        CHANGING gs_fcat gt_fcat.
+
+* ### ##
+  PERFORM set_fieldcat USING 'VENNO' 'Vendor Code' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'VNAME' 'Vendor Name' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'VTELNR' 'Telephone Number' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'CITY' 'City' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'STREET' 'Street' 'C'
+                       CHANGING gs_fcat gt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_info
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_info .
+
+  CLEAR gt_list.
+
+  IF pa_state IS INITIAL.
+    SELECT *
+      FROM zt34_vendor
+      INTO CORRESPONDING FIELDS OF TABLE gt_list
+     WHERE dflag = ''
+       AND venno  IN pa_venno
+       AND vname  IN pa_vname
+       AND city   IN pa_city
+       AND street IN pa_strt.
+
+  ELSE.
+    SELECT *
+      FROM zt34_vendor
+      INTO CORRESPONDING FIELDS OF TABLE gt_list
+      WHERE dflag = ''
+        AND venno  IN pa_venno
+        AND vname  IN pa_vname
+        AND state  = pa_state
+        AND city   IN pa_city
+        AND street IN pa_strt.
+
+  ENDIF.
+
+
+* ##### #### ##
+  SORT gt_list BY venno ASCENDING.
+
+* ## -> fixed value ##
+  PERFORM get_display_data CHANGING gt_list.
+
+* vtype ## ##
+  PERFORM get_vtype_checkbox.
+
+  IF sy-subrc <> 0 OR gt_list IS INITIAL.
+*    MESSAGE i016(pn) WITH 'Data is not found.'.
+    MESSAGE i011.
+    DELETE gt_list WHERE vtype = 'P' OR vtype = 'R'.
+
+    RETURN.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_vtype_checkbox
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_vtype_checkbox .
+
+* ## ## ## (##### #)
+  IF pa_vt1 = 'X' AND pa_vt2 = ''.
+    DELETE gt_list WHERE vtype <> 'P'.          " ###### ##: ##### ## ##
+
+  ELSEIF pa_vt1 = '' AND pa_vt2 = 'X'.
+    DELETE gt_list WHERE vtype <> 'R'.          " ###### ##: ##### ## ##
+
+  ELSEIF pa_vt1 = 'X' AND pa_vt2 = 'X'.         " # # ##: if# ####
+    RETURN.
+
+  ELSEIF pa_vt1 = '' AND pa_vt2 = ''.
+    DELETE gt_list WHERE vtype = 'P' OR vtype = 'R'.
+*    MESSAGE i016(pn) WITH 'Data is not found.'.
+    MESSAGE i011.
+    RETURN.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_display_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GT_LIST
+*&---------------------------------------------------------------------*
+FORM get_display_data  CHANGING pt_list LIKE gt_list.
+
+  DATA: ls_list LIKE LINE OF pt_list[].
+
+  LOOP AT pt_list INTO ls_list.
+
+    PERFORM get_domain_fixed_value USING 'ZD34_STATE'
+                                         ls_list-state
+                                   CHANGING ls_list-state_t.
+
+    PERFORM get_domain_fixed_value USING 'ZD34_VTYPE'
+                                     ls_list-vtype
+                               CHANGING ls_list-vtype_t.
+
+    MODIFY pt_list FROM ls_list.
+    CLEAR ls_list.
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_domain_fixed_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> LS_LIST_STATE
+*&      <-- LS_LIST_STATE_T
+*&---------------------------------------------------------------------*
+FORM get_domain_fixed_value   USING   VALUE(p_doname)
+                                      VALUE(p_code)
+                             CHANGING VALUE(p_text).
+  DATA: ls_domain  TYPE dd07v,
+        lt_domain  LIKE TABLE OF ls_domain,
+        lv_domname TYPE dd07l-domname.
+
+  lv_domname = p_doname.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      domname    = lv_domname
+*     TEXT       = 'X'
+*     FILL_DD07L_TAB        = ' '
+    TABLES
+      values_tab = lt_domain
+*     VALUES_DD07L          =
+*   EXCEPTIONS
+*     NO_VALUES_FOUND       = 1
+*     OTHERS     = 2
+    .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  READ TABLE lt_domain WITH KEY domvalue_l = p_code
+                       INTO ls_domain.
+  IF sy-subrc = 0.
+    p_text = ls_domain-ddtext.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fcat_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fcat_value  USING VALUE(p_end)
+                           VALUE(p_field)
+                           VALUE(p_value)
+                     CHANGING ps_fcat TYPE lvc_s_fcat
+                              pt_fcat TYPE lvc_t_fcat.
+  CASE p_field.
+    WHEN 'FIELDNAME'.
+      ps_fcat-fieldname = p_value.
+    WHEN 'NO_OUT'.
+      ps_fcat-no_out = p_value.
+    WHEN 'COLTEXT'.
+      ps_fcat-coltext = p_value.
+    WHEN 'COL_POS'.
+      ps_fcat-col_pos = p_value.
+    WHEN 'JUST'.
+      ps_fcat-just = p_value.
+    WHEN 'HOTSPOT'.
+      ps_fcat-hotspot = p_value.
+  ENDCASE.
+
+  IF p_end = 'E'.
+    APPEND ps_fcat TO pt_fcat.
+    CLEAR ps_fcat.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fieldcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fieldcat   USING VALUE(p_field)
+                           VALUE(p_col)
+                           VALUE(p_just)
+                    CHANGING ps_fcat LIKE gs_fcat
+                             pt_fcat LIKE gt_fcat.
+  CLEAR ps_fcat.
+
+  ps_fcat-fieldname = p_field.
+  ps_fcat-coltext = p_col.
+  ps_fcat-just = p_just.
+  APPEND ps_fcat TO pt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form move_crud_program
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM move_crud_program .
+  DATA: lv_uname    TYPE sy-uname,
+        lv_eposi(3) TYPE c.
+
+  SELECT *
+    FROM zt34_emp
+    INTO CORRESPONDING FIELDS OF gs_emp
+    WHERE pernr = sy-uname.
+  ENDSELECT.
+
+  lv_uname = sy-uname.
+  lv_eposi = gs_emp-eposi.
+
+  IF lv_eposi = 'HOD' OR lv_eposi = 'TLD'.
+    CALL TRANSACTION 'ZM34_VENDOR01'.
+
+  ELSE.
+*    MESSAGE i016(pn) WITH 'Staff Only.'.
+    MESSAGE i005.
+    RETURN.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form default_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM default_value .
+
+  CLEAR gv_layo.
+
+*  gv_layo-zebra = 'X'.
+  gv_layo-cwidth_opt = 'X'.
+  gv_layo-sel_mode = 'A'.
+*  gv_layo-grid_title = 'Vendor List'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form refresh_alv
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM refresh_alv .
+
+  " layout refresh
+  CALL METHOD go_alv->set_frontend_layout
+    EXPORTING
+      is_layout = gv_layo.
+
+  DATA: ls_stable      TYPE lvc_s_stbl,
+        i_soft_refresh TYPE char01.
+  ls_stable-col = 'X'.
+  ls_stable-row = 'X'.
+  i_soft_refresh = 'X'.
+
+  " refresh display
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      is_stable      = ls_stable
+      i_soft_refresh = ' '
+    EXCEPTIONS
+      finished       = 1
+      OTHERS         = 2.
+
+  IF sy-subrc <> 0.
+*      Implement suitable error handling here
+  ENDIF.
+
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

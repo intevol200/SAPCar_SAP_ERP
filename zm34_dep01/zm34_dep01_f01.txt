@@ -1,0 +1,371 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_DEP01_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form set_alv0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv0100 .
+  CREATE OBJECT go_con
+    EXPORTING
+*     parent                      =
+      container_name              = 'CON'
+*     style                       =
+*     lifetime                    = lifetime_default
+*     repid                       =
+*     dynnr                       =
+*     no_autodef_progid_dynnr     =
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+    MESSAGE a016(pn) WITH 'Create Continar Object Error'.
+  ENDIF.
+
+  CREATE OBJECT go_alv
+    EXPORTING
+*     i_shellstyle      = 0
+*     i_lifetime        =
+      i_parent          = go_con
+*     i_appl_events     = SPACE
+*     i_parentdbg       =
+*     i_applogparent    =
+*     i_graphicsparent  =
+*     i_name            =
+*     i_fcat_complete   = SPACE
+*     o_previous_sral_handler =
+    EXCEPTIONS
+      error_cntl_create = 1
+      error_cntl_init   = 2
+      error_cntl_link   = 3
+      error_dp_create   = 4
+      OTHERS            = 5.
+  IF sy-subrc <> 0.
+    MESSAGE a016(pn) WITH 'Create ALV Object Error'.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form modify_fieldcatlog_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM modify_fieldcatlog_0100 .
+  CALL FUNCTION 'LVC_FIELDCATALOG_MERGE'
+    EXPORTING
+*     I_BUFFER_ACTIVE  =
+      i_structure_name = 'ZT34_ORG' "#### ######?
+*     I_CLIENT_NEVER_DISPLAY       = 'X'
+*     I_BYPASSING_BUFFER           =
+*     I_INTERNAL_TABNAME           =
+    CHANGING
+      ct_fieldcat      = gt_fcat
+*   EXCEPTIONS
+*     INCONSISTENT_INTERFACE       = 1
+*     PROGRAM_ERROR    = 2
+*     OTHERS           = 3
+    .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form display_alv0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv0100 .
+  gs_layo-cwidth_opt = 'X'.
+  gs_layo-sel_mode = 'A'.
+  gs_layo-info_fname = 'LINECOLOR'.
+  PERFORM set_fcat.
+
+  CALL METHOD go_alv->set_table_for_first_display
+    EXPORTING
+*     i_buffer_active               =
+*     i_bypassing_buffer            =
+*     i_consistency_check           =
+      i_structure_name              = 'ZT34_ORG'
+*     is_variant                    =
+*     i_save                        =
+      i_default                     = 'X'
+      is_layout                     = gs_layo
+*     is_print                      =
+*     it_special_groups             =
+*      it_toolbar_excluding          = gt_ui_excluding
+*     it_hyperlink                  =
+*     it_alv_graphics               =
+*     it_except_qinfo               =
+*     ir_salv_adapter               =
+    CHANGING
+      it_outtab                     = gt_deplist
+      it_fieldcatalog               = gt_fcat
+*     it_sort                       =
+*     it_filter                     =
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+
+*## refresh
+      gs_stable-row = abap_true. "Row
+      gs_stable-col = abap_true. "column
+
+      CALL METHOD go_alv->refresh_table_display
+        EXPORTING
+          is_stable      = gs_stable
+          i_soft_refresh = abap_true
+        EXCEPTIONS
+          finished       = 1
+          OTHERS         = 2
+              .
+      IF sy-subrc <> 0.
+        MESSAGE i016(pn) WITH 'ALV REFRESH ERROR!'.
+*       Implement suitable error handling here
+      ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form select_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM init_data .
+ SELECT *
+   FROM zt34_org
+   INTO CORRESPONDING FIELDS OF TABLE gt_deplist
+   WHERE dflag = abap_false.
+* endselect.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form handle_toolbar
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> E_OBJECT
+*&      --> E_INTERACTIVE
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form save
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM save.
+  CLEAR gs_deplist.
+  gs_deplist-vkorg = zt34_org-vkorg.
+  gs_deplist-vtext = zt34_org-vtext.
+
+*  INSERT gs_depdata into table zt34_org.
+  INSERT zt34_org FROM gs_deplist.
+
+  IF sy-subrc = 0.
+    MESSAGE 'Data was created successfully' TYPE 'I'.
+
+    SELECT *
+     FROM zt34_org
+     INTO CORRESPONDING FIELDS OF TABLE gt_deplist
+      WHERE dflag = abap_false.
+
+  ELSE.
+    ROLLBACK WORK.
+    MESSAGE 'Data was not created' TYPE 'I'.
+
+  ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form del_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM del_data .
+    LOOP AT gt_index INTO gs_index.
+      READ TABLE gt_deplist INTO gs_deplist INDEX gs_index-index.
+      MOVE-CORRESPONDING gs_deplist TO zt34_org.
+
+      gs_deplist-vkorg = zt34_org-vkorg.
+      gs_deplist-dflag = 'X'.
+
+      UPDATE zt34_org SET dflag = gs_deplist-dflag
+                      WHERE vkorg  = gs_deplist-vkorg.
+    ENDLOOP.
+
+
+      IF sy-subrc = 0.
+        COMMIT WORK.
+        DELETE gt_deplist WHERE vkorg = abap_true.
+        MESSAGE 'Data was delete successfully' TYPE 'I'.
+      ELSE.
+        ROLLBACK WORK.
+     ENDIF.
+
+     SELECT SINGLE *
+     FROM zt34_org.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form del_msg
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM del_msg .
+  DATA : l_answer.
+  CLEAR : l_answer.
+
+  CALL FUNCTION 'POPUP_TO_CONFIRM'
+    EXPORTING
+      titlebar      = 'DELETE'
+*     DIAGNOSE_OBJECT = ' '
+      text_question = TEXT-002
+      text_button_1 = 'Yes'
+*     ICON_BUTTON_1 = ' '
+      text_button_2 = 'No'
+*     ICON_BUTTON_2 = ' '
+*     DEFAULT_BUTTON = '1'
+*     DISPLAY_CANCEL_BUTTON = 'X'
+*     USERDEFINED_F1_HELP = ' '
+*     START_COLUMN  = 25
+*     START_ROW     = 6
+*     POPUP_TYPE    =
+*     IV_QUICKINFO_BUTTON_1 = ' '
+*     IV_QUICKINFO_BUTTON_2 = ' '
+    IMPORTING
+      answer        = l_answer
+* TABLES * PARAMETER =
+* EXCEPTIONS
+*     TEXT_NOT_FOUND = 1
+*     OTHERS        = 2
+    .
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+     WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+  IF l_answer EQ '1'.
+    PERFORM del_data.
+  ELSE.
+    MESSAGE s000 DISPLAY LIKE 'E' WITH TEXT-e01.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form change
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM change.
+    CLEAR gs_deplist.
+
+   gs_deplist-vkorg = zt34_org-vkorg.
+   gs_deplist-vtext = zt34_org-vtext.
+
+   UPDATE zt34_org
+      SET vtext = gs_deplist-vtext
+      WHERE vkorg = gs_deplist-vkorg.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form select_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM select_data .
+CALL METHOD go_alv->get_selected_rows
+   IMPORTING
+     et_index_rows = gt_index.
+DESCRIBE TABLE gt_index LINES gd_lines.
+
+*  IF gt_index IS INITIAL.
+*    MESSAGE 'Select data.' TYPE 'I'.
+*    CALL SCREEN 100.
+*  ELSE.
+    LOOP AT gt_index INTO gs_index.
+      READ TABLE gt_deplist INTO gs_deplist INDEX gs_index-index.
+      MOVE-CORRESPONDING gs_deplist TO zt34_org.
+    ENDLOOP.
+*  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_fcat.
+    LOOP AT gt_fcat INTO gs_fcat.
+      CASE gs_fcat-fieldname.
+        WHEN 'VKORG'.
+           gs_fcat-coltext = 'Department Code'.
+        WHEN 'VTEXT'.
+          gs_fcat-coltext = 'Department Name'.
+        WHEN 'DFLAG'.
+          gs_fcat-coltext = 'Delete'.
+          gs_fcat-tech = 'X'.
+      ENDCASE.
+
+      MODIFY gt_fcat FROM gs_fcat.
+      CLEAR gs_fcat.
+    ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form search_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM search_data .
+   SELECT *
+   FROM zt34_org
+   INTO CORRESPONDING FIELDS OF TABLE gt_deplist
+     WHERE dflag = 'X'.
+
+  LOOP AT gt_deplist INTO gs_deplist.
+    CASE gs_deplist-dflag.
+      WHEN 'X'.
+   	  gs_deplist-linecolor = 'C600'.
+    ENDCASE.
+     MODIFY gt_deplist FROM gs_deplist.
+  ENDLOOP.
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

@@ -1,0 +1,125 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SREPAIR_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE exit INPUT.
+
+  CASE sy-ucomm.
+
+    WHEN 'EXIT'.
+      LEAVE TO SCREEN 100.
+
+    WHEN 'CANC'.
+      LEAVE PROGRAM.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+
+** MOVE (Screen -> ABAP)
+*  CLEAR: gs_hcond, gs_icond.
+*  MOVE-CORRESPONDING zs34_hsrepair_01 TO gs_hcond.
+*  MOVE-CORRESPONDING zs34_isrepair_01 TO gs_icond.
+
+  CASE ok_code.
+
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+
+***    WHEN 'CLEAR'.
+****      CLEAR: zs34_hsrepair_01, zs34_isrepair_01.
+***
+***    WHEN 'SEARCH'.
+***      CALL TRANSACTION 'ZR34_SREP03'.
+
+*    WHEN 'SAVE'.
+**      PERFORM create_repair.
+**      CLEAR: zs34_hsrepair_01, zs34_isrepair_01.
+
+
+
+*-----------------------------------------------------------*
+
+**dropdown ### ### alv# ##
+    WHEN 'SEL'.
+      gs_cond-venno = gv_vendor.
+
+    WHEN 'SAVE'.
+
+      DATA: lv_value TYPE c LENGTH 1.
+
+**#### ## ### ## ##
+      CALL FUNCTION 'POPUP_TO_CONFIRM'
+        EXPORTING
+          titlebar      = 'Create new Repair Request'
+          text_question = 'Do you want to create a new Repair Request?'
+          text_button_1 = 'Yes'
+        IMPORTING
+          answer        = lv_value.
+
+**VENDOR ## YES ### ###
+      CHECK lv_value EQ '1'.
+      IF gs_cond-scarid IS INITIAL.
+        MESSAGE i016(pn) WITH 'You must select a car.' DISPLAY LIKE 'E'.
+        RETURN.
+
+      ELSEIF gv_vendor IS INITIAL.
+*        MESSAGE i016(pn) WITH 'You must select a vendor code.' DISPLAY LIKE 'E'.
+        MESSAGE i026.
+        RETURN.
+
+      ELSEIF gt_icond IS INITIAL.
+*        MESSAGE i016(pn) WITH 'You should add items first.' DISPLAY LIKE 'E'.
+        MESSAGE i025.
+        RETURN.
+
+**YES ### DB# INSERT # ##
+      ELSE.
+        "ALV ### ## ##
+        PERFORM get_changed_data.
+
+        "ALV ## ##
+        PERFORM check_alv_blank USING gs_icond gt_icond
+                                CHANGING p_subrc.
+
+        CHECK p_subrc NE 4.
+        PERFORM insert_request USING gs_cond.
+
+
+*        MESSAGE i016(pn) WITH 'Repair Request created.' DISPLAY LIKE 'S'.
+        MESSAGE i015 WITH 'Requesting Repair '.
+
+
+
+*******P/R ## 1# ##, ALV ###.
+        CLEAR: gs_icond, gt_icond, gs_cond, gv_vendor, zs34_srepair.
+
+        PERFORM get_header_data CHANGING gs_cond.
+        PERFORM get_data CHANGING gt_icond.
+
+        PERFORM set_fronted_layout.
+        PERFORM repair_number CHANGING gs_cond-repno.
+
+
+
+*        PERFORM number_range CHANGING gs_cond.
+*        LEAVE TO SCREEN 0.
+
+      ENDIF.
+
+  ENDCASE.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

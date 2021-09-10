@@ -1,0 +1,42 @@
+*&---------------------------------------------------------------------*
+*& Module Pool      ZM34_SZONE01
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE zm34_szone01_top                        .  " Global Data
+INCLUDE zm34_szone01_c01                        .  " Class
+INCLUDE zm34_szone01_o01                        .  " PBO-Modules
+INCLUDE zm34_szone01_i01                        .  " PAI-Modules
+INCLUDE zm34_szone01_f01                        .  " FORM-Routines
+
+LOAD-OF-PROGRAM.
+  PERFORM set_default_value CHANGING gs_layo gt_sort gs_re.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Maintain SAP Car Zone
+* T101 --> SAP Car Zone Address
+* T200 --> Create : SAPcarZone
+* T300 --> Change : SAPcarZone
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: ZM34_MESSAGE
+*001   & Data changed.
+*004   You must select single row.
+*006   ALV Container Creation ERROR!
+*007   Information that already exists.
+*009   Failed to change data.
+*011   Data is not found.
+*012   You can not select two or more data at a same time
+*015   & Data Created.
+*018   Data is same as current version.
+*020   ALV Grid Creation ERROR!
+*021   Canceled
+*032   ERROR!
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

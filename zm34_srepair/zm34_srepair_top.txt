@@ -1,0 +1,71 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_SREPAIR_TOP                         - Module Pool      ZM34_SREPAIR
+*&---------------------------------------------------------------------*
+PROGRAM zm34_srepair MESSAGE-ID zm34_message.
+
+* Common
+DATA: ok_code TYPE sy-ucomm,
+      p_subrc TYPE sy-subrc.
+
+* Condition
+
+*TABLES: zs34_hsrepair_01,
+*        zs34_isrepair_01.                  " Screen#
+*DATA: gs_hcond TYPE zs34_hsrepair_01,
+*      gt_hcond LIKE TABLE OF gs_hcond,
+*      gs_icond TYPE zs34_isrepair_01,
+*      gt_icond LIKE TABLE OF gs_icond.     " ABAP Program#
+
+*DATA: gt_icond TYPE TABLE OF zt34_isrepair,
+*      gs_icond LIKE LINE OF gt_icond.
+
+
+
+TABLES: zt34_hsrepair, zt34_isrepair, zs34_srepair.
+DATA: gs_cond LIKE zt34_hsrepair.
+
+DATA: BEGIN OF gs_icond.
+        INCLUDE STRUCTURE zt34_isrepair.
+DATA:   scarid       LIKE gs_cond-scarid,
+        venno        LIKE gs_cond-venno,
+        vname        LIKE zt34_vendor-vname,
+        erdat        LIKE gs_cond-erdat,
+        erzet        LIKE gs_cond-erzet,
+        ernam        LIKE gs_cond-ernam,
+        gv_lineno(2) TYPE n,
+      END OF gs_icond,
+      gt_icond LIKE TABLE OF gs_icond.
+
+
+
+DATA: gv_scno   LIKE zt34_gr-scarno,
+      gv_vendor LIKE zt34_vendor-venno.
+
+DATA: BEGIN OF gs_vendor,
+        gv_venno LIKE gs_cond-venno,
+        gv_vname LIKE zt34_vendor-vname,
+      END OF gs_vendor,
+      gt_vendor LIKE TABLE OF gs_vendor.
+
+"ALV ## ##
+DATA: go_con TYPE REF TO cl_gui_custom_container,
+      go_alv TYPE REF TO cl_gui_alv_grid.
+
+DATA: gt_fcat TYPE lvc_t_fcat,
+      gs_fcat LIKE LINE OF gt_fcat.
+
+DATA: gs_sort TYPE LINE OF lvc_t_sort,
+      gt_sort LIKE TABLE OF gs_sort.
+
+DATA: gs_layo TYPE lvc_s_layo.
+
+"ALV ## ##
+DATA: gt_functions TYPE ui_functions.
+
+**SCREEN DROPDOWN ##
+DATA: field_id TYPE vrm_id,
+      values   TYPE vrm_values,
+      value    LIKE LINE OF values.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

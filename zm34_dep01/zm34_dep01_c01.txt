@@ -1,0 +1,50 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_DEP01_C01
+*&---------------------------------------------------------------------*
+CLASS lcl_event_receiver DEFINITION.
+  PUBLIC SECTION.
+
+    METHODS: handle_double_click
+                  FOR EVENT double_click OF cl_gui_alv_grid
+      IMPORTING e_row
+                  e_column
+                  es_row_no.
+
+    METHODS: handle_data_changed
+                  FOR EVENT data_changed OF cl_gui_alv_grid
+      IMPORTING er_data_changed.
+
+    METHODS: handle_toolbar
+                  FOR EVENT toolbar OF cl_gui_alv_grid
+      IMPORTING e_object
+                  e_interactive.
+
+    METHODS: handle_user_command
+                  FOR EVENT user_command OF cl_gui_alv_grid
+      IMPORTING e_ucomm.
+
+ENDCLASS.
+
+CLASS lcl_event_receiver IMPLEMENTATION."### ##
+
+  METHOD handle_double_click.
+*    PERFORM handle_double_click USING e_column
+*                                      es_row_no.
+  ENDMETHOD.                    "handle_double_click
+
+  METHOD handle_data_changed.
+*    PERFORM handle_data_changed  USING er_data_changed e_onf4 e_onf4_before e_on4_after e_ucomm.
+  ENDMETHOD.                    "handle_data_changed
+
+  METHOD handle_toolbar.
+*    PERFORM handle_toolbar USING e_object e_interactive.
+  ENDMETHOD.                    "handle_toolbar
+
+  METHOD handle_user_command.
+*    PERFORM handle_user_command USING e_ucomm.
+  ENDMETHOD.                    "handle_user_command
+
+ENDCLASS.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

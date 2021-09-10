@@ -1,0 +1,28 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SREPAIR_C01
+*&---------------------------------------------------------------------*
+CLASS lcl_event DEFINITION.
+  PUBLIC SECTION.
+    METHODS : handler_toolbar
+      FOR EVENT toolbar OF cl_gui_alv_grid
+      IMPORTING e_object e_interactive.
+
+    METHODS : handler_user_command
+      FOR EVENT user_command OF cl_gui_alv_grid
+      IMPORTING e_ucomm.
+ENDCLASS.
+
+CLASS lcl_event IMPLEMENTATION.
+  METHOD handler_toolbar. "##
+    PERFORM toolbar_set USING e_object e_interactive.
+  ENDMETHOD.
+
+  METHOD handler_user_command. "CUSTOM ##
+    PERFORM user_command_grid USING e_ucomm.
+  ENDMETHOD.
+ENDCLASS.
+
+DATA : go_toolbar TYPE REF TO lcl_event.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

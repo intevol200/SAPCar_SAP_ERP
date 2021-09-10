@@ -1,0 +1,49 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_SCAR01_TOP                          - Module Pool      ZM34_SCAR01
+*&---------------------------------------------------------------------*
+PROGRAM zm34_scar01 MESSAGE-ID ZM34_MESSAGE.
+
+DATA: gv_subrc TYPE sy-subrc,
+      ok_code  TYPE sy-ucomm,
+      gv_edit  TYPE c LENGTH 1,
+      gv_title TYPE c LENGTH 30,
+      gv_valid.
+
+"ALV
+DATA: go_con TYPE REF TO cl_gui_custom_container,
+      go_alv TYPE REF TO cl_gui_alv_grid.
+
+"Structure
+TABLES: zm34_sapcar_s01, "Screen 200
+        zm34_sapcar_s02, "Screen 101
+        zm34_sapcar_s03. "## Structure
+
+DATA: gs_cond TYPE zm34_sapcar_s03,
+      gs_change type zm34_sapcar_s01.
+
+"Condition range
+DATA: gt_hprice LIKE RANGE OF zt34_sapcar-hprice,
+      gs_hprice LIKE LINE OF gt_hprice,
+      gt_dprice LIKE RANGE OF zt34_sapcar-dprice,
+      gs_dprice LIKE LINE OF gt_dprice.
+
+
+"ALV Setting
+DATA : gs_layo TYPE lvc_s_layo,
+       gs_fcat TYPE lvc_s_fcat,
+       gt_fcat TYPE lvc_t_fcat,
+       gs_sort TYPE LINE OF lvc_t_sort,
+       gt_sort LIKE TABLE OF gs_sort.
+
+DATA: BEGIN OF gs_list.
+        INCLUDE TYPE zm34_sapcar_s01.
+DATA:   light TYPE c LENGTH 1,
+        color TYPE c LENGTH 4,
+      END OF gs_list,
+      gt_list LIKE TABLE OF gs_list,
+      gt_modified type table of zt34_sapcar.
+
+DATA : GV_MODE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

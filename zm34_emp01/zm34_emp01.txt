@@ -1,0 +1,41 @@
+*&---------------------------------------------------------------------*
+*& Module Pool      ZM34_EMP01
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE ZM34_EMP01_TOP                          .    " Global Data
+INCLUDE ZM34_EMP01_C01.
+INCLUDE ZM34_EMP01_ALV.
+INCLUDE ZM34_EMP01_O01                          .  " PBO-Modules
+INCLUDE ZM34_EMP01_I01                          .  " PAI-Modules
+INCLUDE ZM34_EMP01_F01                          .  " FORM-Routines
+
+LOAD-OF-PROGRAM.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Maintain Employee Information
+* T200 --> Create Employee Information
+* T300 --> Change Employee Information
+
+*Text elements
+*--------------------------------------
+* 002 Do you want to delete?
+* 003 #### ########?
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: Hard coded
+*   Please choose one data.
+*
+* Message class: ME
+*000   *** General system messages
+*
+* Message class: PN
+*016   & & & &
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

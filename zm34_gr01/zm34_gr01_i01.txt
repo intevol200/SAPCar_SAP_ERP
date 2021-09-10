@@ -1,0 +1,107 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_GR01_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE exit INPUT.
+  CASE sy-ucomm.
+    WHEN 'CANC'.
+      LEAVE TO SCREEN 0.
+    WHEN 'EXIT'.
+      LEAVE PROGRAM.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+  CLEAR:gs_cond.
+  MOVE-CORRESPONDING zm34_gr01_s04 TO gs_cond.
+
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+    WHEN 'SEARCH' OR 'ENTER'.
+      PERFORM search.
+    WHEN 'CREATE'.
+      CLEAR: zm34_gr01_s01.
+      zm34_gr01_s01-pernr = sy-uname.
+      CALL SCREEN 200.
+    WHEN 'CHANGE'.
+      PERFORM get_selected_list CHANGING gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ENDIF.
+      CALL SCREEN 300.
+    WHEN 'DELETE'.
+      PERFORM get_selected_list_D CHANGING gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ENDIF.
+      PERFORM get_gr_list.
+    WHEN OTHERS.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+  CASE ok_code.
+    WHEN 'BACK'.
+      PERFORM get_gr_list.
+      LEAVE TO SCREEN 0.
+    WHEN 'SAVE'.
+      PERFORM check.
+      IF gv_subrc <> 0.
+        MESSAGE i016(pn) WITH 'Invoice count exceeded!'.
+        RETURN.
+      ENDIF.
+      PERFORM create_gr USING gs_create.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0101  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0101 INPUT.
+
+  CASE ok_code.
+
+    WHEN 'ENTER'.
+      LEAVE TO SCREEN 0.
+    WHEN 'CANC'.
+      LEAVE TO SCREEN 0.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0300  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0300 INPUT.
+
+  CASE ok_code.
+    WHEN 'BACK'.
+      PERFORM get_gr_list.
+      LEAVE TO SCREEN 0.
+    WHEN 'ENTER'.
+    WHEN 'SAVE'.
+      PERFORM change_gr.
+  ENDCASE.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

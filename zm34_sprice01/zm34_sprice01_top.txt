@@ -1,0 +1,54 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_SPRICE01_TOP                        - Module Pool      ZM34_SPRICE01
+*&---------------------------------------------------------------------*
+PROGRAM zm34_sprice01 MESSAGE-ID ZM34_MESSAGE.
+
+TABLES zt34_SPRICE.
+TABLES zs34_sprice.
+
+" Common
+DATA: ok_code  TYPE sy-ucomm,
+      gv_subrc TYPE sy-subrc.
+
+"##
+DATA: gs_cond TYPE zs34_sprice,
+      gt_cond LIKE TABLE OF gs_cond.
+
+"##,##
+DATA: gt_info TYPE TABLE OF zt34_sprice,
+      gs_info LIKE LINE OF gt_info.
+
+" Cust List
+DATA: BEGIN OF gs_list.
+        INCLUDE TYPE zt34_sprice.
+DATA:   color TYPE c LENGTH 4,
+      END OF  gs_list,
+      gt_list LIKE TABLE OF gs_list.
+
+*gt_list type table of zt34_sprice,
+*gs_list like line of gt_list.
+
+"Condition range
+DATA: gt_scpcd   LIKE RANGE OF zt34_sprice-scpcd,
+      gs_scpcd   LIKE LINE OF gt_scpcd,
+      gt_srental LIKE RANGE OF zt34_sprice-srental,
+      gs_srental LIKE LINE OF gt_srental,
+      gt_sdrive  LIKE RANGE OF zt34_sprice-sdrive,
+      gs_sdrive  LIKE LINE OF gt_sdrive.
+
+"ALV
+DATA: go_con      TYPE REF TO cl_gui_custom_container,
+      go_alv      TYPE REF TO cl_gui_alv_grid,
+      gv_alv_flag TYPE c,
+      gs_layo     TYPE lvc_s_layo.
+
+"FIELD CATALOG
+DATA: gt_fcat TYPE lvc_t_fcat,
+      gs_fcat LIKE LINE OF gt_fcat.
+
+"ALV SORT
+DATA: gs_sort TYPE LINE OF lvc_t_sort,
+      gt_sort LIKE TABLE OF gs_sort.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

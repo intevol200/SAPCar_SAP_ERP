@@ -1,0 +1,175 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SZONE03_V3O01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Module STATUS_0100 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE status_0100 OUTPUT.
+ SET PF-STATUS 'S100'.
+ SET TITLEBAR 'T100'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module INIT_TREE OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE init_tree OUTPUT.
+  IF go_tree IS INITIAL.
+    DATA: node_table TYPE node_table_type, "## ## ## ######
+          events     TYPE cntl_simple_events, "#### ###
+          event      TYPE cntl_simple_event.    "#### ###
+
+*#### ##
+    CREATE OBJECT go_con_tree
+      EXPORTING
+        container_name = 'TREE'.
+
+*TREE ### ##, CLASS# INSTANCE
+    CREATE OBJECT go_tree
+      EXPORTING
+        parent              = go_con_tree
+        node_selection_mode = cl_gui_simple_tree=>node_sel_mode_single. "####
+
+*## ##
+    PERFORM build_node_table USING node_table. "### ### ###
+
+*## ## ##
+    CALL METHOD go_tree->add_nodes
+      EXPORTING
+        table_structure_name = 'MTREESNODE'
+        node_table           = node_table. "## ### ##### int
+
+*## ## ## ##
+  CALL METHOD go_tree->expand_node( node_key = 'Child1').
+
+*###
+    CREATE OBJECT go_app.
+
+    event-eventid = cl_gui_simple_tree=>eventid_node_double_click.
+    event-appl_event = 'X'.
+    APPEND event TO events.
+
+*## ### ##
+    CALL METHOD go_tree->set_registered_events
+      EXPORTING
+        events                    = events
+      EXCEPTIONS
+        cntl_error                = 1
+        cntl_system_error         = 2
+        illegal_event_combination = 3.
+
+*### ###
+    SET HANDLER go_app->handle_node_double_click FOR go_tree.
+
+  ENDIF.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module CREATE_CONTAINER OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE create_container OUTPUT.
+  IF go_con_alv IS INITIAL.
+
+    CREATE OBJECT go_con_alv
+      EXPORTING
+          container_name = 'ALV'.
+
+      CREATE OBJECT go_alv
+        EXPORTING
+          i_parent = go_con_alv.
+
+*   ALV_CON## ALV ##### ####.
+
+      PERFORM set_default_value CHANGING gs_layout gt_sort.
+      PERFORM make_fieldcat: USING '' 'FIELDNAME' 'SZCODE'
+                             CHANGING gs_fcat gt_fcat,
+                             USING '' 'COLTEXT' 'SAP Car Zone'
+                             CHANGING gs_fcat gt_fcat,
+                             USING 'E' 'JUST' 'C'
+                             CHANGING gs_fcat gt_fcat.
+      PERFORM make_fieldcat: USING '' 'FIELDNAME' 'LIGHT'
+                             CHANGING gs_fcat gt_fcat,
+                             USING '' 'COLTEXT' 'Status'
+                             CHANGING gs_fcat gt_fcat,
+                             USING 'E' 'JUST' 'C'
+                             CHANGING gs_fcat gt_fcat.
+      PERFORM make_fieldcat: USING '' 'FIELDNAME' 'SZNAME'
+                             CHANGING gs_fcat gt_fcat,
+                             USING '' 'COLTEXT' 'SC-ZONE Name'
+                             CHANGING gs_fcat gt_fcat,
+                             USING '' 'JUST' 'C'
+                             CHANGING gs_fcat gt_fcat,
+                             USING 'E' 'NO_OUT' 'X'
+                             CHANGING gs_fcat gt_fcat.
+      PERFORM make_fieldcat: USING '' 'FIELDNAME' 'SCSTAT'
+                             CHANGING gs_fcat gt_fcat,
+                             USING '' 'COLTEXT' 'Progress'
+                             CHANGING gs_fcat gt_fcat,
+                             USING 'E' 'JUST' 'C'
+                             CHANGING gs_fcat gt_fcat.
+      PERFORM make_fieldcat: USING '' 'FIELDNAME' 'SCARNO'
+                             CHANGING gs_fcat gt_fcat,
+                             USING '' 'COLTEXT' 'Car Number'
+                             CHANGING gs_fcat gt_fcat,
+                             USING 'E' 'JUST' 'C'
+                             CHANGING gs_fcat gt_fcat.
+      PERFORM make_fieldcat: USING '' 'FIELDNAME' 'DFLAG'
+                             CHANGING gs_fcat gt_fcat,
+                             USING '' 'COLTEXT' 'Deleted'
+                             CHANGING gs_fcat gt_fcat,
+                             USING 'E' 'NO_OUT' 'X'
+                             CHANGING gs_fcat gt_fcat."## #### ##
+
+*   ALV ##
+  CALL METHOD go_alv->set_table_for_first_display
+    EXPORTING
+*      i_buffer_active               =
+*      i_bypassing_buffer            =
+*      i_consistency_check           =
+      i_structure_name              = 'ZM34_SZONE03_S01'
+*      is_variant                    =
+*      i_save                        =
+*      i_default                     = 'X'
+      is_layout                     = gs_layout
+*      is_print                      =
+*      it_special_groups             =
+*      it_toolbar_excluding          =
+*      it_hyperlink                  =
+*      it_alv_graphics               =
+*      it_except_qinfo               =
+*      ir_salv_adapter               =
+    CHANGING
+      it_outtab                     = gt_list
+      it_fieldcatalog               = gt_fcat
+      it_sort                       = gt_sort
+*      it_filter                     =
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      others                        = 4.
+  IF sy-subrc <> 0.
+*   Implement suitable error handling here
+  ENDIF.
+
+    ELSE.
+      PERFORM refresh_grid.
+    ENDIF.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_INIT OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE set_init OUTPUT.
+
+   PERFORM SELECT_DATA.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

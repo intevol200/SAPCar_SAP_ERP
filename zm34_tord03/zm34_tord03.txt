@@ -1,0 +1,61 @@
+*&---------------------------------------------------------------------*
+*& Report ZM34_TORD03
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE zm34_tord03_top                         .    " Global Data
+INCLUDE ZM34_TORD03_c01                         .  " class
+INCLUDE zm34_tord03_o01                         .  " PBO-Modules
+INCLUDE zm34_tord03_i01                         .  " PAI-Modules
+INCLUDE zm34_tord03_f01                         .  " FORM-Routines
+
+INITIALIZATION.
+  PERFORM display_move_list CHANGING gt_list gv_subrc.
+  IF gv_subrc <> 0.
+    MESSAGE i016(pn) WITH 'Error'.
+    RETURN.
+  ENDIF.
+
+AT SELECTION-SCREEN OUTPUT.
+
+AT SELECTION-SCREEN.
+
+START-OF-SELECTION.
+  CALL SCREEN 100.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Search SAP Car Move History
+
+*Text elements
+*--------------------------------------
+* H01 SAP Car Condition
+
+
+*Selection texts
+*--------------------------------------
+* PA_CAR         Car Number
+* PA_DFLAG         Deleted
+* PA_EMP         Person in Charge
+* PA_RET         Rent Number
+* PA_ST01         Complete
+* PA_ST02         Progress
+* PA_ST03         Unassigned
+* SO_DAT         Move Date
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+*
+* Message class: ZM34_MESSAGE
+*005   You are not a manager.
+*011   Data is not found.
+*019   ALV Container Creation ERROR!
+*020   ALV Grid Creation ERROR!
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

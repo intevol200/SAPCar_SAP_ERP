@@ -1,0 +1,28 @@
+*&---------------------------------------------------------------------*
+*& Report ZBDC34_CUST
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE zbdc34_cust_top                         .    " Global Data
+INCLUDE zbdc34_cust_c01                         .  " Class
+INCLUDE zbdc34_cust_o01                         .  " PBO-Modules
+INCLUDE zbdc34_cust_i01                         .  " PAI-Modules
+INCLUDE zbdc34_cust_f01                         .  " FORM-Routines
+
+START-OF-SELECTION.
+  CALL SCREEN 0100.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Customer BDC Program
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

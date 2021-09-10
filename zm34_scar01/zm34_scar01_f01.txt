@@ -1,0 +1,802 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SCAR01_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form set_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv_0100 .
+  CREATE OBJECT go_con
+    EXPORTING
+*     parent                      =
+      container_name              = 'MYCON'
+*     style                       =
+*     lifetime                    = lifetime_default
+*     repid                       =
+*     dynnr                       =
+*     no_autodef_progid_dynnr     =
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+    MESSAGE i019.
+  ENDIF.
+
+  IF go_alv IS INITIAL.
+    CREATE OBJECT go_alv
+      EXPORTING
+*       i_shellstyle      = 0
+*       i_lifetime        =
+        i_parent          = go_con
+*       i_appl_events     = SPACE
+*       i_parentdbg       =
+*       i_applogparent    =
+*       i_graphicsparent  =
+*       i_name            =
+*       i_fcat_complete   = SPACE
+*       o_previous_sral_handler =
+      EXCEPTIONS
+        error_cntl_create = 1
+        error_cntl_init   = 2
+        error_cntl_link   = 3
+        error_dp_create   = 4
+        OTHERS            = 5.
+    IF sy-subrc <> 0.
+      MESSAGE i020.
+    ENDIF.
+  ENDIF.
+
+  CREATE OBJECT go_event.
+  SET HANDLER go_event->on_hotspot_click FOR go_alv.
+*  SET HANDLER go_event->handle_toolbar FOR go_alv.
+*  SET HANDLER go_event->handle_user_command FOR go_alv.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form display_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv_0100 .
+  CALL METHOD go_alv->set_table_for_first_display
+    EXPORTING
+*     i_buffer_active               =
+*     i_bypassing_buffer            =
+*     i_consistency_check           =
+      i_structure_name              = 'ZM34_SAPCAR_S01'
+*     is_variant                    =
+*     i_save                        =
+*     i_default                     = 'X'
+      is_layout                     = gs_layo
+*     is_print                      =
+*     it_special_groups             =
+*     it_toolbar_excluding          =
+*     it_hyperlink                  =
+*     it_alv_graphics               =
+*     it_except_qinfo               =
+*     ir_salv_adapter               =
+    CHANGING
+      it_outtab                     = gt_list
+      it_fieldcatalog               = gt_fcat
+      it_sort                       = gt_sort
+*     it_filter                     =
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+  IF sy-subrc <> 0.
+    MESSAGE i016(pn) WITH 'ALV Display ERROR!'.
+  ENDIF.
+  CALL METHOD go_alv->set_ready_for_input
+    EXPORTING
+      i_ready_for_input = 0.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form refresh
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM refresh .
+  CALL METHOD go_alv->set_frontend_layout
+    EXPORTING
+      is_layout = gs_layo.
+
+  DATA:gs_re   TYPE lvc_s_stbl.
+  gs_re-col = 'X'.
+  gs_re-row = 'X'.
+
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      is_stable      = gs_re
+      i_soft_refresh = ' '
+    EXCEPTIONS
+      finished       = 1
+      OTHERS         = 2.
+  IF sy-subrc <> 0.
+    MESSAGE i016(pn) WITH 'ALV Refresh Display ERROR!'.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_default_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GS_LAYO
+*&      <-- GT_SORT
+*&      <-- GS_RE
+*&---------------------------------------------------------------------*
+FORM set_default_value  CHANGING ps_layo LIKE gs_layo
+                                 pt_sort LIKE gt_sort.
+
+  CLEAR ps_layo.
+  ps_layo-cwidth_opt = 'X'.
+  ps_layo-sel_mode = 'A'.
+  ps_layo-excp_fname = 'LIGHT'.
+  ps_layo-excp_led = 'X'.
+  ps_layo-info_fname = 'COLOR'.
+
+  CLEAR: gs_sort.
+  gs_sort-spos = '1'.
+  gs_sort-fieldname = 'LIGHT'.
+  gs_sort-up = 'X'.
+  APPEND gs_sort TO pt_sort.
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_selected_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      <-- GV_SUBRC
+*&---------------------------------------------------------------------*
+FORM get_selected_list  USING    VALUE(p_code)
+                        CHANGING p_subrc.
+  DATA: lt_rows TYPE lvc_t_roid,
+        ls_rows LIKE LINE OF lt_rows.
+
+  CLEAR p_subrc.
+
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+*     et_index_rows = lt_index.
+      et_row_no = lt_rows.
+
+  CASE p_code.
+    WHEN 'CHANGE'.
+      READ TABLE lt_rows INDEX 1 INTO ls_rows.
+      IF sy-subrc <> 0.
+        p_subrc = 4.
+        MESSAGE i004.
+        RETURN.
+      ENDIF.
+
+      READ TABLE lt_rows INDEX 2 INTO ls_rows.
+      IF sy-subrc = 0.
+        p_subrc = 4.
+        MESSAGE i032.
+        RETURN.
+      ENDIF.
+
+      READ TABLE gt_list INDEX ls_rows-row_id INTO gs_list.
+      MOVE-CORRESPONDING gs_list TO zm34_sapcar_s01.
+    WHEN 'DELETE'.
+      READ TABLE lt_rows INDEX 1 INTO ls_rows.
+      IF sy-subrc <> 0.
+        p_subrc = 4.
+        MESSAGE i004.
+        RETURN.
+      ENDIF.
+
+      PERFORM popup USING 'Delete Check'
+                            'Do you want to delete data?'
+                    CHANGING p_subrc.
+      IF p_subrc <> 0.
+        RETURN.
+      ENDIF.
+      LOOP AT lt_rows INTO ls_rows.
+        READ TABLE gt_list INDEX ls_rows-row_id INTO gs_list.
+        IF gs_list-dflag = 'X'.
+          MESSAGE i014.
+          RETURN.
+        ENDIF.
+        PERFORM delete_sapcar USING gs_list.
+      ENDLOOP.
+      PERFORM search_sapcar_list USING gs_cond
+                                CHANGING gt_list gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ENDIF.
+  ENDCASE.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form popup
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      <-- P_SUBRC
+*&---------------------------------------------------------------------*
+FORM popup  USING    VALUE(p_title)
+                     VALUE(p_message)
+            CHANGING p_subrc.
+
+  DATA: lv_answer.
+  CLEAR: lv_answer, p_subrc.
+
+  CALL FUNCTION 'POPUP_TO_CONFIRM'
+    EXPORTING
+      titlebar              = p_title
+*     DIAGNOSE_OBJECT       = ' '
+      text_question         = p_message
+      text_button_1         = 'Yes'(001)
+      icon_button_1         = 'ICON_CHECKED'
+      text_button_2         = 'No'(002)
+      icon_button_2         = 'ICON_INCOMPLETE'
+*     DEFAULT_BUTTON        = '1'
+      display_cancel_button = ''
+*     USERDEFINED_F1_HELP   = ' '
+      start_column          = 25
+      start_row             = 6
+*     POPUP_TYPE            =
+*     IV_QUICKINFO_BUTTON_1 = ' '
+*     IV_QUICKINFO_BUTTON_2 = ' '
+    IMPORTING
+      answer                = lv_answer
+*   TABLES
+*     PARAMETER             =
+    EXCEPTIONS
+      text_not_found        = 1
+      OTHERS                = 2.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+    MESSAGE i021.
+  ENDIF.
+  CLEAR: p_subrc.
+  IF lv_answer = 1.
+    p_subrc = 0.
+  ELSE.
+    p_subrc = 4.
+    MESSAGE s021.
+    RETURN.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form delete_sapcar
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_LIST
+*&---------------------------------------------------------------------*
+FORM delete_sapcar  USING VALUE(ps_list) LIKE gs_list.
+  UPDATE zt34_sapcar SET dflag = 'X'
+                     WHERE scarno = ps_list-scarno.
+  IF sy-subrc <> 0.
+    ROLLBACK WORK.
+    MESSAGE i010.
+  ELSE.
+    COMMIT WORK.
+      UPDATE zt34_scarzone SET dflag = 'X'
+                     WHERE scarno = ps_list-scarno.
+      IF sy-subrc <> 0.
+          ROLLBACK WORK.
+      ELSE.
+        COMMIT WORK.
+      ENDIF.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form update_sapcar
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> ZM34_SAPCAR_S01
+*&---------------------------------------------------------------------*
+FORM update_sapcar  USING VALUE(ps_sapcar) LIKE zm34_sapcar_s01.
+  CLEAR ps_sapcar.
+  ps_sapcar-scarno = zm34_sapcar_s01-scarno.
+  ps_sapcar-hprice = zm34_sapcar_s01-hprice.
+  ps_sapcar-dprice = zm34_sapcar_s01-dprice.
+  ps_sapcar-aedat = sy-datum.
+  ps_sapcar-aezet = sy-uzeit.
+  ps_sapcar-aenam = sy-uname.
+
+
+  IF    gs_list-scarno = ps_sapcar-scarno
+    AND  gs_list-hprice = ps_sapcar-hprice
+    AND gs_list-dprice = ps_sapcar-dprice.
+
+    MESSAGE i018.
+    RETURN.
+
+  ELSE.
+
+    UPDATE zt34_sapcar SET hprice = ps_sapcar-hprice
+                         dprice = ps_sapcar-dprice
+                         aedat = ps_sapcar-aedat
+                         aezet = ps_sapcar-aezet
+                         aenam = ps_sapcar-aenam
+                     WHERE scarno = ps_sapcar-scarno.
+    IF sy-subrc <> 0.
+      ROLLBACK WORK.
+      MESSAGE i009.
+    ELSE.
+      COMMIT WORK.
+      MESSAGE i001.
+    ENDIF.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form field_catalog
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM field_catalog .
+  CLEAR : gs_fcat, gt_fcat.
+
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'SCARNO'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'COLTEXT' 'SAP Car No.'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'JUST' 'C'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'HOTSPOT' 'X'
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'LIGHT' 'Status' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'HPRICE'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'COLTEXT' 'Hour Price'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'JUST' 'C'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'EDIT' 'X'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'CHECKTABLE' 'ZT34_SPRICE'
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'DPRICE'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'COLTEXT' 'Day Price'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'JUST' 'C'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'EDIT' 'X'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'CHECKTABLE' 'ZT34_SPRICE'
+                                CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'ERDAT' 'Create Date' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'ERZET' 'Create Time' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'ERNAM'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'COLTEXT' 'Create Emp.'
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'CTEXT'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'COLTEXT' 'Emp. Name'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'COL_POS' 9
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'AEDAT' 'Change Date' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'AEZET' 'Change Time' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'AENAM'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'COLTEXT' 'Change Emp.'
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'ATEXT'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'COLTEXT' 'Emp. Name'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'COL_POS' 13
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'DFLAG'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'NO_OUT' 'X'
+                          CHANGING gs_fcat gt_fcat.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fcat_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fcat_value  USING VALUE(p_end)
+                           VALUE(p_field)
+                           VALUE(p_value)
+                     CHANGING ps_fcat TYPE lvc_s_fcat
+                              pt_fcat TYPE lvc_t_fcat.
+  CASE p_field.
+    WHEN 'FIELDNAME'.
+      ps_fcat-fieldname = p_value.
+    WHEN 'NO_OUT'.
+      ps_fcat-no_out = p_value.
+    WHEN 'COLTEXT'.
+      ps_fcat-coltext = p_value.
+    WHEN 'COL_POS'.
+      ps_fcat-col_pos = p_value.
+    WHEN 'JUST'.
+      ps_fcat-just = p_value.
+    WHEN 'HOTSPOT'.
+      ps_fcat-hotspot = p_value.
+    WHEN 'EDIT'.
+      ps_fcat-edit = p_value.
+    WHEN 'CHECKTABLE'.
+      ps_fcat-checktable = p_value.
+    WHEN 'REF_TABLE'.
+      ps_fcat-ref_table = p_value.
+    WHEN 'REF_FIELD'.
+      ps_fcat-ref_field = p_value.
+  ENDCASE.
+
+  IF p_end = 'E'.
+    APPEND ps_fcat TO pt_fcat.
+    CLEAR ps_fcat.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fieldcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fieldcat  USING VALUE(p_field)
+                           VALUE(p_col)
+                           VALUE(p_just)
+                    CHANGING ps_fcat LIKE gs_fcat
+                             pt_fcat LIKE gt_fcat.
+  CLEAR ps_fcat.
+  ps_fcat-fieldname = p_field.
+  ps_fcat-coltext = p_col.
+  ps_fcat-just = p_just.
+  APPEND ps_fcat TO pt_fcat.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form event_hotspot
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> E_ROW_ID
+*&      --> E_COLUMN_ID
+*&      --> ES_ROW_NO
+*&---------------------------------------------------------------------*
+FORM event_hotspot  USING    p_row_id
+                             p_column_id
+                             ps_row_no TYPE lvc_s_roid.
+  DATA ls_list LIKE gs_list.
+  DATA: ls_gr      TYPE zt34_gr,
+        ls_invoice TYPE zt34_invoice,
+        ls_isorder TYPE zt34_isorder,
+        ls_manu    TYPE zt34_manu,
+        ls_popup   TYPE zm34_sapcar_s02.
+  DATA: BEGIN OF ls_car.
+          INCLUDE TYPE zt34_car.
+  DATA:   ctext TYPE ze34_ctext,
+        END OF ls_car.
+
+  CLEAR ls_list.
+  READ TABLE gt_list INDEX ps_row_no-row_id INTO ls_list.
+
+  SELECT SINGLE invno
+    FROM zt34_gr
+    INTO CORRESPONDING FIELDS OF ls_gr
+    WHERE scarno = ls_list-scarno.
+
+  SELECT SINGLE ponum
+    FROM zt34_invoice
+    INTO CORRESPONDING FIELDS OF ls_invoice
+    WHERE invno = ls_gr-invno.
+
+  SELECT SINGLE carno
+    FROM zt34_isorder
+    INTO CORRESPONDING FIELDS OF ls_isorder
+    WHERE ponum = ls_invoice-ponum.
+
+  SELECT SINGLE *
+    FROM zt34_car AS a INNER JOIN zt34_car_t AS b
+    ON a~carno = b~carno
+    INTO CORRESPONDING FIELDS OF ls_car
+    WHERE a~carno = ls_isorder-carno
+      AND b~spras = sy-langu.
+
+  SELECT SINGLE manu_t
+    FROM zt34_manu
+    INTO CORRESPONDING FIELDS OF ls_manu
+    WHERE manu = ls_car-manu.
+
+  PERFORM get_domain_fixed_value USING 'ZD34_FUEL'
+                                       ls_car-fuel
+                                 CHANGING ls_popup-fuel_t.
+  PERFORM get_domain_fixed_value USING 'ZD34_CLASS'
+                                       ls_car-class
+                                 CHANGING ls_popup-class_t.
+  PERFORM get_domain_fixed_value USING 'ZDE34_SHIFT'
+                                       ls_car-shift
+                                 CHANGING ls_popup-shift_t.
+  CLEAR zm34_sapcar_s02.
+  zm34_sapcar_s02-scarno = ls_list-scarno.
+  zm34_sapcar_s02-carname = ls_car-ctext.
+  zm34_sapcar_s02-fuel_t = ls_popup-fuel_t.
+  zm34_sapcar_s02-manu_t = ls_manu-manu_t.
+  zm34_sapcar_s02-capa = ls_car-capa.
+  zm34_sapcar_s02-class_t = ls_popup-class_t.
+  zm34_sapcar_s02-shift_t = ls_popup-shift_t.
+  zm34_sapcar_s02-price = ls_car-price.
+  zm34_sapcar_s02-waers = ls_car-waers.
+
+  CALL SCREEN 0101 STARTING AT 10 10.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_domain_fixed_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> LS_LIST_STATE
+*&      <-- LS_LIST_STATE_T
+*&---------------------------------------------------------------------*
+FORM get_domain_fixed_value   USING   VALUE(p_doname)
+                                      VALUE(p_code)
+                              CHANGING VALUE(p_text).
+  DATA: ls_domain  TYPE dd07v,
+        lt_domain  LIKE TABLE OF ls_domain,
+        lv_domname TYPE dd07l-domname.
+
+  lv_domname = p_doname.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      domname    = lv_domname
+*     TEXT       = 'X'
+*     FILL_DD07L_TAB        = ' '
+    TABLES
+      values_tab = lt_domain
+*     VALUES_DD07L          =
+*   EXCEPTIONS
+*     NO_VALUES_FOUND       = 1
+*     OTHERS     = 2
+    .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  READ TABLE lt_domain WITH KEY domvalue_l = p_code
+                       INTO ls_domain.
+  IF sy-subrc = 0.
+    p_text = ls_domain-ddtext.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_display_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- PT_LIST
+*&---------------------------------------------------------------------*
+FORM get_display_data  CHANGING pt_list LIKE gt_list.
+  DATA: ls_list LIKE LINE OF pt_list[].
+
+  LOOP AT pt_list INTO ls_list.
+    IF ls_list-hprice IS INITIAL AND ls_list-dprice IS INITIAL.
+      ls_list-light = '1'.
+    ELSE.
+      ls_list-light = '3'.
+    ENDIF.
+
+    IF ls_list-dflag = 'X'.
+      ls_list-color = 'C600'.
+    ENDIF.
+
+    MODIFY pt_list FROM ls_list.
+    CLEAR ls_list.
+  ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form search_range
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_HPRICE
+*&      --> PS_COND
+*&      <-- GT_HPRICE
+*&---------------------------------------------------------------------*
+FORM search_range  USING VALUE(ps_field) LIKE gs_hprice
+                         VALUE(ps_cond_b)
+                         VALUE(ps_cond_e)
+                         VALUE(ps_cond) LIKE zm34_sapcar_s03
+                   CHANGING pt_field LIKE gt_hprice.
+  CLEAR: ps_field, pt_field.
+
+  IF ps_cond_e IS INITIAL AND ps_cond_b IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'GE'.
+    ps_field-low = ps_cond_b.
+    ps_field-high = ps_cond_e.
+    APPEND ps_field TO pt_field.
+  ELSEIF ps_cond_e IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'EQ'.
+    ps_field-low = ps_cond_b.
+    ps_field-high = ps_cond_e.
+    APPEND ps_field TO pt_field.
+  ELSE.
+    ps_field-sign = 'I'.
+    ps_field-option = 'BT'.
+    ps_field-low = ps_cond_b.
+    ps_field-high = ps_cond_e.
+    APPEND ps_field TO pt_field.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form alv_mode_change
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM alv_mode_change .
+  DATA lv_result.
+  lv_result = go_alv->is_ready_for_input( ).
+
+  CASE lv_result.
+    WHEN 1.
+      CALL METHOD go_alv->set_ready_for_input
+        EXPORTING
+          i_ready_for_input = 0.
+      gv_title = 'Display Mode: SAP car'.
+    WHEN 0.
+      CALL METHOD go_alv->set_ready_for_input
+        EXPORTING
+          i_ready_for_input = 1.
+      gv_title = 'Change Mode: SAP car'.
+  ENDCASE.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form handle_toolbar
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> SENDER
+*&      --> E_OBJECT
+*&      --> E_INTERACTIVE
+*&---------------------------------------------------------------------*
+FORM handle_toolbar  USING    p_sender
+                              p_object TYPE REF TO cl_alv_event_toolbar_set
+                              p_interactive TYPE char01.
+
+  DATA: ls_toolbar TYPE stb_button.
+
+  CLEAR ls_toolbar.
+  ls_toolbar-butn_type = 3.
+  APPEND ls_toolbar TO p_object->mt_toolbar.
+
+  CLEAR ls_toolbar.
+  ls_toolbar-function = 'SAVE'.
+  ls_toolbar-icon = icon_system_save.
+  ls_toolbar-quickinfo = 'All Changed Data is applied'.
+  ls_toolbar-text = 'SAVE'.
+  ls_toolbar-disabled = ' '.
+  APPEND ls_toolbar TO p_object->mt_toolbar.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form handle_user_command
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> SENDER
+*&      --> E_UCOMM
+*&---------------------------------------------------------------------*
+FORM handle_user_command  USING    p_sender
+                                   p_e_ucomm.
+*  CASE p_e_ucomm.
+*    WHEN 'SAVE'.
+*      CALL METHOD go_alv->check_changed_data
+*        IMPORTING
+*          e_valid = gv_valid.
+*      CHECK gv_valid = 'X'.
+*      "## ##
+*      PERFORM popup USING 'Update confirm'
+*                          'Do you want to Update Data?'
+*                    CHANGING gv_subrc.
+*      IF gv_subrc <> 0.
+*        MESSAGE i016(pn) WITH 'Data is not found'.
+*      ENDIF.
+*      PERFORM update_sapcar_list CHANGING gv_subrc.
+*      IF gv_subrc <> 0.
+*        RETURN.
+*      ENDIF.
+*  ENDCASE.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form update_sapcar_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GV_SUBRC
+*&---------------------------------------------------------------------*
+FORM update_sapcar_list  CHANGING p_subrc.
+  DATA: lt_rows TYPE lvc_t_roid,
+        ls_rows LIKE LINE OF lt_rows.
+
+  CLEAR p_subrc.
+
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+*     et_index_rows = lt_index.
+      et_row_no = lt_rows.
+
+  READ TABLE lt_rows INDEX 1 INTO ls_rows.
+  IF sy-subrc <> 0.
+    p_subrc = 4.
+    MESSAGE i004.
+    RETURN.
+  ENDIF.
+
+  LOOP AT lt_rows INTO ls_rows.
+
+    "### zm# ##
+    READ TABLE gt_list INDEX ls_rows-row_id INTO zm34_sapcar_s01.
+
+    "#### gs_list# ##
+    SELECT SINGLE * FROM zt34_sapcar
+      INTO CORRESPONDING FIELDS OF gs_list
+      WHERE scarno = zm34_sapcar_s01-scarno.
+
+    PERFORM update_sapcar USING gs_change.
+
+  ENDLOOP.
+  PERFORM search_sapcar_list USING gs_cond
+                              CHANGING gt_list gv_subrc.
+  IF gv_subrc <> 0.
+    RETURN.
+  ENDIF.
+
+ENDFORM.
+*
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

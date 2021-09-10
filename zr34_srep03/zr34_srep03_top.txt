@@ -1,0 +1,75 @@
+*&---------------------------------------------------------------------*
+*& Include ZR34_SREP01_TOP                          - Report ZR34_SREP01
+*&---------------------------------------------------------------------*
+REPORT zr34_srep03 MESSAGE-ID zm34_message.
+
+* Common
+DATA: ok_code  TYPE sy-ucomm,
+      gv_subrc TYPE sy-subrc.
+
+* Condition
+TABLES: zs34_srepair.
+
+* Display
+DATA: BEGIN OF gs_list.
+        INCLUDE TYPE zs34_srepair.
+DATA:   light TYPE c LENGTH 1,
+        ctab  TYPE lvc_t_scol,
+*        color TYPE c LENGTH 10,
+      END OF gs_list,
+      gt_list LIKE TABLE OF gs_list.
+
+* EMP
+*TABLES: zt34_emp.
+DATA: gt_emp TYPE TABLE OF zt34_emp,
+      gs_emp LIKE LINE OF gt_emp.
+
+
+* ####
+SELECTION-SCREEN BEGIN OF SCREEN 1100 AS SUBSCREEN.
+  SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-h01.
+
+    "#####
+    SELECTION-SCREEN BEGIN OF LINE.
+      SELECTION-SCREEN COMMENT 1(10) FOR FIELD pa_fs1.
+      PARAMETERS pa_fs1 AS CHECKBOX DEFAULT 'X'. " ##
+
+      SELECTION-SCREEN COMMENT 20(10) FOR FIELD pa_fs2.
+      PARAMETERS pa_fs2 AS CHECKBOX DEFAULT 'X'. " ##
+
+      SELECTION-SCREEN COMMENT 40(10) FOR FIELD pa_fs3.
+      PARAMETERS pa_fs3 AS CHECKBOX DEFAULT 'X'. " ##
+
+    SELECTION-SCREEN END OF LINE.
+
+    SELECT-OPTIONS: pa_repno FOR zs34_srepair-repno  NO-EXTENSION NO INTERVALS, " ####
+                    pa_venno FOR zs34_srepair-venno  NO-EXTENSION NO INTERVALS, " #####
+                    pa_carid FOR zs34_srepair-scarid NO-EXTENSION NO INTERVALS. " #####
+*                    pa_remp FOR zs34_srepair-ernam NO-EXTENSION NO INTERVALS.  " ###
+
+  SELECTION-SCREEN END OF BLOCK b1.
+SELECTION-SCREEN END OF SCREEN 1100.
+
+
+* Change States
+DATA gv_fstats TYPE zs34_srepair-fstats.
+
+
+* ALV
+DATA: go_con      TYPE REF TO cl_gui_custom_container,
+      go_alv      TYPE REF TO cl_gui_alv_grid,
+      gv_alv_flag TYPE c.
+
+* Layout
+DATA: gv_layo   TYPE lvc_s_layo.
+
+* Field Catalog
+DATA: gt_fcat TYPE lvc_t_fcat,
+      gs_fcat TYPE lvc_s_fcat.
+
+* Sort
+DATA: gs_sort TYPE LINE OF lvc_t_sort,
+      gt_sort LIKE TABLE OF gs_sort.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

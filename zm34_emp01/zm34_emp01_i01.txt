@@ -1,0 +1,130 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_EMP01_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE exit INPUT.
+  CASE ok_code.
+    WHEN 'EXIT'.
+      LEAVE TO SCREEN 0.
+    WHEN 'CANC'.
+      LEAVE PROGRAM.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+
+    WHEN 'SEARCH'.
+      PERFORM search.
+
+    WHEN 'CREATE'.
+      CLEAR zt34_emp.
+      zt34_emp-waers = 'KRW'.
+      zt34_emp-erdat = sy-datum.
+      zt34_emp-erzet = sy-uzeit.
+      zt34_emp-ernam = sy-uname.
+      CALL SCREEN 200.
+
+    WHEN 'CHANGE'.
+      PERFORM select_data.
+      zt34_emp-aedat = sy-datum.
+      zt34_emp-aezet = sy-uzeit.
+      zt34_emp-aenam = sy-uname.
+      IF gd_lines <> 1.
+        MESSAGE 'Please choose one data.' TYPE 'I'.
+       ELSEIF ZT34_EMP-dflag = abap_true.
+         MESSAGE 'Already deleted data.' TYPE 'I'.
+      ELSE.
+        CALL SCREEN 300.
+      ENDIF.
+
+    WHEN 'DELETE'.
+      PERFORM select_data.
+      IF zt34_emp-dflag = abap_true.
+        MESSAGE 'Already delete data.' TYPE 'I'.
+      ELSE.
+        PERFORM del_msg.
+      ENDIF.
+
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+
+    WHEN 'SAVE'.
+      IF zt34_emp-pernr IS INITIAL.
+        MESSAGE 'Please insert data.' TYPE 'I'.
+      ELSE.
+        PERFORM create.
+
+        SELECT *
+          FROM zt34_emp
+          INTO CORRESPONDING FIELDS OF TABLE gt_emplist
+          where dflag = abap_false.
+
+        LEAVE TO SCREEN 0.
+      ENDIF.
+  ENDCASE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0300  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0300 INPUT.
+  CASE ok_code.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0.
+
+    WHEN 'SAVE'.
+      IF zt34_emp-ename IS INITIAL.
+        zt34_emp = gs_emplist.
+        MESSAGE 'Please change data' TYPE 'I'.
+
+      ELSEIF ( zt34_emp-pernr = gs_emplist-pernr
+         AND zt34_emp-vkorg = gs_emplist-vkorg
+         AND zt34_emp-ename = gs_emplist-ename
+         AND zt34_emp-eposi = gs_emplist-eposi
+         AND zt34_emp-gesch = gs_emplist-gesch
+         AND zt34_emp-telnr = gs_emplist-telnr
+         AND zt34_emp-email = gs_emplist-email
+         AND zt34_emp-begda = gs_emplist-begda
+         AND zt34_emp-salary = gs_emplist-salary
+         AND zt34_emp-waers = gs_emplist-waers
+        ).
+        MESSAGE 'Please change data' TYPE 'I'.
+
+
+      ELSE.
+        PERFORM change.
+        PERFORM dis_refresh.
+
+        SELECT *
+          FROM zt34_emp
+        INTO CORRESPONDING FIELDS OF TABLE gt_emplist
+        where dflag = abap_false.
+
+        LEAVE TO SCREEN 0.
+      ENDIF.
+  ENDCASE.
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

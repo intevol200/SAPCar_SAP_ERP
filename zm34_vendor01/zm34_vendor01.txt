@@ -1,0 +1,52 @@
+*&---------------------------------------------------------------------*
+*& Module Pool      ZM34_VENDOR01
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE zm34_vendor01_top                       .    " Global Data
+
+INCLUDE zm34_vendor01_o01                       .  " PBO-Modules
+INCLUDE zm34_vendor01_i01                       .  " PAI-Modules
+INCLUDE zm34_vendor01_f01                       .  " FORM-Routines
+
+LOAD-OF-PROGRAM.
+*
+*  "ALV FLAG
+*  gv_alv_flag = 'X'.
+
+  gs_cond-vtype_c1 = 'X'.
+  gs_cond-vtype_c2 = 'X'.
+  gs_cond-dflag    = ''.
+
+  PERFORM get_info.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Maintain Vendor Information
+* T200 --> Create Vendor Information
+* T300 --> Change Vendor Information
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+*
+* Message class: ZM34_MESSAGE
+*001   & Data changed.
+*002   & Data deleted.
+*008   Failed to save data.
+*009   Failed to change data.
+*010   Failed to delete data.
+*011   Data is not found.
+*012   You can not select two or more data at a same time
+*013   Please select a data.
+*014   Data already deleted.
+*015   & Data Created.
+*020   ALV Grid Creation ERROR!
+*021   Canceled
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

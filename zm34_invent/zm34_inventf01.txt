@@ -1,0 +1,704 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_INVENTF01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Module SET_ALV_0100 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_ALV_0100 OUTPUT.
+
+  CHECK GO_CON IS INITIAL.
+
+  PERFORM SET_ALV_0100.
+  PERFORM SET_LAYO CHANGING GS_LAYO01 GS_LAYO02.
+  PERFORM SET_FCAT CHANGING GT_FCAT01 GT_FCAT02.
+  PERFORM EVENT_HANDLER_REGISTER USING GO_ALV_BOT.
+  PERFORM DISPLAY_ALV_0100.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_0100
+*&---------------------------------------------------------------------*
+FORM SET_ALV_0100 .
+
+  CREATE OBJECT GO_CON
+    EXPORTING
+      CONTAINER_NAME = 'CUSTCON'.
+
+  CREATE OBJECT GO_SPLITTER
+    EXPORTING
+      PARENT  = GO_CON
+      ROWS    = 2
+      COLUMNS = 1.
+
+  CALL METHOD GO_SPLITTER->SET_ROW_HEIGHT " ##.
+    EXPORTING
+      ID     = 1
+      HEIGHT = 40.
+
+  CALL METHOD GO_SPLITTER->SET_COLUMN_WIDTH " ##.
+    EXPORTING
+      ID    = 2
+      WIDTH = 53.
+
+  GO_CON_TOP  = GO_SPLITTER->GET_CONTAINER(
+    ROW       = 1
+    COLUMN    = 1 ).
+
+  GO_CON_BOT = GO_SPLITTER->GET_CONTAINER(
+    ROW       = 2
+    COLUMN    = 1 ).
+
+  CREATE OBJECT GO_ALV_TOP
+    EXPORTING
+      I_PARENT = GO_CON_TOP.
+
+  CREATE OBJECT GO_ALV_BOT
+    EXPORTING
+      I_PARENT = GO_CON_BOT.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_0100
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV_0100 .
+
+  CALL METHOD GO_ALV_TOP->SET_TABLE_FOR_FIRST_DISPLAY
+    EXPORTING
+      I_STRUCTURE_NAME              = 'ZT34_HSORDER'
+      IS_LAYOUT                     = GS_LAYO01
+    CHANGING
+      IT_OUTTAB                     = GT_HSORDER
+      IT_FIELDCATALOG               = GT_FCAT01
+*     it_sort                       =
+*     it_filter                     =
+    EXCEPTIONS
+      INVALID_PARAMETER_COMBINATION = 1
+      PROGRAM_ERROR                 = 2
+      TOO_MANY_LINES                = 3
+      OTHERS                        = 4.
+
+  CALL METHOD GO_ALV_BOT->SET_TABLE_FOR_FIRST_DISPLAY
+    EXPORTING
+      I_STRUCTURE_NAME              = 'ZT34_ISORDER'
+      IS_LAYOUT                     = GS_LAYO02
+    CHANGING
+      IT_OUTTAB                     = GT_ISORDER
+      IT_FIELDCATALOG               = GT_FCAT02
+*     it_sort                       =
+*     it_filter                     =
+    EXCEPTIONS
+      INVALID_PARAMETER_COMBINATION = 1
+      PROGRAM_ERROR                 = 2
+      TOO_MANY_LINES                = 3
+      OTHERS                        = 4.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_LAYO
+*&---------------------------------------------------------------------*
+FORM SET_LAYO  CHANGING CS_LAYO01 LIKE GS_LAYO01
+                        CS_LAYO02 LIKE GS_LAYO02.
+
+  CS_LAYO01-CWIDTH_OPT = 'X'.
+  CS_LAYO01-EXCP_FNAME = 'LIGHT'.
+  CS_LAYO01-EXCP_LED = 'X'.
+*  CS_LAYO01-INFO_FNAME = 'COLOR'.
+  CS_LAYO01-SEL_MODE = 'A'.
+
+  CS_LAYO02-CWIDTH_OPT = 'X'.
+  CS_LAYO02-EXCP_FNAME = 'LIGHT'.
+  CS_LAYO02-EXCP_LED = 'X'.
+  CS_LAYO02-INFO_FNAME = 'COLOR'.
+*  CS_LAYO02-SEL_MODE = 'A'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FCAT
+*&---------------------------------------------------------------------*
+FORM SET_FCAT  CHANGING CT_FCAT01 LIKE GT_FCAT01
+                        CT_FCAT02 LIKE GT_FCAT02.
+
+  DATA: LS_FCAT LIKE LINE OF CT_FCAT01.
+*--------------------------------------------------------------------*
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'LIGHT'.
+  LS_FCAT-COLTEXT = 'Status'.
+  APPEND LS_FCAT TO CT_FCAT01.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'PONUM'.
+  LS_FCAT-COLTEXT = 'P/O Number'.
+  LS_FCAT-JUST = 'C'.
+  APPEND LS_FCAT TO CT_FCAT01.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'VKORG'.
+  LS_FCAT-COLTEXT = 'Dep. Code'.
+  LS_FCAT-JUST = 'C'.
+  APPEND LS_FCAT TO CT_FCAT01.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'PODAT'.
+  LS_FCAT-COLTEXT = 'Order Date'.
+  LS_FCAT-JUST = 'C'.
+  APPEND LS_FCAT TO CT_FCAT01.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'PERNR'.
+  LS_FCAT-COLTEXT = 'Ordered By'.
+  LS_FCAT-JUST = 'C'.
+  APPEND LS_FCAT TO CT_FCAT01.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'AENAM'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT01.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'DFLAG'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT01.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'ERDAT'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT01.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'ERZET'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT01.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'ERNAM'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT01.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'AEDAT'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT01.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'AEZET'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT01.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'AENAM'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT01.
+
+*--------------------------------------------------------------------*
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'LIGHT'.
+  LS_FCAT-COLTEXT = 'Status'.
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'PONUM'.
+  LS_FCAT-COLTEXT = 'P/O Number'.
+  LS_FCAT-JUST = 'C'.
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'ITMNM'.
+  LS_FCAT-COLTEXT = 'Seq.'.
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'CARNO'.
+  LS_FCAT-COLTEXT = 'Model Number'.
+  LS_FCAT-JUST = 'C'.
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'FUEL'.
+  LS_FCAT-COLTEXT = 'Fuel'.
+  LS_FCAT-JUST = 'C'.
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'MEINM'.
+  LS_FCAT-COLTEXT = 'Amount'.
+  LS_FCAT-JUST = 'C'.
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'MSEHI'.
+  LS_FCAT-COLTEXT = 'Unit'.
+  LS_FCAT-JUST = 'C'.
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'PRICE'.
+  LS_FCAT-COLTEXT = 'Price'.
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'WAERS'.
+  LS_FCAT-COLTEXT = 'Currency'.
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'PRNUM'.
+  LS_FCAT-COLTEXT = 'P/R Number'.
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'OSTATS'.
+  LS_FCAT-COLTEXT = 'Progress'.
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'TAKING'.
+  LS_FCAT-COLTEXT = 'Taking Stock'.
+  LS_FCAT-COL_POS = 8.
+
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'TMEINS'.
+  LS_FCAT-COLTEXT = 'Unit'.
+  LS_FCAT-COL_POS = 9.
+
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'BUTTON'.
+  LS_FCAT-COLTEXT = 'Inventory check'.
+  LS_FCAT-STYLE = CL_GUI_ALV_GRID=>MC_STYLE_BUTTON.
+  LS_FCAT-COL_POS = 17.
+
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'STOCK'.
+  LS_FCAT-COLTEXT = 'Current Stock'.
+  LS_FCAT-COL_POS = 10.
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'MEINS'.
+  LS_FCAT-COLTEXT = 'Unit'.
+  LS_FCAT-COL_POS = 11.
+
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'DFLAG'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'ERDAT'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'ERZET'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'ERNAM'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'AEDAT'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'AEZET'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT02.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'AENAM'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT02.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_INIT_DISPLAY_DATA
+*&---------------------------------------------------------------------*
+FORM GET_INIT_DISPLAY_DATA  CHANGING CT_ORDER LIKE GT_HSORDER.
+
+  DATA: LT_ISORDER TYPE TABLE OF ZT34_ISORDER,
+        LS_ISORDER TYPE ZT34_ISORDER.
+
+  FIELD-SYMBOLS: <LFS_ORDER> LIKE LINE OF CT_ORDER.
+*--------------------------------------------------------------------*
+
+  SELECT *
+    INTO CORRESPONDING FIELDS OF TABLE CT_ORDER
+    FROM ZT34_HSORDER.
+
+  SELECT *
+    INTO CORRESPONDING FIELDS OF TABLE GT_IORDER
+    FROM ZT34_ISORDER.
+
+  LOOP AT CT_ORDER ASSIGNING <LFS_ORDER>.
+
+    READ TABLE GT_IORDER INTO LS_ISORDER WITH KEY PONUM = <LFS_ORDER>-PONUM.
+
+    IF LS_ISORDER-OSTATS IS INITIAL.
+
+      <LFS_ORDER>-LIGHT = 1.
+
+    ELSEIF LS_ISORDER-OSTATS IS NOT INITIAL.
+
+      <LFS_ORDER>-LIGHT = 3.
+
+    ENDIF.
+
+  ENDLOOP.
+
+  SORT CT_ORDER BY LIGHT PONUM.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHANGE_CHECK
+*&---------------------------------------------------------------------*
+FORM CHANGE_CHECK .
+
+  DATA: LV_ROW     TYPE I,
+        LT_ROW     TYPE LVC_T_ROID,
+        LS_ROW     LIKE LINE OF LT_ROW,
+        LT_IORDER  LIKE GT_ISORDER,
+        LS_IORDER  LIKE LINE OF GT_ISORDER,
+        LS_ISORDER LIKE LINE OF GT_ISORDER,
+        LS_HORDER  LIKE LINE OF GT_HSORDER,
+        LS_STOCK   LIKE LINE OF GT_STOCK.
+*--------------------------------------------------------------------*
+
+*  CLEAR: GV_SUBRC.
+
+  CALL METHOD GO_ALV_TOP->GET_SELECTED_ROWS
+    IMPORTING
+      ET_ROW_NO = LT_ROW.
+
+  LV_ROW = LINES( LT_ROW ).
+
+  IF LV_ROW IS INITIAL.
+
+*    GV_SUBRC  = 4.
+    MESSAGE S004(ZM34_MESSAGE) DISPLAY LIKE 'E'.
+    RETURN.
+
+  ELSE.
+
+    CLEAR: GT_ISORDER.
+
+    LOOP AT LT_ROW INTO LS_ROW .
+
+      READ TABLE GT_HSORDER INTO LS_HORDER INDEX LS_ROW-ROW_ID.
+      CHECK SY-SUBRC EQ 0.
+
+      LOOP AT  GT_IORDER INTO LS_IORDER WHERE PONUM EQ LS_HORDER-PONUM.
+
+        READ TABLE GT_STOCK INTO LS_STOCK WITH KEY CARNO = LS_IORDER-CARNO
+                                                   FUEL  = LS_IORDER-FUEL.
+
+        CHECK SY-SUBRC EQ 0.
+
+        IF LS_IORDER-OSTATS EQ 'N'.
+          LS_IORDER-LIGHT = 1.
+
+        ELSEIF LS_IORDER-OSTATS EQ 'H'.
+          LS_ISORDER-LIGHT = 2.
+
+        ELSEIF LS_IORDER-OSTATS EQ 'P'.
+          LS_IORDER-LIGHT = 3.
+
+        ENDIF.
+
+        MOVE-CORRESPONDING LS_IORDER TO LS_ISORDER.
+
+        LS_ISORDER-STOCK = LS_STOCK-STOCK.
+        LS_ISORDER-MEINS = LS_STOCK-MEINS.
+        LS_ISORDER-BUTTON = 'Inventory Approval'.
+
+        APPEND LS_ISORDER TO GT_ISORDER.
+
+      ENDLOOP.
+
+    ENDLOOP.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form REFRESH_ALV
+*&---------------------------------------------------------------------*
+FORM REFRESH_ALV .
+
+  DATA: LV_SCROLL TYPE LVC_S_STBL.
+  DATA: LS_LAYOUT  TYPE LVC_S_LAYO.         "ALV ###
+*--------------------------------------------------------------------*
+
+  CHECK GO_ALV_BOT IS NOT INITIAL.
+  LV_SCROLL-ROW = 'X'.
+  LV_SCROLL-COL = 'X'.
+
+  CALL METHOD GO_ALV_BOT->GET_FRONTEND_LAYOUT
+    IMPORTING
+      ES_LAYOUT = LS_LAYOUT.
+
+  LS_LAYOUT-CWIDTH_OPT = 'X'.
+
+  CALL METHOD GO_ALV_BOT->SET_FRONTEND_LAYOUT
+    EXPORTING
+      IS_LAYOUT = LS_LAYOUT.
+
+  CALL METHOD GO_ALV_BOT->REFRESH_TABLE_DISPLAY
+    EXPORTING
+      I_SOFT_REFRESH = ''
+      IS_STABLE      = LV_SCROLL.     "## ### ### refresh
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_STOCK
+*&---------------------------------------------------------------------*
+FORM GET_STOCK  CHANGING CT_STOCK LIKE GT_STOCK.
+
+  SELECT *
+    INTO TABLE CT_STOCK
+    FROM ZT34_STOCK.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form BUTTON_CLICK
+*&---------------------------------------------------------------------*
+FORM BUTTON_CLICK  USING    PS_COL_ID    TYPE LVC_S_COL
+                            PS_ROW_NO    TYPE LVC_S_ROID.
+
+  DATA: LV_STOCK   TYPE I,
+        LS_ISORDER LIKE LINE OF GT_ISORDER.
+
+  FIELD-SYMBOLS: <LFS_ISORDER> LIKE LINE OF GT_ISORDER.
+*--------------------------------------------------------------------*
+
+  READ TABLE GT_ISORDER ASSIGNING <LFS_ISORDER> INDEX PS_ROW_NO-ROW_ID.
+  CHECK SY-SUBRC EQ 0.
+
+  IF <LFS_ISORDER>-STOCK IS INITIAL.
+
+    <LFS_ISORDER>-LIGHT = 1.
+    <LFS_ISORDER>-OSTATS = 'N'.
+    <LFS_ISORDER>-TAKING = 0.
+    RETURN.
+
+  ENDIF.
+
+  <LFS_ISORDER>-TMEINS = <LFS_ISORDER>-MEINS.
+  LV_STOCK = <LFS_ISORDER>-STOCK - <LFS_ISORDER>-MEINM.
+
+  IF LV_STOCK LT 0.
+
+    <LFS_ISORDER>-TAKING = <LFS_ISORDER>-STOCK.
+    <LFS_ISORDER>-LIGHT = 2.
+    <LFS_ISORDER>-OSTATS = 'H'.
+    <LFS_ISORDER>-STOCK = 0.
+
+  ELSE.
+
+    <LFS_ISORDER>-TAKING = <LFS_ISORDER>-MEINM.
+    <LFS_ISORDER>-LIGHT = 3.
+    <LFS_ISORDER>-OSTATS = 'P'.
+    <LFS_ISORDER>-STOCK = LV_STOCK.
+
+  ENDIF.
+
+  LOOP AT GT_ISORDER INTO LS_ISORDER WHERE CARNO EQ <LFS_ISORDER>-CARNO
+                                        AND FUEL EQ <LFS_ISORDER>-FUEL.
+
+    LS_ISORDER-STOCK = <LFS_ISORDER>-STOCK.
+
+    MODIFY GT_ISORDER FROM  LS_ISORDER TRANSPORTING STOCK.
+
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form EVENT_HANDLER_REGISTER
+*&---------------------------------------------------------------------*
+FORM EVENT_HANDLER_REGISTER USING LO_ALV TYPE REF TO CL_GUI_ALV_GRID.
+
+*- ALV Event Handler
+  CREATE OBJECT GO_ALV_EVENT_HANDLER.
+
+  SET HANDLER GO_ALV_EVENT_HANDLER->HANDLE_BUTTON_CLICK FOR LO_ALV.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CREATE_INVOICE
+*&---------------------------------------------------------------------*
+FORM CREATE_INVOICE .
+
+  DATA: LV_INVNO     TYPE ZT34_INVOICE-INVNO,
+        LV_STOCK     TYPE ZT34_INVOICE-MEINM,
+        LV_PONUM     TYPE ZT34_ISORDER-PONUM,
+        LT_ROW       TYPE LVC_T_ROID,
+        LS_ROW       LIKE LINE OF LT_ROW,
+        LS_STOCK     TYPE ZT34_STOCK,
+        LT_STOCK     TYPE TABLE OF ZT34_STOCK,
+        LS_ISORDER   LIKE LINE OF GT_ISORDER,
+        LS_ZTISORDER TYPE ZT34_ISORDER,
+        LT_ZTISORDER TYPE TABLE OF ZT34_ISORDER,
+        LS_HSORDER   LIKE LINE OF GT_HSORDER,
+        LS_DINVOICE  TYPE ZT34_DINVOICE,
+        LT_DINVOICE  TYPE TABLE OF ZT34_DINVOICE,
+        LS_INVOICE   TYPE ZT34_INVOICE,
+        LT_INVOICE   TYPE TABLE OF ZT34_INVOICE.
+*--------------------------------------------------------------------*
+
+*  CLEAR: GV_SUBRC.
+
+  CALL METHOD GO_ALV_TOP->GET_SELECTED_ROWS
+    IMPORTING
+      ET_ROW_NO = LT_ROW.
+
+  LOOP AT LT_ROW INTO LS_ROW.
+
+    READ TABLE GT_HSORDER INTO LS_HSORDER INDEX LS_ROW-ROW_ID.
+    CHECK SY-SUBRC EQ 0.
+
+    LOOP AT GT_ISORDER INTO LS_ISORDER WHERE PONUM EQ LS_HSORDER-PONUM.
+
+      IF LV_PONUM IS INITIAL.
+
+        LV_PONUM = LS_HSORDER-PONUM.
+
+      ENDIF.
+
+      IF LV_PONUM EQ LS_ISORDER-PONUM.
+
+        LV_STOCK = LV_STOCK + LS_ISORDER-TAKING.
+
+      ELSEIF LV_PONUM NE LS_ISORDER-PONUM.
+
+        CLEAR: LV_STOCK.
+        LV_PONUM = LS_ISORDER-PONUM.
+        LV_STOCK = LV_STOCK + LS_ISORDER-TAKING.
+
+      ENDIF.
+
+      MOVE-CORRESPONDING LS_ISORDER TO LS_STOCK.
+      APPEND LS_STOCK TO LT_STOCK.
+
+      MOVE-CORRESPONDING LS_ISORDER TO LS_ZTISORDER.
+      LS_DINVOICE-AEDAT = SY-DATUM.
+      LS_DINVOICE-AEZET = SY-UZEIT.
+      LS_DINVOICE-AENAM = SY-UNAME.
+
+      APPEND LS_ZTISORDER TO LT_ZTISORDER.
+
+      MOVE-CORRESPONDING LS_ISORDER TO LS_DINVOICE.
+      LS_DINVOICE-TMEINM = LS_ISORDER-TAKING.
+      LS_DINVOICE-ERDAT = SY-DATUM.
+      LS_DINVOICE-ERZET = SY-UZEIT.
+      LS_DINVOICE-ERNAM = SY-UNAME.
+
+      APPEND LS_DINVOICE TO LT_DINVOICE.
+
+    ENDLOOP.
+
+    LS_INVOICE-PONUM = LS_HSORDER-PONUM.
+
+    PERFORM GET_INVOICENUM CHANGING LV_INVNO.
+    LS_INVOICE-INVNO = LV_INVNO.
+
+    LS_INVOICE-MEINM = LV_STOCK.
+    LS_INVOICE-MSEHI = 'EA'.
+    LS_INVOICE-ERDAT = SY-DATUM.
+    LS_INVOICE-ERZET = SY-UZEIT.
+    LS_INVOICE-ERNAM = SY-UNAME.
+
+    APPEND LS_INVOICE TO LT_INVOICE.
+
+  ENDLOOP.
+
+  INSERT ZT34_INVOICE FROM TABLE LT_INVOICE.
+  INSERT ZT34_DINVOICE FROM TABLE LT_DINVOICE.
+
+  MODIFY ZT34_STOCK FROM TABLE LT_STOCK.
+  MODIFY ZT34_ISORDER FROM TABLE LT_ZTISORDER.
+
+  MESSAGE I022(ZM34_MESSAGE) DISPLAY LIKE 'S'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_INVOICENUM
+*&---------------------------------------------------------------------*
+FORM GET_INVOICENUM  CHANGING    CV_INVNO.
+
+  DATA: LV_NR    TYPE INRI-NRRANGENR VALUE '01'.
+*--------------------------------------------------------------------*
+
+  CALL FUNCTION 'NUMBER_GET_NEXT'
+    EXPORTING
+      NR_RANGE_NR             = LV_NR
+      OBJECT                  = 'ZN34_INVO'
+    IMPORTING
+      NUMBER                  = CV_INVNO
+    EXCEPTIONS
+      INTERVAL_NOT_FOUND      = 1
+      NUMBER_RANGE_NOT_INTERN = 2
+      OBJECT_NOT_FOUND        = 3
+      QUANTITY_IS_0           = 4
+      QUANTITY_IS_NOT_1       = 5
+      INTERVAL_OVERFLOW       = 6
+      BUFFER_OVERFLOW         = 7.
+
+  CV_INVNO = 'IV' && SY-DATUM+2(4) && CV_INVNO.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form REFRESH_ALV_TOP
+*&---------------------------------------------------------------------*
+FORM REFRESH_ALV_TOP .
+
+  DATA: LV_SCROLL TYPE LVC_S_STBL.
+  DATA: LS_LAYOUT  TYPE LVC_S_LAYO.         "ALV ###
+*--------------------------------------------------------------------*
+
+  CHECK GO_ALV_BOT IS NOT INITIAL.
+  LV_SCROLL-ROW = 'X'.
+  LV_SCROLL-COL = 'X'.
+
+  CALL METHOD GO_ALV_TOP->GET_FRONTEND_LAYOUT
+    IMPORTING
+      ES_LAYOUT = LS_LAYOUT.
+
+  LS_LAYOUT-CWIDTH_OPT = 'X'.
+
+  CALL METHOD GO_ALV_TOP->SET_FRONTEND_LAYOUT
+    EXPORTING
+      IS_LAYOUT = LS_LAYOUT.
+
+  CALL METHOD GO_ALV_TOP->REFRESH_TABLE_DISPLAY
+    EXPORTING
+      I_SOFT_REFRESH = ''
+      IS_STABLE      = LV_SCROLL.     "## ### ### refresh
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

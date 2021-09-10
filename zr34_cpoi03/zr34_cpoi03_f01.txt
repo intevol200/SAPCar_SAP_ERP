@@ -1,0 +1,408 @@
+*&---------------------------------------------------------------------*
+*& Include          ZR34_CPOI03_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM SET_ALV_100 .
+
+
+  CREATE OBJECT GO_CON
+    EXPORTING
+*     parent         =
+      CONTAINER_NAME = 'MYBOX'
+*     style          =
+*     lifetime       = lifetime_default
+*     repid          =
+*     dynnr          =
+*     no_autodef_progid_dynnr     =
+*  EXCEPTIONS
+*     cntl_error     = 1
+*     cntl_system_error           = 2
+*     create_error   = 3
+*     lifetime_error = 4
+*     lifetime_dynpro_dynpro_link = 5
+*     others         = 6
+    .
+  IF SY-SUBRC <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+
+
+  IF GO_ALV IS NOT INITIAL.
+    RETURN.
+  ENDIF.
+
+
+  CREATE OBJECT GO_ALV
+    EXPORTING
+*     i_shellstyle      = 0
+*     i_lifetime        =
+      I_PARENT          = GO_CON
+*     i_appl_events     = SPACE
+*     i_parentdbg       =
+*     i_applogparent    =
+*     i_graphicsparent  =
+*     i_name            =
+*     i_fcat_complete   = SPACE
+*     o_previous_sral_handler =
+    EXCEPTIONS
+      ERROR_CNTL_CREATE = 1
+      ERROR_CNTL_INIT   = 2
+      ERROR_CNTL_LINK   = 3
+      ERROR_DP_CREATE   = 4
+      OTHERS            = 5.
+  IF SY-SUBRC <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV_100 .
+
+  IF GO_ALV IS INITIAL.
+    RETURN.
+  ENDIF.
+
+  "## ALV ##
+  IF GV_ALV_FLAG = 'X'.
+
+    CALL METHOD GO_ALV->SET_TABLE_FOR_FIRST_DISPLAY
+      EXPORTING
+*       i_buffer_active               =
+*       i_bypassing_buffer            =
+*       i_consistency_check           =
+        I_STRUCTURE_NAME              = 'ZS34_S_POINT'
+*       is_variant                    =
+*       i_save                        =
+*       i_default                     = 'X'
+        IS_LAYOUT                     = GS_LAYO
+*       is_print                      =
+*       it_special_groups             =
+*       it_toolbar_excluding          =
+*       it_hyperlink                  =
+*       it_alv_graphics               =
+*       it_except_qinfo               =
+*       ir_salv_adapter               =
+      CHANGING
+        IT_OUTTAB                     = GT_LIST
+        IT_FIELDCATALOG               = GT_FCAT
+        IT_SORT                       = GT_SORT
+*       it_filter                     =
+      EXCEPTIONS
+        INVALID_PARAMETER_COMBINATION = 1
+        PROGRAM_ERROR                 = 2
+        TOO_MANY_LINES                = 3
+        OTHERS                        = 4.
+    IF SY-SUBRC <> 0.
+*   Implement suitable error handling here
+    ENDIF.
+
+    "ALV FALG #####
+    CLEAR GV_ALV_FLAG.
+
+    "### ALV ##
+  ELSE.
+    DATA: LS_STABLE      TYPE LVC_S_STBL,
+          I_SOFT_REFRESH TYPE CHAR01.
+    LS_STABLE-COL = 'X'.
+    LS_STABLE-ROW = 'X'.
+    I_SOFT_REFRESH = 'X'.
+
+    " layo refresh
+    CALL METHOD GO_ALV->SET_FRONTEND_LAYOUT
+      EXPORTING
+        IS_LAYOUT = GS_LAYO.
+
+    CALL METHOD GO_ALV->REFRESH_TABLE_DISPLAY
+      EXPORTING
+        IS_STABLE      = LS_STABLE
+        I_SOFT_REFRESH = ' '
+      EXCEPTIONS
+        FINISHED       = 1
+        OTHERS         = 2.
+    IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+    ENDIF.
+  ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_alv_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM GET_ALV_DATA CHANGING VALUE(P_SUBRC).
+
+
+
+  IF PA_STATE IS INITIAL.
+
+    SELECT *
+      INTO CORRESPONDING FIELDS OF TABLE GT_LIST
+      FROM ZT34_CPOINT AS A INNER JOIN ZT34_CUST AS B
+      ON A~CUSTNO EQ B~CUSTNO INNER JOIN ZT34_PCODE AS C
+      ON A~PCODE EQ C~CPCODE
+      WHERE A~CUSTNO IN S_CUSTNO
+        AND A~CPDATE IN S_CPDATE
+        AND A~PCODE IN S_PCODE
+        AND B~CITY IN S_CITY.
+
+  ELSE.
+    SELECT *
+    INTO CORRESPONDING FIELDS OF TABLE GT_LIST
+    FROM ZT34_CPOINT AS A INNER JOIN ZT34_CUST AS B
+    ON A~CUSTNO EQ B~CUSTNO INNER JOIN ZT34_PCODE AS C
+    ON A~PCODE EQ C~CPCODE
+    WHERE A~CUSTNO IN S_CUSTNO
+      AND A~CPDATE IN S_CPDATE
+      AND A~PCODE IN S_PCODE
+      AND B~STATE EQ PA_STATE
+      AND B~CITY IN S_CITY.
+
+  ENDIF.
+  IF SY-SUBRC <> 0.
+    P_SUBRC = 4.
+    RETURN.
+  ENDIF.
+
+  PERFORM GET_STATE_FIXED_VALUE.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_state_t
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM GET_STATE_T .
+
+*  CALL FUNCTION 'GET_DOMAIN_VALUES'
+*    EXPORTING
+*      domname               =
+**     TEXT                  = 'X'
+**     FILL_DD07L_TAB        = ' '
+**   TABLES
+**     VALUES_TAB            =
+**     VALUES_DD07L          =
+*   EXCEPTIONS
+**     NO_VALUES_FOUND       = 1
+**     OTHERS                = 2
+*            .
+*  IF sy-subrc <> 0.
+** Implement suitable error handling here
+*  ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_domain_fixed_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> LS_LIST_STATE
+*&      <-- LS_LIST_STATE_T
+*&---------------------------------------------------------------------*
+FORM GET_DOMAIN_FIXED_VALUE   USING   VALUE(P_DONAME)
+                                      VALUE(P_CODE)
+                             CHANGING VALUE(P_TEXT).
+  DATA: LS_DOMAIN  TYPE DD07V,
+        LT_DOMAIN  LIKE TABLE OF LS_DOMAIN,
+        LV_DOMNAME TYPE DD07L-DOMNAME.
+
+  LV_DOMNAME = P_DONAME.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      DOMNAME    = LV_DOMNAME
+*     TEXT       = 'X'
+*     FILL_DD07L_TAB        = ' '
+    TABLES
+      VALUES_TAB = LT_DOMAIN
+*     VALUES_DD07L          =
+*   EXCEPTIONS
+*     NO_VALUES_FOUND       = 1
+*     OTHERS     = 2
+    .
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  READ TABLE LT_DOMAIN WITH KEY DOMVALUE_L = P_CODE
+                       INTO LS_DOMAIN.
+  IF SY-SUBRC = 0.
+    P_TEXT = LS_DOMAIN-DDTEXT.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_state_fixed_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM GET_STATE_FIXED_VALUE .
+
+  DATA LS_LIST LIKE LINE OF GT_LIST[].
+
+  LOOP AT GT_LIST INTO LS_LIST.
+    PERFORM GET_DOMAIN_FIXED_VALUE USING 'ZD34_STATE'
+                                             LS_LIST-STATE
+                                       CHANGING LS_LIST-STATE_T.
+    MODIFY GT_LIST FROM LS_LIST.
+    CLEAR LS_LIST.
+
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_default_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- PS_LAYO
+*&---------------------------------------------------------------------*
+FORM SET_DEFAULT_VALUE .
+
+
+
+  PERFORM GET_ALV_DATA CHANGING GV_SUBRC.
+  IF GV_SUBRC = 4.
+    MESSAGE I016(PN) WITH 'Data is not found.'.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form field_catalog
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM FIELD_CATALOG .
+
+  PERFORM REUSE_FIELDCAT USING 'CPDATE' 'Collected Date' 'C' '' '' '' '' '' ''
+                           CHANGING GS_FCAT GT_FCAT.
+  PERFORM REUSE_FIELDCAT USING 'CUSTNO' 'Customer Number' 'C' '' '' '' '' '' ''
+                           CHANGING GS_FCAT GT_FCAT.
+  PERFORM REUSE_FIELDCAT USING 'CNAME' 'Customer Name' 'C' '' '' '' '' '' ''
+                           CHANGING GS_FCAT GT_FCAT.
+  PERFORM REUSE_FIELDCAT USING 'PCODE' 'Point Code' 'C' '' '' 'X' '' '' ''
+                           CHANGING GS_FCAT GT_FCAT.
+  PERFORM REUSE_FIELDCAT USING 'PTYPE' 'Point Type' 'C' '' '' '' '' '' ''
+                           CHANGING GS_FCAT GT_FCAT.
+  PERFORM REUSE_FIELDCAT USING 'POINT' 'Point' 'C' '' '' '' '' '' 'X'
+                           CHANGING GS_FCAT GT_FCAT.
+  PERFORM REUSE_FIELDCAT USING 'STATE' '' '' '' '' 'X' '' '' ''
+                           CHANGING GS_FCAT GT_FCAT.
+  PERFORM REUSE_FIELDCAT USING 'STATE_T' 'State' 'C' '' '' '' '' '' ''
+                           CHANGING GS_FCAT GT_FCAT.
+  PERFORM REUSE_FIELDCAT USING 'CITY' 'City' 'C' '' '' '' '' '' ''
+                           CHANGING GS_FCAT GT_FCAT.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form reuse_fieldcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM REUSE_FIELDCAT  USING VALUE(P_FIELD)
+                           VALUE(P_COL)
+                           VALUE(P_JUST)
+                           VALUE(P_EDIT)
+                           VALUE(P_POS)
+                           VALUE(P_OUT)
+                           VALUE(P_CFIELD)
+                           VALUE(P_MASK)
+                           VALUE(P_DOSUM)
+                     CHANGING PS_FCAT LIKE GS_FCAT
+                              PT_FCAT LIKE GT_FCAT.
+  CLEAR: PS_FCAT.
+
+  PS_FCAT-FIELDNAME = P_FIELD.
+  PS_FCAT-COLTEXT = P_COL.
+  PS_FCAT-JUST = P_JUST.
+  PS_FCAT-EDIT = P_EDIT.
+  PS_FCAT-COL_POS = P_POS.
+  PS_FCAT-NO_OUT = P_OUT.
+  PS_FCAT-CFIELDNAME = P_CFIELD.
+  PS_FCAT-EDIT_MASK = P_MASK.
+  PS_FCAT-DO_SUM = P_DOSUM.
+  APPEND PS_FCAT TO PT_FCAT.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form layout
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM LAYOUT .
+
+  CLEAR GS_LAYO.
+*  gs_layo-zebra = 'X'.
+  GS_LAYO-SEL_MODE = 'A'.
+  GS_LAYO-CWIDTH_OPT = 'X'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form sort
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM SORT .
+
+  CLEAR: GS_SORT.
+  GS_SORT-SPOS = '1'.
+  GS_SORT-FIELDNAME = 'CPDATE'.
+  GS_SORT-UP = 'X'.
+  APPEND GS_SORT TO GT_SORT.
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

@@ -1,0 +1,780 @@
+*&---------------------------------------------------------------------*
+*& Form set_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv_0100 .
+
+  CREATE OBJECT go_con
+    EXPORTING
+*     parent                      =
+      container_name              = 'MYCON'
+*     style                       =
+*     lifetime                    = lifetime_default
+*     repid                       =
+*     dynnr                       =
+*     no_autodef_progid_dynnr     =
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+*  ENDIF.
+*
+**  IF go_docking IS INITIAL.
+**    PERFORM set_container. "#### ##
+**  ENDIF.
+*
+*  IF go_alv IS NOT INITIAL.
+*    RETURN.
+*  ENDIF.
+
+
+  IF go_alv IS INITIAL.
+    CREATE OBJECT go_alv
+      EXPORTING
+*       i_shellstyle      = 0
+*       i_lifetime        =
+        i_parent          = go_con
+*       i_appl_events     = SPACE
+*       i_parentdbg       =
+*       i_applogparent    =
+*       i_graphicsparent  =
+*       i_name            =
+*       i_fcat_complete   = SPACE
+*       o_previous_sral_handler =
+      EXCEPTIONS
+        error_cntl_create = 1
+        error_cntl_init   = 2
+        error_cntl_link   = 3
+        error_dp_create   = 4
+        OTHERS            = 5.
+    IF sy-subrc <> 0.
+*      MESSAGE a016(pn) WITH 'CREATE ALV ERROR'.
+      MESSAGE i020.
+    ENDIF.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form display_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv_0100 .
+
+*  "## ALV ##
+*  IF gv_alv_flag = 'X'.
+
+  CALL METHOD go_alv->set_table_for_first_display
+    EXPORTING
+*     i_buffer_active               =
+*     i_bypassing_buffer            =
+*     i_consistency_check           =
+      i_structure_name              = 'ZT34_VENDOR'
+*     is_variant                    =
+*     i_save                        =
+*     i_default                     = 'X'
+      is_layout                     = gv_layo
+*     is_print                      =
+*     it_special_groups             =
+*     it_toolbar_excluding          =
+*     it_hyperlink                  =
+*     it_alv_graphics               =
+*     it_except_qinfo               =
+*     ir_salv_adapter               =
+    CHANGING
+      it_outtab                     = gt_list
+      it_fieldcatalog               = gt_fcat
+*     it_sort                       =
+*     it_filter                     =
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+
+  IF sy-subrc <> 0.
+*   Implement suitable error handling here
+  ENDIF.
+*
+*    "ALV FALG #####
+*    CLEAR gv_alv_flag.
+*
+*
+*    "### ALV ##
+*  ELSE.
+*    DATA: ls_stable      TYPE lvc_s_stbl,
+*          i_soft_refresh TYPE char01.
+*    ls_stable-col = 'X'.
+*    ls_stable-row = 'X'.
+*    i_soft_refresh = 'X'.
+*
+*    " layout refresh
+*    CALL METHOD go_alv->set_frontend_layout
+*      EXPORTING
+*        is_layout = gv_layo.
+*
+*    " refresh display
+*    CALL METHOD go_alv->refresh_table_display
+*      EXPORTING
+*        is_stable      = ls_stable
+*        i_soft_refresh = ' '
+*      EXCEPTIONS
+*        finished       = 1
+*        OTHERS         = 2.
+*
+*    IF sy-subrc <> 0.
+**      Implement suitable error handling here
+*    ENDIF.
+*
+*  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Include          ZM34_VENDOR01_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form get_info
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_info.
+
+  CLEAR: gs_list, gt_list.
+
+  IF gs_cond-dflag IS INITIAL.
+    SELECT *
+      FROM zt34_vendor
+      INTO CORRESPONDING FIELDS OF TABLE gt_list
+     WHERE dflag = ''.
+
+  ELSE.
+    SELECT *
+    FROM zt34_vendor
+    INTO CORRESPONDING FIELDS OF TABLE gt_list
+   WHERE dflag = 'X'.
+
+  ENDIF.
+
+
+  LOOP AT gt_list INTO gs_list.
+
+    IF gs_list-dflag = 'X'.
+      gs_list-color = 'C600'.
+    ENDIF.
+
+    MODIFY gt_list FROM gs_list.
+  ENDLOOP.
+
+
+
+* ##### #### ##
+  SORT gt_list BY venno ASCENDING.
+
+* ## -> fixed value ##
+  PERFORM get_display_data CHANGING gt_list.
+
+
+
+* ## ## ## (##### #)
+  IF gs_cond-vtype_c1 = 'X' AND gs_cond-vtype_c2 = ''.
+    DELETE gt_list WHERE vtype <> 'P'.          " ###### ##: ##### ## ##
+    RETURN.
+
+  ELSEIF gs_cond-vtype_c1 = '' AND gs_cond-vtype_c2 = 'X'.
+    DELETE gt_list WHERE vtype <> 'R'.          " ###### ##: ##### ## ##
+    RETURN.
+
+  ELSEIF gs_cond-vtype_c1 = 'X' AND gs_cond-vtype_c2 = 'X'.         " # # ##: if# ####
+    RETURN.
+
+  ELSEIF gs_cond-vtype_c1 = '' AND gs_cond-vtype_c2 = ''.
+    DELETE gt_list WHERE vtype = 'P' OR vtype = 'R'.
+*    MESSAGE i016(pn) WITH 'Data is not found.'.
+    MESSAGE i011.
+    RETURN.
+
+  ENDIF.
+
+
+
+  IF sy-subrc <> 0.
+*    MESSAGE i016(pn) WITH 'Data is not found.'.
+    MESSAGE i011.
+    DELETE gt_list WHERE vtype = 'P' OR vtype = 'R'.
+
+    RETURN.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form create_vendor
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM create_vendor .
+
+  DATA ls_zt34_vendor TYPE zt34_vendor.
+
+  CLEAR: ls_zt34_vendor.
+
+  ls_zt34_vendor-venno = zs34_vendor_02-venno.
+  ls_zt34_vendor-vname = zs34_vendor_02-vname.
+  ls_zt34_vendor-vtype = zs34_vendor_02-vtype.
+  ls_zt34_vendor-vtelnr = zs34_vendor_02-vtelnr.
+  ls_zt34_vendor-state = zs34_vendor_02-state.
+  ls_zt34_vendor-city = zs34_vendor_02-city.
+  ls_zt34_vendor-street = zs34_vendor_02-street.
+
+  INSERT zt34_vendor FROM ls_zt34_vendor.
+
+  IF sy-subrc = 0.
+    COMMIT WORK.
+*    MESSAGE i016(pn) WITH 'Create Success.'.
+    MESSAGE i015.
+
+    gs_cond-vtype_c1 = 'X'.
+    gs_cond-vtype_c2 = 'X'.
+    gs_cond-dflag    = ''.
+    PERFORM get_info.
+
+*    LEAVE TO SCREEN 0.
+
+  ELSE.
+    ROLLBACK WORK.
+*    MESSAGE i016(pn) WITH 'Create Fail.'.
+    MESSAGE i008.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form update_vendor
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM update_vendor .
+
+  DATA ls_zt34_vendor TYPE zt34_vendor.
+
+  CLEAR: ls_zt34_vendor.
+
+  ls_zt34_vendor-venno = zs34_vendor_02-venno.
+  ls_zt34_vendor-vname = zs34_vendor_02-vname.
+  ls_zt34_vendor-vtype = zs34_vendor_02-vtype.
+  ls_zt34_vendor-vtelnr = zs34_vendor_02-vtelnr.
+  ls_zt34_vendor-state = zs34_vendor_02-state.
+  ls_zt34_vendor-city = zs34_vendor_02-city.
+  ls_zt34_vendor-street = zs34_vendor_02-street.
+*  ls_zt34_vendor-dflag = zs34_vendor_02-dflag.
+
+
+  SELECT SINGLE *
+    INTO CORRESPONDING FIELDS OF gs_changed
+    FROM zt34_vendor
+    WHERE venno = zs34_vendor_02-venno.
+
+
+  IF    ls_zt34_vendor-vname  = gs_changed-vname
+    AND ls_zt34_vendor-vtype  = gs_changed-vtype
+    AND ls_zt34_vendor-vtelnr = gs_changed-vtelnr
+    AND ls_zt34_vendor-state  = gs_changed-state
+    AND ls_zt34_vendor-city   = gs_changed-city
+    AND ls_zt34_vendor-street = gs_changed-street.
+
+*    MESSAGE i016(pn) WITH 'No changes.'.
+    MESSAGE i009.
+
+  ELSE.
+    UPDATE zt34_vendor SET vname  = ls_zt34_vendor-vname
+                           vtype  = ls_zt34_vendor-vtype
+                           vtelnr = ls_zt34_vendor-vtelnr
+                           state  = ls_zt34_vendor-state
+                           city   = ls_zt34_vendor-city
+                           street = ls_zt34_vendor-street
+*                           dflag  = ls_zt34_vendor-dflag
+                     WHERE venno  = ls_zt34_vendor-venno.
+
+    IF sy-subrc <> 0.
+      ROLLBACK WORK.
+*      MESSAGE i016(pn) WITH 'Update Fail.'.
+      MESSAGE i009.
+      RETURN.
+
+    ELSE.
+      COMMIT WORK.
+*      MESSAGE i016(pn) WITH 'Update Success.'.
+      MESSAGE i001.
+
+*      gs_cond-vtype_c1 = 'X'.
+*      gs_cond-vtype_c2 = 'X'.
+*      gs_cond-dflag    = ''.
+      PERFORM get_info.
+
+      LEAVE TO SCREEN 0.
+
+      CLEAR zs34_vendor_02.
+
+    ENDIF.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_select_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GV_SUBRC
+*&---------------------------------------------------------------------*
+FORM get_select_list  CHANGING cv_subrc.
+
+  DATA: lt_rows TYPE lvc_t_roid,
+        ls_rows LIKE LINE OF lt_rows.
+
+  CLEAR cv_subrc.
+
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+*     et_index_rows =
+      et_row_no = lt_rows.
+
+  READ TABLE lt_rows INDEX 1 INTO ls_rows.
+  IF sy-subrc <> 0.
+    cv_subrc = 4.
+*    MESSAGE i016(pn) WITH 'Select line.'.
+    MESSAGE i013.
+    RETURN.
+  ENDIF.
+
+  READ TABLE lt_rows INDEX 2 INTO ls_rows.
+  IF sy-subrc = 0.
+    cv_subrc = 4.
+*    MESSAGE i016(pn) WITH 'You can not select two or more data.'.
+    MESSAGE i012.
+    RETURN.
+  ENDIF.
+
+* Move To Screen 300
+  READ TABLE gt_list INDEX ls_rows-row_id INTO gs_list.
+  CLEAR zs34_vendor_02.
+  MOVE-CORRESPONDING gs_list TO zs34_vendor_02.
+
+  CLEAR gs_list.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form delete_vendor
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM delete_vendor .
+*  DATA: ls_data TYPE zt34_vendor,
+*        ls_info TYPE zs34_vendor_01.
+
+  DATA: ls_dflag TYPE zt34_vendor-dflag.
+
+*  ls_dflag  = 'X'.
+
+
+  CLEAR: gv_subrc, gs_list.
+
+  DATA: lt_index TYPE lvc_t_row,
+        ls_index LIKE LINE OF lt_index,
+        lt_rows  TYPE lvc_t_roid,
+        ls_rows  LIKE LINE OF lt_rows.
+
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+      et_index_rows = lt_index
+      et_row_no     = lt_rows.
+
+  READ TABLE lt_rows INDEX 1 INTO ls_rows.
+  IF sy-subrc <> 0.
+    gv_subrc = 4.
+*    MESSAGE i016(pn) WITH 'Select line.'.
+    MESSAGE i013.
+    RETURN.
+  ENDIF.
+
+
+
+
+  PERFORM popup USING 'Delete Check'
+                      'Data is delete?'
+                CHANGING gv_subrc.
+
+*  UPDATE zt34_vendor SET dflag = 'X'
+*                   WHERE venno = gs_list-venno.
+
+
+  IF gv_subrc <> 0.
+    RETURN.
+  ENDIF.
+
+  LOOP AT lt_rows INTO ls_rows.
+    READ TABLE gt_list INDEX ls_rows-row_id INTO gs_list.
+    IF gs_list-dflag = 'X'.
+*      MESSAGE i016(pn) WITH 'Data already deleted'.
+      MESSAGE i014.
+      RETURN.
+    ENDIF.
+    UPDATE zt34_vendor
+       SET dflag = 'X'
+     WHERE venno = gs_list-venno.
+  ENDLOOP.
+
+  IF sy-subrc <> 0.
+    ROLLBACK WORK.
+*    MESSAGE i016(pn) WITH 'Delete Fail.'.
+    MESSAGE i010.
+    RETURN.
+
+  ELSE.
+    COMMIT WORK.
+*    MESSAGE i016(pn) WITH 'Delete Success.'.
+    MESSAGE i002.
+
+*    gs_cond-vtype_c1 = 'X'.
+*    gs_cond-vtype_c2 = 'X'.
+*    gs_cond-dflag    = ''.
+    PERFORM get_info.
+
+*    LEAVE TO SCREEN 0.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fcat_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fcat_value  USING VALUE(p_end)
+                           VALUE(p_field)
+                           VALUE(p_value)
+                     CHANGING ps_fcat TYPE lvc_s_fcat
+                              pt_fcat TYPE lvc_t_fcat.
+  CASE p_field.
+    WHEN 'FIELDNAME'.
+      ps_fcat-fieldname = p_value.
+    WHEN 'NO_OUT'.
+      ps_fcat-no_out = p_value.
+    WHEN 'COLTEXT'.
+      ps_fcat-coltext = p_value.
+    WHEN 'COL_POS'.
+      ps_fcat-col_pos = p_value.
+    WHEN 'JUST'.
+      ps_fcat-just = p_value.
+    WHEN 'HOTSPOT'.
+      ps_fcat-hotspot = p_value.
+  ENDCASE.
+
+  IF p_end = 'E'.
+    APPEND ps_fcat TO pt_fcat.
+    CLEAR ps_fcat.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fieldcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fieldcat   USING VALUE(p_field)
+                           VALUE(p_col)
+                           VALUE(p_just)
+                    CHANGING ps_fcat LIKE gs_fcat
+                             pt_fcat LIKE gt_fcat.
+  CLEAR ps_fcat.
+
+  ps_fcat-fieldname = p_field.
+  ps_fcat-coltext = p_col.
+  ps_fcat-just = p_just.
+  APPEND ps_fcat TO pt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form modify_fcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM modify_fcat .
+
+  IF gt_fcat IS NOT INITIAL. RETURN. ENDIF.
+
+  CLEAR: gs_fcat.
+  gs_fcat-fieldname = 'DFLAG'.
+  gs_fcat-no_out = 'X'.
+  APPEND gs_fcat TO gt_fcat.
+
+* ## ##
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'DFLAG'
+                            CHANGING gs_fcat gt_fcat,
+                            USING 'E' 'NO_OUT' 'X'
+                            CHANGING gs_fcat gt_fcat.
+
+* ## ##, fixed value# ##
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'STATE'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'NO_OUT' 'X'
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'STATE_T'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'COLTEXT' 'State'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'JUST' 'C'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'COL_POS' 7
+                          CHANGING gs_fcat gt_fcat.
+
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'VTYPE'
+                        CHANGING gs_fcat gt_fcat,
+                        USING 'E' 'NO_OUT' 'X'
+                        CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'VTYPE_T'
+                        CHANGING gs_fcat gt_fcat,
+                        USING '' 'COLTEXT' 'Vendor Type'
+                        CHANGING gs_fcat gt_fcat,
+                        USING '' 'JUST' 'C'
+                        CHANGING gs_fcat gt_fcat,
+                        USING 'E' 'COL_POS' 4
+                        CHANGING gs_fcat gt_fcat.
+
+* ### ##
+  PERFORM set_fieldcat USING 'VENNO' 'Vendor Code' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'VNAME' 'Vendor Name' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'VTELNR' 'Telephone Number' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'CITY' 'City' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'STREET' 'Street' 'C'
+                       CHANGING gs_fcat gt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_display_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GT_LIST
+*&---------------------------------------------------------------------*
+FORM get_display_data  CHANGING pt_list LIKE gt_list.
+
+  DATA: ls_list LIKE LINE OF pt_list[].
+
+  LOOP AT pt_list INTO ls_list.
+
+    PERFORM get_domain_fixed_value USING 'ZD34_STATE'
+                                         ls_list-state
+                                   CHANGING ls_list-state_t.
+
+    PERFORM get_domain_fixed_value USING 'ZD34_VTYPE'
+                                     ls_list-vtype
+                               CHANGING ls_list-vtype_t.
+
+    MODIFY pt_list FROM ls_list.
+    CLEAR ls_list.
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_domain_fixed_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> LS_LIST_STATE
+*&      <-- LS_LIST_STATE_T
+*&---------------------------------------------------------------------*
+FORM get_domain_fixed_value   USING   VALUE(p_doname)
+                                      VALUE(p_code)
+                             CHANGING VALUE(p_text).
+  DATA: ls_domain  TYPE dd07v,
+        lt_domain  LIKE TABLE OF ls_domain,
+        lv_domname TYPE dd07l-domname.
+
+  lv_domname = p_doname.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      domname    = lv_domname
+*     TEXT       = 'X'
+*     FILL_DD07L_TAB        = ' '
+    TABLES
+      values_tab = lt_domain
+*     VALUES_DD07L          =
+*   EXCEPTIONS
+*     NO_VALUES_FOUND       = 1
+*     OTHERS     = 2
+    .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  READ TABLE lt_domain WITH KEY domvalue_l = p_code
+                       INTO ls_domain.
+  IF sy-subrc = 0.
+    p_text = ls_domain-ddtext.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form popup
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      <-- P_SUBRC
+*&---------------------------------------------------------------------*
+FORM popup USING    VALUE(p_title)
+                     VALUE(p_message)
+            CHANGING p_subrc.
+
+  DATA: lv_answer.
+  CLEAR: lv_answer, p_subrc.
+
+  CALL FUNCTION 'POPUP_TO_CONFIRM'
+    EXPORTING
+      titlebar              = p_title
+*     DIAGNOSE_OBJECT       = ' '
+      text_question         = p_message
+      text_button_1         = 'Yes'(001)
+      icon_button_1         = 'ICON_CHECKED'
+      text_button_2         = 'No'(002)
+      icon_button_2         = 'ICON_INCOMPLETE'
+*     DEFAULT_BUTTON        = '1'
+      display_cancel_button = ''
+*     USERDEFINED_F1_HELP   = ' '
+      start_column          = 25
+      start_row             = 6
+*     POPUP_TYPE            =
+*     IV_QUICKINFO_BUTTON_1 = ' '
+*     IV_QUICKINFO_BUTTON_2 = ' '
+    IMPORTING
+      answer                = lv_answer
+*   TABLES
+*     PARAMETER             =
+    EXCEPTIONS
+      text_not_found        = 1
+      OTHERS                = 2.
+  IF sy-subrc <> 0.
+    MESSAGE i016(pn) WITH 'Error'.
+  ENDIF.
+
+  CLEAR: p_subrc.
+
+  IF lv_answer = 1.
+    p_subrc = 0.
+
+  ELSE.
+    p_subrc = 4.
+*    MESSAGE s016(pn) WITH 'Cancelled'.
+    MESSAGE i021.
+    RETURN.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form default_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM default_value .
+
+  CLEAR gv_layo.
+
+*  gv_layo-zebra = 'X'.
+  gv_layo-cwidth_opt = 'X'.
+  gv_layo-sel_mode = 'A'.
+*  gv_layo-grid_title = 'Vendor List'.
+  gv_layo-info_fname = 'COLOR'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form refresh_alv
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM refresh_alv .
+
+  " layout refresh
+  CALL METHOD go_alv->set_frontend_layout
+    EXPORTING
+      is_layout = gv_layo.
+
+
+  DATA: ls_stable      TYPE lvc_s_stbl,
+        i_soft_refresh TYPE char01.
+  ls_stable-col = 'X'.
+  ls_stable-row = 'X'.
+  i_soft_refresh = 'X'.
+
+
+  " refresh display
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      is_stable      = ls_stable
+      i_soft_refresh = ' '
+    EXCEPTIONS
+      finished       = 1
+      OTHERS         = 2.
+
+  IF sy-subrc <> 0.
+*      Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

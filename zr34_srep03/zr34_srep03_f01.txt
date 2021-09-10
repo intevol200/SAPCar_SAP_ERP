@@ -1,0 +1,714 @@
+*&---------------------------------------------------------------------*
+*& Include          ZR34_SREP01_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form set_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv_0100 .
+
+  CREATE OBJECT go_con
+    EXPORTING
+*     parent                      =
+      container_name              = 'MYCON'
+*     style                       =
+*     lifetime                    = lifetime_default
+*     repid                       =
+*     dynnr                       =
+*     no_autodef_progid_dynnr     =
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+*  ENDIF.
+
+  IF go_alv IS INITIAL.
+    CREATE OBJECT go_alv
+      EXPORTING
+*       i_shellstyle      = 0
+*       i_lifetime        =
+        i_parent          = go_con
+*       i_appl_events     = SPACE
+*       i_parentdbg       =
+*       i_applogparent    =
+*       i_graphicsparent  =
+*       i_name            =
+*       i_fcat_complete   = SPACE
+*       o_previous_sral_handler =
+      EXCEPTIONS
+        error_cntl_create = 1
+        error_cntl_init   = 2
+        error_cntl_link   = 3
+        error_dp_create   = 4
+        OTHERS            = 5.
+    IF sy-subrc <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+    ENDIF.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form display_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv_0100 .
+
+*  "## ALV ##
+*  IF gv_alv_flag = 'X'.
+
+  CALL METHOD go_alv->set_table_for_first_display
+    EXPORTING
+*     i_buffer_active               =
+*     i_bypassing_buffer            =
+*     i_consistency_check           =
+      i_structure_name              = 'ZS34_SREPAIR'   " h,i ### #### ##
+*     is_variant                    =
+*     i_save                        =
+*     i_default                     = 'X'
+      is_layout                     = gv_layo
+*     is_print                      =
+*     it_special_groups             =
+*     it_toolbar_excluding          =
+*     it_hyperlink                  =
+*     it_alv_graphics               =
+*     it_except_qinfo               =
+*     ir_salv_adapter               =
+    CHANGING
+      it_outtab                     = gt_list
+      it_fieldcatalog               = gt_fcat
+*     it_sort                       =
+*     it_filter                     =
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+  IF sy-subrc <> 0.
+*   Implement suitable error handling here
+  ENDIF.
+
+
+*    "ALV FALG #####
+*    CLEAR gv_alv_flag.
+*
+*
+*    "### ALV ##
+*  ELSE.
+*
+*    " layout refresh
+*    CALL METHOD go_alv->set_frontend_layout
+*      EXPORTING
+*        is_layout = gv_layo.
+*
+*    DATA: ls_stable      TYPE lvc_s_stbl,
+*          i_soft_refresh TYPE char01.
+*    ls_stable-col = 'X'.
+*    ls_stable-row = 'X'.
+*    i_soft_refresh = 'X'.
+*
+*    " refresh display
+*    CALL METHOD go_alv->refresh_table_display
+*      EXPORTING
+*        is_stable      = ls_stable
+*        i_soft_refresh = ' '
+*      EXCEPTIONS
+*        finished       = 1
+*        OTHERS         = 2.
+*
+*    IF sy-subrc <> 0.
+**      Implement suitable error handling here
+*    ENDIF.
+*
+*  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form refresh_alv
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM refresh_alv .
+
+  " layout refresh
+  CALL METHOD go_alv->set_frontend_layout
+    EXPORTING
+      is_layout = gv_layo.
+
+  DATA: ls_stable      TYPE lvc_s_stbl,
+        i_soft_refresh TYPE char01.
+  ls_stable-col = 'X'.
+  ls_stable-row = 'X'.
+  i_soft_refresh = 'X'.
+
+  " refresh display
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      is_stable      = ls_stable
+      i_soft_refresh = ' '
+    EXCEPTIONS
+      finished       = 1
+      OTHERS         = 2.
+
+  IF sy-subrc <> 0.
+*      Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form default_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM default_value .
+
+  CLEAR gv_layo.
+
+*  gv_layo-zebra = 'X'.
+  gv_layo-cwidth_opt = 'X'.       " fcat-outputlen## ##
+  gv_layo-excp_fname = 'LIGHT'.
+  gv_layo-excp_led = 'X'.
+*  gv_layo-info_fname = 'COLOR'.
+  gv_layo-sel_mode = 'A'.
+  gv_layo-stylefname = 'CELTAB'.
+*  gv_layo-grid_title = 'Requesting Repair List'.
+
+  gv_layo-ctab_fname = 'CTAB'.   " Cell Color
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_info
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_info .
+
+  CLEAR gt_list.
+
+  SELECT a~fstats a~repno a~venno c~vname a~scarid b~itmno
+         b~rinfo b~price b~waers a~erdat a~erzet a~ernam c~dflag
+    FROM zt34_hsrepair AS a
+    JOIN zt34_isrepair AS b
+      ON a~repno = b~repno
+     JOIN zt34_vendor AS c
+      ON a~venno = c~venno
+    INTO CORRESPONDING FIELDS OF TABLE gt_list
+    WHERE a~repno IN pa_repno
+      AND a~venno IN pa_venno
+      AND a~scarid IN pa_carid.
+*      AND a~ernam IN pa_remp.
+
+
+
+
+* ### ### ## ### ##
+
+  DATA: ls_ctab TYPE lvc_s_scol,
+        lt_ctab LIKE TABLE OF ls_ctab,
+        lt_data LIKE TABLE OF gt_list.
+
+
+  LOOP AT gt_list INTO gs_list.
+
+    CLEAR: ls_ctab, lt_ctab.
+
+    IF gs_list-dflag = 'X'.
+
+      ls_ctab-fname = 'VNAME'.
+      ls_ctab-color-col = 6.
+      ls_ctab-color-int = 0.
+      ls_ctab-color-inv = 0.
+
+      APPEND ls_ctab TO lt_ctab.
+
+    ENDIF.
+
+    INSERT LINES OF lt_ctab INTO TABLE gs_list-ctab.
+
+    MODIFY gt_list FROM gs_list.
+
+    CLEAR gs_list.
+
+  ENDLOOP.
+
+*  LOOP AT gt_list INTO gs_list.
+*    IF gs_list-dflag = 'X'.
+*      ls_col-fname = 'VNAME'.
+*      ls_col-color- = 'C600'.
+*    ENDIF.
+*    MODIFY gt_list FROM gs_list.
+*  ENDLOOP.
+
+
+*  LOOP AT gt_fcat INTO gs_fcat.
+*
+*    IF gs_list-dflag = 'X'.
+*
+*      CLEAR: gs_list-ctab.
+*      gs_list-ctab-fname = gs_fcat-fieldname.
+*      gs_list-ctab-color-col = 6.
+*      gs_list-ctab-color-int = 1.
+*      gs_list-ctab-color-inv = 0.
+*      APPEND gs_list TO gt_list.
+*    ENDIF.
+**    MODIFY gt_list FROM gs_list.
+*
+*  ENDLOOP.
+
+
+
+
+
+
+
+
+* #### #### ##
+  SORT gt_list BY repno ASCENDING.
+
+* ## -> fixed value ##
+  PERFORM get_display_data CHANGING gt_list.
+
+* ## ## ## (#### #)
+  IF pa_fs1 = 'X' AND pa_fs2 = '' AND pa_fs3 = ''.
+    DELETE gt_list WHERE fstats <> '1'.          " 'Requested'# ##
+
+  ELSEIF pa_fs1 = '' AND pa_fs2 = 'X' AND pa_fs3 = ''.
+    DELETE gt_list WHERE fstats <> '2'.          " 'Repairing'# ##
+
+  ELSEIF pa_fs1 = '' AND pa_fs2 = '' AND pa_fs3 = 'X'.
+    DELETE gt_list WHERE fstats <> '3'.          " 'Complete'# ##
+
+  ELSEIF pa_fs1 = 'X' AND pa_fs2 = 'X' AND pa_fs3 = ''.
+    DELETE gt_list WHERE fstats = '3'.          " 1,2# ##
+
+  ELSEIF pa_fs1 = 'X' AND pa_fs2 = '' AND pa_fs3 = 'X'.
+    DELETE gt_list WHERE fstats = '2'.          " 1,3# ##
+
+  ELSEIF pa_fs1 = '' AND pa_fs2 = 'X' AND pa_fs3 = 'X'.
+    DELETE gt_list WHERE fstats = '1'.          " 2,3# ##
+
+  ELSEIF pa_fs1 = 'X' AND pa_fs2 = 'X' AND pa_fs3 = 'X'.
+    RETURN.                                     " ## ##: if# ####
+
+  ELSEIF pa_fs1 = '' AND pa_fs2 = '' AND pa_fs3 = ''.
+    DELETE gt_list WHERE fstats = '1' OR fstats = '2' OR fstats = '3'.
+*    MESSAGE i016(pn) WITH 'Data is not found'.
+    MESSAGE i011.
+    RETURN.
+
+  ENDIF.
+
+  IF sy-subrc <> 0 OR gt_list IS INITIAL.
+    DELETE gt_list WHERE fstats = '1' OR fstats = '2' OR fstats = '3'.
+*    MESSAGE i016(pn) WITH 'Data is not found.'.
+    MESSAGE i011.
+    RETURN.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_display_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GT_LIST
+*&---------------------------------------------------------------------*
+FORM get_display_data  CHANGING pt_list LIKE gt_list.
+
+  DATA: ls_list LIKE LINE OF pt_list[].
+
+  LOOP AT pt_list INTO ls_list.
+
+    PERFORM get_domain_fixed_value USING 'ZD34_FSTATS'
+                                         ls_list-fstats
+                                   CHANGING ls_list-fstats_t.
+
+    PERFORM get_domain_fixed_value USING 'ZD34_ITMNO'
+                                     ls_list-itmno
+                               CHANGING ls_list-itmno_t.
+
+* ### ## ### ##.
+
+    CASE ls_list-fstats.
+      WHEN '1'.
+        ls_list-light = '1'.
+      WHEN '2'.
+        ls_list-light = '2'.
+      WHEN '3'.
+        ls_list-light = '3'.
+    ENDCASE.
+
+    MODIFY pt_list FROM ls_list.
+    CLEAR ls_list.
+  ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_domain_fixed_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> LS_LIST_STATE
+*&      <-- LS_LIST_STATE_T
+*&---------------------------------------------------------------------*
+FORM get_domain_fixed_value   USING   VALUE(p_doname)
+                                      VALUE(p_code)
+                             CHANGING VALUE(p_text).
+  DATA: ls_domain  TYPE dd07v,
+        lt_domain  LIKE TABLE OF ls_domain,
+        lv_domname TYPE dd07l-domname.
+
+  lv_domname = p_doname.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      domname    = lv_domname
+*     TEXT       = 'X'
+*     FILL_DD07L_TAB        = ' '
+    TABLES
+      values_tab = lt_domain
+*     VALUES_DD07L          =
+*   EXCEPTIONS
+*     NO_VALUES_FOUND       = 1
+*     OTHERS     = 2
+    .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  READ TABLE lt_domain WITH KEY domvalue_l = p_code
+                       INTO ls_domain.
+  IF sy-subrc = 0.
+    p_text = ls_domain-ddtext.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form modify_fcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM modify_fcat .
+
+  IF gt_fcat IS NOT INITIAL. RETURN. ENDIF.
+
+  CLEAR: gs_fcat.
+*  gs_fcat-fieldname = 'DFLAG'.
+*  gs_fcat-no_out = 'X'.
+*  APPEND gs_fcat TO gt_fcat.
+
+* ## ##
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'DFLAG'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'NO_OUT' 'X'
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'VENNO'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'NO_OUT' 'X'
+                          CHANGING gs_fcat gt_fcat.
+
+* ## ##, fixed value# ##
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'FSTATS'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'EDIT' 'X'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'NO_OUT' 'X'
+                          CHANGING gs_fcat gt_fcat.
+*  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'FSTATS_T'
+*                          CHANGING gs_fcat gt_fcat,
+*                          USING '' 'COLTEXT' 'State'
+*                          CHANGING gs_fcat gt_fcat,
+*                          USING '' 'JUST' 'C'
+*                          CHANGING gs_fcat gt_fcat,
+*                          USING 'E' 'COL_POS' 1
+*                          CHANGING gs_fcat gt_fcat.
+
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'ITMNO'
+                        CHANGING gs_fcat gt_fcat,
+                        USING 'E' 'NO_OUT' 'X'
+                        CHANGING gs_fcat gt_fcat.
+*  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'ITMNO_T'
+*                        CHANGING gs_fcat gt_fcat,
+*                        USING '' 'COLTEXT' 'Repair Part'
+*                        CHANGING gs_fcat gt_fcat,
+*                        USING '' 'JUST' 'C'
+*                        CHANGING gs_fcat gt_fcat,
+*                        USING 'E' 'COL_POS' 5
+*                        CHANGING gs_fcat gt_fcat.
+
+* ### ##
+  PERFORM set_fieldcat USING 'REPNO' 'Repair Number' 'C' '' '' '' '' '' "'14'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'VNAME' 'Vendor Name' 'C' '' '' '' '' '' "'15'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'SCARID' 'SAP Car Number' 'C' '' '' '' '' '' "'12'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'RINFO' 'Rapair Detail Information' 'L' '' '' '' '' '' "'30'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'PRICE' 'Price' 'R' '' '' '' '' '' "'8'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'WAERS' 'Currency' 'C' '' '' '' '' '' "'5'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'ERDAT' 'Request Date' 'C' '' '' '' '' '' "'10'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'ERZET' 'Request Time' 'C' '' '' '' '' '' "'10'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'ERNAM' 'Requested By' 'C' '' '' '' '' '' "'10'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'FSTATS_T' 'Progress' 'C' '' '2' '' '' '' "'8'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'ITMNO_T' 'Repair Part' 'C' '' '5' '' '' '' "'12'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'LIGHT' 'Status' 'C' '' '1' '' '' '' "'10'
+                       CHANGING gs_fcat gt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fcat_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fcat_value  USING VALUE(p_end)
+                           VALUE(p_field)
+                           VALUE(p_value)
+                     CHANGING ps_fcat TYPE lvc_s_fcat
+                              pt_fcat TYPE lvc_t_fcat.
+  CASE p_field.
+    WHEN 'FIELDNAME'.
+      ps_fcat-fieldname = p_value.
+    WHEN 'NO_OUT'.
+      ps_fcat-no_out = p_value.
+    WHEN 'COLTEXT'.
+      ps_fcat-coltext = p_value.
+    WHEN 'COL_POS'.
+      ps_fcat-col_pos = p_value.
+    WHEN 'JUST'.
+      ps_fcat-just = p_value.
+    WHEN 'HOTSPOT'.
+      ps_fcat-hotspot = p_value.
+    WHEN 'OUTPUTLEN'.
+      ps_fcat-outputlen = p_value.
+  ENDCASE.
+
+  IF p_end = 'E'.
+    APPEND ps_fcat TO pt_fcat.
+    CLEAR ps_fcat.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fieldcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fieldcat   USING VALUE(p_field)
+                           VALUE(p_col)
+                           VALUE(p_just)
+                           VALUE(p_edit)
+                           VALUE(p_pos)
+                           VALUE(p_out)
+                           VALUE(p_cfield)
+                           VALUE(p_mask)
+*                           VALUE(p_length)
+                    CHANGING ps_fcat LIKE gs_fcat
+                             pt_fcat LIKE gt_fcat.
+
+  CLEAR ps_fcat.
+
+  ps_fcat-fieldname = p_field.
+  ps_fcat-coltext = p_col.
+  ps_fcat-just = p_just.
+  ps_fcat-edit = p_edit.
+  ps_fcat-col_pos = p_pos.
+  ps_fcat-no_out = p_out.
+  ps_fcat-cfieldname = p_cfield.
+  ps_fcat-edit_mask = p_mask.
+*  ps_fcat-outputlen = p_length.
+  APPEND ps_fcat TO pt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form change_repair_state
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM change_repair_state .
+
+  DATA lv_result.
+
+  lv_result = go_alv->is_ready_for_input( ).
+
+  CASE lv_result.
+
+    WHEN 0.
+      CALL METHOD go_alv->set_ready_for_input
+        EXPORTING
+          i_ready_for_input = 1.
+*      gv_title = 'Change Mode: Repair states'.
+
+    WHEN 1.
+      CALL METHOD go_alv->set_ready_for_input
+        EXPORTING
+          i_ready_for_input = 0.
+*      gv_title = 'Display Mode: Repair states'.
+
+  ENDCASE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form update_states
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM update_states .
+
+  DATA: ls_zt34_hsrepair TYPE zt34_hsrepair,
+        ls_changed       TYPE zs34_srepair.
+
+
+*  CLEAR: gv_fstats, ls_zt34_hsrepair.
+
+*  ls_zt34_hsrepair-fstats = zs34_srepair-fstats.
+  ls_zt34_hsrepair-repno  = zs34_srepair-repno.
+  ls_zt34_hsrepair-fstats = gv_fstats.
+
+  SELECT SINGLE *
+    INTO CORRESPONDING FIELDS OF ls_changed
+    FROM zt34_hsrepair
+    WHERE fstats = zs34_srepair-fstats.
+
+
+  IF ls_zt34_hsrepair-fstats  = ls_changed-fstats     " ## #### ### #
+    OR ls_changed-fstats = '0'                        " ## #### ### #
+    OR ls_zt34_hsrepair-fstats = '1'                  " ## ##### #
+    OR ls_changed-fstats = '3'.                       " ## ##### #
+
+*    MESSAGE i016(pn) WITH 'No changes.'.
+    MESSAGE i009.
+
+*    CLEAR: gv_fstats, ls_zt34_hsrepair.
+
+  ELSE.
+    UPDATE zt34_hsrepair SET fstats  = gv_fstats
+                       WHERE repno   = ls_zt34_hsrepair-repno.
+
+    IF sy-subrc <> 0.
+      ROLLBACK WORK.
+*      MESSAGE i016(pn) WITH 'Update Fail.'.
+      MESSAGE i009.
+      RETURN.
+
+      CLEAR: gv_fstats, ls_zt34_hsrepair.
+
+    ELSE.
+      COMMIT WORK.
+*      MESSAGE i016(pn) WITH 'Update Success.'.
+      MESSAGE i001.
+
+*      gs_cond-vtype_c1 = 'X'.
+*      gs_cond-vtype_c2 = 'X'.
+*      gs_cond-dflag    = ''.
+      PERFORM get_info.
+
+      CLEAR: zs34_srepair, gv_fstats, ls_zt34_hsrepair.
+
+      LEAVE TO SCREEN 0.
+
+    ENDIF.
+
+*    CLEAR: zs34_srepair, gv_fstats.
+
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_select_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GV_SUBRC
+*&---------------------------------------------------------------------*
+FORM get_select_list  CHANGING cv_subrc.
+
+  DATA: lt_rows TYPE lvc_t_roid,
+        ls_rows LIKE LINE OF lt_rows.
+
+  CLEAR cv_subrc.
+
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+*     et_index_rows =
+      et_row_no = lt_rows.
+
+  READ TABLE lt_rows INDEX 1 INTO ls_rows.
+  IF sy-subrc <> 0.
+    cv_subrc = 4.
+*    MESSAGE i016(pn) WITH 'Select line.'.
+    MESSAGE i004.
+    RETURN.
+  ENDIF.
+
+  READ TABLE lt_rows INDEX 2 INTO ls_rows.
+  IF sy-subrc = 0.
+    cv_subrc = 4.
+*    MESSAGE i016(pn) WITH '# ## #####.'.
+    MESSAGE i004.
+    RETURN.
+  ENDIF.
+
+* Move To Screen 101
+  READ TABLE gt_list INDEX ls_rows-row_id INTO gs_list.
+  CLEAR zs34_srepair.
+  MOVE-CORRESPONDING gs_list TO zs34_srepair.
+
+  CLEAR gs_list.
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

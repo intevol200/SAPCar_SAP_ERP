@@ -1,0 +1,500 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_EMP01_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form dis_refresh
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM dis_refresh .
+  gs_stable-row = abap_true. "Row
+  gs_stable-col = abap_true. "column
+
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      is_stable      = gs_stable
+      i_soft_refresh = abap_true
+    EXCEPTIONS
+      finished       = 1
+      OTHERS         = 2.
+  IF sy-subrc <> 0.
+    MESSAGE i016(pn) WITH 'ALV REFRESH ERROR!'.
+*       Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_alv0100.
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv0100 .
+  CREATE OBJECT go_con
+    EXPORTING
+*     parent                      =
+      container_name              = 'CON'
+*     style                       =
+*     lifetime                    = lifetime_default
+*     repid                       =
+*     dynnr                       =
+*     no_autodef_progid_dynnr     =
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+    MESSAGE a016(pn) WITH 'Create Continar Object Error'.
+  ENDIF.
+
+  CREATE OBJECT go_alv
+    EXPORTING
+*     i_shellstyle      = 0
+*     i_lifetime        =
+      i_parent          = go_con
+*     i_appl_events     = SPACE
+*     i_parentdbg       =
+*     i_applogparent    =
+*     i_graphicsparent  =
+*     i_name            =
+*     i_fcat_complete   = SPACE
+*     o_previous_sral_handler =
+    EXCEPTIONS
+      error_cntl_create = 1
+      error_cntl_init   = 2
+      error_cntl_link   = 3
+      error_dp_create   = 4
+      OTHERS            = 5.
+  IF sy-subrc <> 0.
+    MESSAGE a016(pn) WITH 'Create ALV Object Error'.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form display_alv0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv0100 .
+  gs_layo-cwidth_opt = 'X'.
+  gs_layo-sel_mode = 'A'.
+  gs_layo-info_fname = 'LINECOLOR'.
+  PERFORM SET_FCAT CHANGING GS_FCAT GT_FCAT.
+
+  CALL METHOD go_alv->set_table_for_first_display
+    EXPORTING
+*     i_buffer_active               =
+*     i_bypassing_buffer            =
+*     i_consistency_check           =
+      i_structure_name              = 'ZT34_EMP'
+*     is_variant                    =
+*     i_save                        =
+      i_default                     = 'X'
+      is_layout                     = gs_layo
+*     is_print                      =
+*     it_special_groups             =
+*     it_toolbar_excluding          = gt_ui_excluding
+*     it_hyperlink                  =
+*     it_alv_graphics               =
+*     it_except_qinfo               =
+*     ir_salv_adapter               =
+    CHANGING
+      it_outtab                     = gt_emplist
+      it_fieldcatalog               = gt_fcat
+*     it_sort                       =
+*     it_filter                     =
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form init_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM init_data .
+  SELECT *
+    FROM zt34_emp
+    INTO CORRESPONDING FIELDS OF TABLE gt_emplist
+    WHERE dflag = abap_false.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form search
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM search .
+
+  DATA:
+    lt_vkorg TYPE RANGE OF zt34_emp-vkorg, "####.
+    ls_vkorg LIKE LINE  OF lt_vkorg,
+    lt_eposi TYPE RANGE OF zt34_emp-eposi, "##.
+    ls_eposi LIKE LINE  OF lt_eposi.
+
+  IF zt34_emp IS INITIAL.
+    PERFORM init_data.
+    PERFORM dis_refresh.
+
+  ELSE.
+    IF zt34_emp-vkorg IS NOT INITIAL.
+      ls_vkorg-sign   = 'I'.
+      ls_vkorg-option = 'EQ'.
+      ls_vkorg-low    = zt34_emp-vkorg.
+      APPEND ls_vkorg TO lt_vkorg.
+    ENDIF.
+
+    IF zt34_emp-eposi IS NOT INITIAL.
+      LS_eposi-sign   = 'I'.
+      LS_eposi-option = 'EQ'.
+      LS_eposi-low    = zt34_emp-eposi.
+      APPEND LS_eposi TO LT_eposi.
+    ENDIF.
+
+    SELECT *
+      FROM zt34_emp
+      INTO CORRESPONDING FIELDS OF TABLE gt_emplist
+     WHERE vkorg IN lt_vkorg
+       AND eposi IN lt_eposi
+       AND dflag EQ zt34_emp-dflag.
+
+      PERFORM del_color.
+     PERFORM dis_refresh.
+  ENDIF.
+
+    IF gt_emplist IS INITIAL.
+     MESSAGE 'No data.' TYPE 'I'.
+    ELSE.
+      PERFORM dis_refresh.
+    ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form create
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM create .
+  CLEAR gs_emplist.
+  gs_emplist-pernr = zt34_emp-pernr.
+  gs_emplist-vkorg = zt34_emp-vkorg.
+  gs_emplist-ename = zt34_emp-ename.
+  gs_emplist-eposi = zt34_emp-eposi.
+  gs_emplist-gesch = zt34_emp-gesch.
+  gs_emplist-telnr = zt34_emp-telnr.
+  gs_emplist-email = zt34_emp-email.
+  gs_emplist-begda = zt34_emp-begda.
+  gs_emplist-salary = zt34_emp-salary.
+  gs_emplist-waers = zt34_emp-waers.
+  gs_emplist-erdat = sy-datum.
+  gs_emplist-erzet = sy-uzeit.
+  gs_emplist-ernam = zt34_emp-ernam.
+*  INSERT gs_depdata into table zt34_org.
+  IF gs_emplist-begda > sy-datum.
+    MESSAGE 'Incorrect date.' TYPE 'I'.
+  ELSE.
+   INSERT zt34_emp FROM gs_emplist.
+  ENDIF.
+
+  IF sy-subrc = 0.
+    MESSAGE 'Data was created successfully' TYPE 'I'.
+    PERFORM dis_refresh.
+  ELSE.
+*    ROLLBACK WORK.
+    MESSAGE 'Data was not created' TYPE 'I'.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form change
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM change .
+  CLEAR: gs_emplist.
+
+  gs_emplist-pernr = zt34_emp-pernr.
+  gs_emplist-vkorg = zt34_emp-vkorg.
+  gs_emplist-ename = zt34_emp-ename.
+  gs_emplist-eposi = zt34_emp-eposi.
+  gs_emplist-gesch = zt34_emp-gesch.
+  gs_emplist-telnr = zt34_emp-telnr.
+  gs_emplist-email = zt34_emp-email.
+  gs_emplist-begda = zt34_emp-begda.
+  gs_emplist-salary = zt34_emp-salary.
+  gs_emplist-waers = zt34_emp-waers.
+
+  UPDATE zt34_emp SET vkorg  = gs_emplist-vkorg
+                      ename  = gs_emplist-ename
+                      eposi  = gs_emplist-eposi
+                      gesch  = gs_emplist-gesch
+                      telnr  = gs_emplist-telnr
+                      email = gs_emplist-email
+                      begda = gs_emplist-begda
+                      salary = gs_emplist-salary
+                      waers = gs_emplist-waers
+                      aedat = sy-datum
+                      aezet = sy-uzeit
+                      aenam = sy-uname
+                     WHERE pernr  = gs_emplist-pernr.
+
+  IF sy-subrc = 0.
+    MESSAGE 'Data was change successfully' TYPE 'I'.
+    PERFORM dis_refresh.
+
+  ELSE.
+    MESSAGE 'Data was not change' TYPE 'I'.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form del_msg
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM del_msg .
+  DATA : l_answer.
+  CLEAR : l_answer.
+
+  CALL FUNCTION 'POPUP_TO_CONFIRM'
+    EXPORTING
+      titlebar      = 'Delete'
+*     DIAGNOSE_OBJECT = ' '
+      text_question = TEXT-002
+      text_button_1 = 'Yes'
+*     ICON_BUTTON_1 = ' '
+      text_button_2 = 'No'
+*     ICON_BUTTON_2 = ' '
+*     DEFAULT_BUTTON = '1'
+*     DISPLAY_CANCEL_BUTTON = 'X'
+*     USERDEFINED_F1_HELP = ' '
+*     START_COLUMN  = 25
+*     START_ROW     = 6
+*     POPUP_TYPE    =
+*     IV_QUICKINFO_BUTTON_1 = ' '
+*     IV_QUICKINFO_BUTTON_2 = ' '
+    IMPORTING
+      answer        = l_answer
+* TABLES * PARAMETER =
+* EXCEPTIONS
+*     TEXT_NOT_FOUND = 1
+*     OTHERS        = 2
+    .
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+     WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+  IF l_answer EQ '1'.
+    PERFORM del_data.
+  ELSE.
+    MESSAGE s000 DISPLAY LIKE 'E' WITH TEXT-e01.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form del_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM del_data .
+  CLEAR: gs_emplist.
+
+ LOOP AT gt_index INTO gs_index.
+      READ TABLE gt_emplist INTO gs_emplist INDEX gs_index-index.
+      MOVE-CORRESPONDING gs_emplist TO zt34_emp.
+
+       gs_emplist-pernr = zt34_emp-pernr.
+       gs_emplist-endda = sy-datum.
+       gs_emplist-dflag = 'X'.
+       gs_emplist-aedat = sy-datum.
+       gs_emplist-aezet = sy-uzeit.
+       gs_emplist-aenam = sy-uname.
+
+   UPDATE zt34_emp SET endda = gs_emplist-endda
+                      salary = gs_emplist-salary
+                      waers = gs_emplist-waers
+                      dflag = gs_emplist-dflag
+                      aedat = gs_emplist-aedat
+                      aezet = gs_emplist-aezet
+                      aenam = gs_emplist-aenam
+                     WHERE pernr  = gs_emplist-pernr.
+    ENDLOOP.
+
+
+  IF sy-subrc = 0.
+    MESSAGE 'Data was delete successfully' TYPE 'I'.
+
+    SELECT *
+      FROM zt34_emp
+      INTO CORRESPONDING FIELDS OF TABLE gt_emplist
+      WHERE dflag = abap_true.
+
+    PERFORM del_color.
+    PERFORM dis_refresh.
+
+  ELSE.
+    MESSAGE 'Data was not delete' TYPE 'I'.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form select_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM select_data .
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+      et_index_rows = gt_index.
+  DESCRIBE TABLE gt_index LINES gd_lines.
+
+  IF gt_index IS INITIAL.
+    MESSAGE 'Please select data.' TYPE 'I'.
+    CALL SCREEN 100.
+  ELSE.
+    LOOP AT gt_index INTO gs_index.
+      READ TABLE gt_emplist INTO gs_emplist INDEX gs_index-index.
+      MOVE-CORRESPONDING gs_emplist TO zt34_emp.
+    ENDLOOP.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM SET_FCAT CHANGING CS_FCAT LIKE GS_FCAT
+                       CT_FCAT LIKE GT_FCAT.
+
+  IF CT_FCAT IS INITIAL.
+    PERFORM REUSE_FIELDCAT USING 'PERNR' 'Emp. Number' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'VKORG' 'Dep. Code' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ENAME' 'Emp. Name' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'EPOSI' 'Position Code' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'GESCH' 'Gender Type' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'TELNR' 'Telephone Number' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'EMAIL' 'E-Mail' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'BEGDA' 'Join Date' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ENDDA' 'Retire Date' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'SALARY' 'Salary' '' '' '' '' 'WAERS'
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'WAERS' 'Currency' 'C' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+*--------------------------------------------------------------------*
+    PERFORM REUSE_FIELDCAT USING 'DFLAG' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ERDAT' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ERZET' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ERNAM' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'AEDAT' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'AEZET' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'AENAM' '' '' '' '' 'X' ''
+                           CHANGING CS_FCAT CT_FCAT.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form del_color
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM del_color .
+     LOOP AT gt_emplist INTO gs_emplist.
+       IF gs_EMPLIST-dflag = abap_true.
+         Gs_emplist-linecolor = 'C600'.
+       ENDIF.
+       MODIFY gt_emplist FROM gs_emplist.
+     ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form REUSE_FIELDCAT
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- CS_FCAT
+*&      <-- CT_FCAT
+*&---------------------------------------------------------------------*
+FORM REUSE_FIELDCAT  USING VALUE(P_FIELD)
+                           VALUE(P_COL)
+                           VALUE(P_JUST)
+                           VALUE(P_HOTSPOT)
+                           VALUE(P_POS)
+                           VALUE(P_OUT)
+                           VALUE(P_CFIELD)
+
+                     CHANGING PS_FCAT LIKE GS_FCAT
+                              PT_FCAT LIKE GT_FCAT.
+  CLEAR: PS_FCAT.
+
+  PS_FCAT-FIELDNAME = P_FIELD.
+  PS_FCAT-COLTEXT = P_COL.
+  PS_FCAT-JUST = P_JUST.
+  PS_FCAT-HOTSPOT = P_HOTSPOT.
+  PS_FCAT-COL_POS = P_POS.
+  PS_FCAT-NO_OUT = P_OUT.
+  PS_FCAT-CFIELDNAME = P_CFIELD.
+
+  APPEND PS_FCAT TO PT_FCAT.
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

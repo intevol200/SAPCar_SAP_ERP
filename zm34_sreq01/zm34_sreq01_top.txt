@@ -1,0 +1,50 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_SREQ01_TOP                          - Module Pool      ZM34_SREQ01
+*&---------------------------------------------------------------------*
+PROGRAM ZM34_SREQ01.
+
+"COMMON USE
+DATA: OK_CODE TYPE SY-UCOMM,
+      P_SUBRC TYPE SY-SUBRC.
+
+"###, #### ##
+DATA: BEGIN OF GS_DISP.
+        INCLUDE TYPE ZT34_ISREQ.
+DATA:   VKORG TYPE ZT34_HSREQ-VKORG,
+        RQDAT TYPE ZT34_HSREQ-RQDAT,
+        VENNO TYPE ZT34_HSREQ-VENNO,
+        VNAME TYPE ZT34_VENDOR-VNAME,
+      END OF GS_DISP,
+      GT_DISP LIKE TABLE OF GS_DISP.
+
+"## ##
+DATA: BEGIN OF GS_USER.
+        INCLUDE TYPE ZT34_HSREQ.
+DATA:   VTEXT TYPE ZT34_ORG-VTEXT,
+        ENAME TYPE ZT34_EMP-ENAME,
+      END OF GS_USER.
+
+DATA: GV_VENDOR LIKE ZT34_VENDOR-VENNO.
+
+"ALV ## ##
+DATA: GO_CON TYPE REF TO CL_GUI_CUSTOM_CONTAINER,
+      GO_ALV TYPE REF TO CL_GUI_ALV_GRID.
+
+DATA: GT_FCAT TYPE LVC_T_FCAT,
+      GS_FCAT LIKE LINE OF GT_FCAT.
+
+DATA: GS_SORT TYPE LINE OF LVC_T_SORT,
+      GT_SORT LIKE TABLE OF GS_SORT.
+
+DATA: GS_LAYO TYPE LVC_S_LAYO.
+
+"ALV ## ##
+DATA: GT_FUNCTIONS TYPE UI_FUNCTIONS.
+
+**SCREEN DROPDOWN ##
+DATA: FIELD_ID TYPE VRM_ID,
+      VALUES   TYPE VRM_VALUES,
+      VALUE    LIKE LINE OF VALUES.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

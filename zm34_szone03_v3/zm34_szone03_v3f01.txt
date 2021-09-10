@@ -1,0 +1,262 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SZONE03_V3F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form NODE_DOUBLE_CLICK_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> NODE_KEY
+*&---------------------------------------------------------------------*
+FORM node_double_click_0100  USING    p_node_key.
+
+CASE pa_st01.
+  WHEN 'R'.
+    SELECT * FROM zt34_scarzone
+      INTO TABLE gt_list
+     WHERE szcode = p_node_key
+      AND  scstat = 'R'.
+  WHEN 'M'.
+    SELECT * FROM zt34_scarzone
+      INTO TABLE gt_list
+     WHERE szcode = p_node_key
+      AND  scstat = 'M'.
+  WHEN 'S'.
+    SELECT * FROM zt34_scarzone
+      INTO TABLE gt_list
+     WHERE szcode = p_node_key
+      AND  scstat = 'S'.
+  WHEN 'I'.
+    SELECT * FROM zt34_scarzone
+      INTO TABLE gt_list
+     WHERE szcode = p_node_key
+      AND  scstat = 'I'.
+  WHEN ' '.
+    SELECT * FROM zt34_scarzone
+      INTO TABLE gt_list
+     WHERE szcode = p_node_key.
+
+ENDCASE.
+
+LOOP AT gt_list INTO gs_list.
+
+        SELECT SINGLE SZNAME
+          FROM zt34_szone_t
+          INTO gs_list-szname
+          WHERE szcode = gs_list-szcode.
+
+MODIFY gt_list FROM gs_list.
+CLEAR: gs_list.
+ENDLOOP.
+
+  PERFORM get_display_data CHANGING gt_list.
+
+  PERFORM refresh_grid.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SELECT_DATA
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM select_data .
+
+SELECT * from zt34_szone
+  INTO CORRESPONDING FIELDS OF TABLE gt_tree
+  WHERE szcode <> 'SZBURMS'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form make_fieldcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM make_fieldcat USING VALUE(p_end)
+                           VALUE(p_field)
+                           VALUE(p_value)
+                     CHANGING ps_fcat TYPE lvc_s_fcat
+                              pt_fcat TYPE lvc_t_fcat.
+
+  CASE p_field.
+    WHEN 'FIELDNAME'.
+      ps_fcat-fieldname = p_value.
+    WHEN 'NO_OUT'.
+      ps_fcat-no_out = p_value.
+    WHEN 'COLTEXT'.
+      ps_fcat-coltext = p_value.
+    WHEN 'COL_POS'.
+      ps_fcat-col_pos = p_value.
+    WHEN 'JUST'.
+      ps_fcat-just = p_value.
+    WHEN 'HOTSPOT'.
+      ps_fcat-hotspot = p_value.
+    WHEN 'EDIT'.
+      ps_fcat-edit = p_value.
+  ENDCASE.
+
+  IF p_end = 'E'.
+    APPEND ps_fcat TO pt_fcat.
+    CLEAR ps_fcat.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form build_node_table
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> NODE_TABLE
+*&---------------------------------------------------------------------*
+FORM build_node_table  USING    node_table TYPE node_table_type.
+
+  DATA: node LIKE mtreesnode.
+
+  CLEAR node.
+  node-node_key = 'Root'.       "tree ####
+  node-isfolder = 'X'.    "###### ##
+  node-text = 'SAPCAR-ZONE'.    "##### #### ##
+  node-expander = ' '.
+  APPEND node TO node_table.
+
+  CLEAR node.
+  node-node_key = 'Child1'. "root ## ##
+  node-relatkey = 'Root'.
+  node-isfolder = 'X'.
+  node-text = 'SC-ZONE'.
+  node-expander = ' '. "### #### ### ####
+  APPEND node TO node_table.
+
+  LOOP AT gt_tree INTO gs_tree.
+    CLEAR node.
+    node-node_key = gs_tree-szcode.
+    node-relatkey = 'Child1'.
+    node-n_image = '@AW@'.
+
+    SELECT SINGLE SZNAME FROM zt34_szone_t
+      INTO NODE-TEXT
+      WHERE szcode = gs_tree-szcode.
+
+    APPEND node TO node_table.
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form refresh_grid
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM refresh_grid .
+
+  CALL METHOD go_alv->set_frontend_layout
+    EXPORTING
+      is_layout = gs_layout.
+
+  DATA:gs_re   TYPE lvc_s_stbl.
+  gs_re-col = 'X'.
+  gs_re-row = 'X'.
+
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      is_stable      = gs_re
+      i_soft_refresh = ' '
+    EXCEPTIONS
+      finished       = 1
+      OTHERS         = 2.
+  IF sy-subrc <> 0.
+    MESSAGE i016(pn) WITH 'Display Refresh Error'.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_list_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_list_data .
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_default_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GS_LAYO
+*&      <-- GT_SORT
+*&---------------------------------------------------------------------*
+FORM set_default_value  CHANGING ps_layo LIKE gs_layout
+                                 pt_sort LIKE gt_sort.
+  CLEAR ps_layo.
+  ps_layo-cwidth_opt = 'X'.
+  ps_layo-sel_mode = 'D'.
+  ps_layo-excp_fname = 'LIGHT'.
+  ps_layo-excp_led = 'X'.
+  ps_layo-info_fname = 'COLOR'.
+
+  CLEAR: gs_sort.
+  gs_sort-spos = '1'.
+  gs_sort-fieldname = 'SZCODE'.
+  gs_sort-up = 'X'.
+  APPEND gs_sort TO pt_sort.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_display_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GT_LIST
+*&      <-- PERFORM
+*&      <-- REFRESH_GRID
+*&---------------------------------------------------------------------*
+FORM get_display_data  CHANGING pt_list LIKE gt_list.
+
+  DATA: ls_list LIKE LINE OF pt_list[].
+
+  LOOP AT pt_list INTO ls_list.
+    "###
+    IF ls_list-scstat = 'I'.
+      ls_list-light = '1'.
+    ELSEIF ls_list-scstat = 'R' OR ls_list-scstat = 'M'.
+      ls_list-light = '2'.
+    ELSEIF ls_list-scstat = 'S'.
+      ls_list-light = '3'.
+    ELSE.
+
+    ENDIF.
+
+*    "###
+*    IF ls_list-dflag = 'X'.
+*
+*      ls_list-color = 'C600'.
+*
+*    ENDIF.
+
+    MODIFY pt_list FROM ls_list.
+    CLEAR: ls_list.
+
+  ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form init_listbox
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM init_listbox .
+
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

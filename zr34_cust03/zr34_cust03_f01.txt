@@ -1,0 +1,803 @@
+*&---------------------------------------------------------------------*
+*& Include          ZR34_CUST03_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv_100 .
+  CHECK go_con IS INITIAL.
+  CREATE OBJECT go_con
+    EXPORTING
+*     parent                      =
+      container_name              = 'MYCON'
+*     style                       =
+*     lifetime                    = lifetime_default
+*     repid                       =
+*     dynnr                       =
+*     no_autodef_progid_dynnr     =
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+    MESSAGE e019.
+  ENDIF.
+
+
+  IF go_alv IS NOT INITIAL.
+    RETURN.
+  ENDIF.
+
+
+  CREATE OBJECT go_alv
+    EXPORTING
+*     i_shellstyle      = 0
+*     i_lifetime        =
+      i_parent          = go_con
+*     i_appl_events     = SPACE
+*     i_parentdbg       =
+*     i_applogparent    =
+*     i_graphicsparent  =
+*     i_name            =
+*     i_fcat_complete   = SPACE
+*     o_previous_sral_handler =
+    EXCEPTIONS
+      error_cntl_create = 1
+      error_cntl_init   = 2
+      error_cntl_link   = 3
+      error_dp_create   = 4
+      OTHERS            = 5.
+  IF sy-subrc <> 0.
+    MESSAGE e019.
+  ENDIF.
+
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv_100 .
+
+  IF go_alv IS INITIAL. RETURN. ENDIF.
+
+  IF gv_alv_flag = 'X'.
+    CALL METHOD go_alv->set_table_for_first_display
+      EXPORTING
+*       i_buffer_active               =
+*       i_bypassing_buffer            =
+*       i_consistency_check           =
+        i_structure_name              = 'zs34_cust'
+*       is_variant                    =
+*       i_save                        =
+*       i_default                     = 'X'
+        is_layout                     = gs_layout
+*       is_print                      =
+*       it_special_groups             =
+*       it_toolbar_excluding          =
+*       it_hyperlink                  =
+*       it_alv_graphics               =
+*       it_except_qinfo               =
+*       ir_salv_adapter               =
+      CHANGING
+        it_outtab                     = gt_list
+        it_fieldcatalog               = gt_fcat
+        it_sort                       = gt_sort
+*       it_filter                     =
+      EXCEPTIONS
+        invalid_parameter_combination = 1
+        program_error                 = 2
+        too_many_lines                = 3
+        OTHERS                        = 4.
+    IF sy-subrc <> 0.
+*   Implement suitable error handling here
+    ENDIF.
+    "ALV FALG #####
+    CLEAR gv_alv_flag.
+
+    "### ALV ##
+  ELSE.
+    DATA: ls_stable      TYPE lvc_s_stbl,
+          i_soft_refresh TYPE char01.
+    ls_stable-col = 'X'.
+    ls_stable-row = 'X'.
+    i_soft_refresh = ' '.
+
+
+    " layo refresh
+    CALL METHOD go_alv->set_frontend_layout
+      EXPORTING
+        is_layout = gs_layout.
+
+
+    CALL METHOD go_alv->refresh_table_display
+      EXPORTING
+        is_stable      = ls_stable
+        i_soft_refresh = ' '
+      EXCEPTIONS
+        finished       = 1
+        OTHERS         = 2.
+    IF sy-subrc <> 0.
+* Implement suitable error handling here
+    ENDIF.
+
+  ENDIF.
+
+  CREATE OBJECT go_hot.
+  SET HANDLER: go_hot->handle_hotspot_click FOR go_alv.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_alv_Data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_alv_data CHANGING VALUE(p_subrc) .
+  CLEAR gt_list.
+  IF pa_dflag = 'X'.
+    PERFORM get_list USING 'X'
+                     CHANGING gt_list.
+
+  ELSEIF pa_dflag = ' '.
+    PERFORM get_list USING ' '
+                     CHANGING gt_list.
+  ENDIF.
+  IF sy-subrc <> 0.
+    p_subrc = 4.
+    RETURN.
+  ENDIF.
+
+  PERFORM get_point_color_domain.
+
+
+  IF pa_ges1 <> 'X' AND pa_ges2 <> 'X'.
+    MESSAGE i011.
+    CLEAR gt_list.
+    RETURN.
+  ELSEIF pa_ges1 = 'X' AND pa_ges2 = 'X'.
+    EXIT.
+  ELSEIF pa_ges1 <> 'X'.
+    DELETE gt_list WHERE gesch ='1'.
+  ELSEIF pa_ges2 <> 'X'.
+    DELETE gt_list WHERE gesch ='2'.
+  ENDIF.
+
+  IF gt_list IS INITIAL.
+    p_subrc = 4.
+    RETURN.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&---------------------------------------------------------------------*
+FORM get_list  USING    VALUE(p_dflag)
+               CHANGING pt_list LIKE gt_list.
+
+  IF p_dflag IS INITIAL.
+    IF pa_state IS INITIAL.
+      SELECT *
+      FROM zt34_cust
+      INTO CORRESPONDING FIELDS OF TABLE pt_list
+      WHERE  custno IN pa_cutno
+      AND drnum IN pa_drnum
+      AND phone IN pa_phone
+      AND city IN pa_city
+      AND street IN pa_strt
+      AND sdate IN gv_date
+      AND dflag = p_dflag .
+
+    ELSE.
+      SELECT *
+      FROM zt34_cust
+      INTO CORRESPONDING FIELDS OF TABLE pt_list
+      WHERE  custno IN pa_cutno
+      AND drnum IN pa_drnum
+      AND phone IN pa_phone
+      AND state = pa_state
+      AND city IN pa_city
+      AND street IN pa_strt
+      AND sdate IN gv_date
+      AND dflag = p_dflag .
+    ENDIF.
+
+  ELSE.
+    IF pa_state IS INITIAL.
+      SELECT *
+      FROM zt34_cust
+      INTO CORRESPONDING FIELDS OF TABLE pt_list
+      WHERE  custno IN pa_cutno
+      AND drnum IN pa_drnum
+      AND phone IN pa_phone
+      AND city IN pa_city
+      AND street IN pa_strt
+      AND sdate IN gv_date
+      AND dflag = p_dflag.
+
+    ELSE.
+      SELECT *
+      FROM zt34_cust
+      INTO CORRESPONDING FIELDS OF TABLE pt_list
+      WHERE  custno IN pa_cutno
+      AND drnum IN pa_drnum
+      AND phone IN pa_phone
+      AND state = pa_state
+      AND city IN pa_city
+      AND street IN pa_strt
+      AND sdate IN gv_date
+      AND dflag = p_dflag.
+    ENDIF.
+
+  ENDIF.
+
+
+
+
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get-selected_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GV_SUBRC
+*&---------------------------------------------------------------------*
+FORM get_selected_list  CHANGING p_subrc.
+  CLEAR p_subrc.
+
+  DATA: lt_index TYPE lvc_t_row,
+        ls_index LIKE LINE OF lt_index,
+        lt_rows  TYPE lvc_t_roid,
+        ls_rows  LIKE LINE OF lt_rows.
+
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+      et_index_rows = lt_index
+      et_row_no     = lt_rows.
+
+  READ TABLE lt_rows INDEX 1 INTO ls_rows.
+  IF sy-subrc <> 0.
+    p_subrc = 4.
+    MESSAGE i004.
+    RETURN.
+  ENDIF.
+
+
+  READ TABLE gt_list INDEX ls_rows-row_id INTO gs_list.
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_memory
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_memory .
+  EXPORT lv_03 TO MEMORY ID 'MEM_LV_03'.
+
+  CLEAR: gs_cond.
+  gs_cond-custno = gs_list-custno.
+  gs_cond-drnum = gs_list-drnum.
+  gs_cond-cname = gs_list-cname.
+  gs_cond-phone = gs_list-phone.
+  gs_cond-state = gs_list-state.
+  gs_cond-city = gs_list-city.
+  gs_cond-street = gs_list-street.
+  gs_cond-sdate = gs_list-sdate.
+  gs_cond-point = gs_list-point.
+  gs_cond-dflag = gs_list-dflag.
+
+  IF gs_list-gesch = 1.
+    gs_cond-gesch = 'X'.
+    gs_cond-gesch_f = ''.
+  ELSE.
+    gs_cond-gesch = ''.
+    gs_cond-gesch_f = 'X'.
+
+  ENDIF.
+
+  EXPORT gs_cond TO MEMORY ID 'MEM_GS_COND'.
+  CLEAR : gs_cond.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_point
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_point_color_domain.
+
+
+  SELECT custno SUM( point ) AS apoint
+    INTO CORRESPONDING FIELDS OF TABLE gt_apoint
+    FROM zt34_cpoint
+    GROUP BY custno.
+
+  LOOP AT gt_list INTO gs_list.
+    READ TABLE gt_apoint INTO gs_apoint WITH KEY custno = gs_list-custno.
+    gs_list-point = gs_apoint-apoint.
+
+    "COLOR
+    IF gs_list-dflag = 'X'.
+      gs_list-color = 'C600'.
+    ENDIF.
+
+
+    "Domain Value
+    PERFORM get_domain_values USING 'GESCH' gs_list-gesch
+                      CHANGING gs_list-gesch_t.
+    PERFORM get_domain_values USING 'ZD34_STATE' gs_list-state
+                        CHANGING gs_list-state_t.
+
+    MODIFY gt_list FROM gs_list.
+
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form alv_hotspot_click
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> E_ROW_ID
+*&      --> E_COLUMN_ID
+*&      --> ES_ROW_NO
+*&      --> SENDER
+*&---------------------------------------------------------------------*
+FORM alv_hotspot_click  USING    VALUE(p_row_id) TYPE lvc_s_row
+                                 VALUE(p_column_id) TYPE lvc_s_col
+                                 VALUE(p_row_no) TYPE lvc_s_roid.
+
+
+  IF p_column_id-fieldname = 'POINT'.
+    READ TABLE gt_list INDEX p_row_no-row_id INTO gs_list.
+    IF sy-subrc = 0.
+      PERFORM get_point_list.
+
+      IF gs_list-point IS INITIAL.
+        RETURN.
+      ENDIF.
+      CALL SCREEN 0101 STARTING AT 10 10.
+    ENDIF.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_101
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv_101 .
+  CHECK go_con_point IS INITIAL.
+  CREATE OBJECT go_con_point
+    EXPORTING
+*     parent                      =
+      container_name              = 'MYCON2'
+*     style                       =
+*     lifetime                    = lifetime_default
+*     repid                       =
+*     dynnr                       =
+*     no_autodef_progid_dynnr     =
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+
+  IF go_alv2 IS NOT INITIAL.
+    RETURN.
+  ENDIF.
+
+
+  CREATE OBJECT go_alv2
+    EXPORTING
+*     i_shellstyle      = 0
+*     i_lifetime        =
+      i_parent          = go_con_point
+*     i_appl_events     = SPACE
+*     i_parentdbg       =
+*     i_applogparent    =
+*     i_graphicsparent  =
+*     i_name            =
+*     i_fcat_complete   = SPACE
+*     o_previous_sral_handler =
+    EXCEPTIONS
+      error_cntl_create = 1
+      error_cntl_init   = 2
+      error_cntl_link   = 3
+      error_dp_create   = 4
+      OTHERS            = 5.
+  IF sy-subrc <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_101
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv_101 .
+  IF go_alv2 IS INITIAL. RETURN. ENDIF.
+
+  IF gv_alv_flag2 = 'X'.
+    CALL METHOD go_alv2->set_table_for_first_display
+      EXPORTING
+*       i_buffer_active               =
+*       i_bypassing_buffer            =
+*       i_consistency_check           =
+        i_structure_name              = 'ZT34_CPOINT'
+*       is_variant                    =
+*       i_save                        =
+*       i_default                     = 'X'
+        is_layout                     = gs_layout
+*       is_print                      =
+*       it_special_groups             =
+*       it_toolbar_excluding          =
+*       it_hyperlink                  =
+*       it_alv_graphics               =
+*       it_except_qinfo               =
+*       ir_salv_adapter               =
+      CHANGING
+        it_outtab                     = gt_point
+        it_fieldcatalog               = gt_fcat_point
+        it_sort                       = gt_sort_p
+*       it_filter                     =
+      EXCEPTIONS
+        invalid_parameter_combination = 1
+        program_error                 = 2
+        too_many_lines                = 3
+        OTHERS                        = 4.
+    IF sy-subrc <> 0.
+*   Implement suitable error handling here
+    ENDIF.
+    "ALV FALG #####
+    CLEAR gv_alv_flag2.
+
+    "### ALV ##
+  ELSE.
+    DATA: ls_stable      TYPE lvc_s_stbl,
+          i_soft_refresh TYPE char01.
+    ls_stable-col = 'X'.
+    ls_stable-row = 'X'.
+    i_soft_refresh = 'X'.
+
+    CALL METHOD go_alv2->refresh_table_display
+      EXPORTING
+        is_stable      = ls_stable
+        i_soft_refresh = ' '
+      EXCEPTIONS
+        finished       = 1
+        OTHERS         = 2.
+    IF sy-subrc <> 0.
+* Implement suitable error handling here
+    ENDIF.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_point_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_point_list .
+  SELECT *
+    INTO CORRESPONDING FIELDS OF TABLE gt_point
+    FROM zt34_cpoint
+    WHERE custno = gs_list-custno.
+
+  SELECT *
+    INTO TABLE gt_pcode
+    FROM zt34_pcode.
+
+  LOOP AT gt_point INTO gs_point.
+    READ TABLE gt_pcode INTO gs_pcode WITH KEY cpcode = gs_point-pcode.
+    gs_point-pcode_t = gs_pcode-ptype.
+    MODIFY gt_point FROM gs_point.
+  ENDLOOP.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form field_catalog
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM field_catalog .
+  PERFORM set_fcat USING gs_fcat 'CUSTNO' 'Customer Number' 'C' '' '' ''
+                   CHANGING gt_fcat.
+  PERFORM set_fcat USING gs_fcat 'DRNUM' 'Drivers ID' 'C' '' '' ''
+                   CHANGING gt_fcat.
+  PERFORM set_fcat USING gs_fcat 'CNAME' 'Customer Name' 'C' '' '' ''
+                   CHANGING gt_fcat.
+  PERFORM set_fcat USING gs_fcat 'GESCH' '' '' '' 'X' ''
+                   CHANGING gt_fcat.
+  PERFORM set_fcat USING gs_fcat 'GESCH_T' 'Gender' 'C' '' '' ''
+               CHANGING gt_fcat.
+  PERFORM set_fcat USING gs_fcat 'PHONE' 'Telephone Number' 'C' '' '' ''
+                   CHANGING gt_fcat.
+  PERFORM set_fcat USING gs_fcat 'STATE' '' 'C' '' 'X' ''
+                   CHANGING gt_fcat.
+  PERFORM set_fcat USING gs_fcat 'STATE_T' 'State' 'C' '' '' ''
+                 CHANGING gt_fcat.
+  PERFORM set_fcat USING gs_fcat 'CITY' 'City' 'C' '' '' ''
+                   CHANGING gt_fcat.
+  PERFORM set_fcat USING gs_fcat 'STREET' 'Street' 'C' '' '' ''
+                   CHANGING gt_fcat.
+  PERFORM set_fcat USING gs_fcat 'SDATE' 'Start Date' 'C' '' '' ''
+                   CHANGING gt_fcat.
+  PERFORM set_fcat USING gs_fcat 'DFLAG' 'Delete Flag' 'C' '' 'X' ''
+                   CHANGING gt_fcat.
+  PERFORM set_fcat USING gs_fcat 'POINT' 'Point' 'C' 'X' '' ''
+                   CHANGING gt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_FCAT
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&---------------------------------------------------------------------*
+FORM set_fcat  USING    VALUE(ps_fcat) LIKE gs_fcat
+                        VALUE(p_fname)
+                        VALUE(p_ctext)
+                        VALUE(p_just)
+                        VALUE(p_hotspot)
+                        VALUE(p_no_out)
+                        VALUE(p_col_pos)
+               CHANGING pt_fcat LIKE gt_fcat.
+
+  CLEAR ps_fcat.
+  ps_fcat-fieldname = p_fname.
+  ps_fcat-coltext = p_ctext.
+  ps_fcat-just = p_just.
+  ps_fcat-hotspot = p_hotspot.
+  ps_fcat-no_out = p_no_out.
+  ps_fcat-col_pos = p_col_pos.
+  APPEND ps_fcat TO pt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form layout
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM layout .
+  gs_layout-zebra = 'X'.
+  gs_layout-cwidth_opt = 'X'.
+  gs_layout-sel_mode = 'D'. "D,A,C,B
+  gs_layout-info_fname = 'COLOR'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form sort
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM sort .
+  gs_sort-fieldname = 'CUSTNO'.
+  gs_sort-up = 'X'.
+
+*  gs_sort-subtot = 'X'.
+
+  APPEND gs_sort TO gt_sort.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form field_catalog_point
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM field_catalog_point .
+  PERFORM set_fcat USING gs_fcat_point 'CPDATE' 'Collected Date' 'C' '' '' '1'
+                   CHANGING gt_fcat_point.
+  PERFORM set_fcat USING gs_fcat_point 'SEQUE' 'Sequence' 'C' '' 'X' '2'
+                   CHANGING gt_fcat_point.
+  PERFORM set_fcat USING gs_fcat_point 'CUSTNO' 'Customer Number' 'C' '' '' '3'
+                   CHANGING gt_fcat_point.
+  PERFORM set_fcat USING gs_fcat_point 'PCODE' 'Point Code' 'C' '' 'X' '4'
+                   CHANGING gt_fcat_point.
+  PERFORM set_fcat USING gs_fcat_point 'PCODE_T' 'Point Code' 'C' '' '' '5'
+                 CHANGING gt_fcat_point.
+  PERFORM set_fcat USING gs_fcat_point 'POINT' 'Point' 'C' '' '' '6'
+                   CHANGING gt_fcat_point.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form check_manager
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM check_manager .
+
+  PERFORM get_emp.
+  IF gs_emp-vkorg <> 'SAL' .
+    MESSAGE i005.
+    LEAVE TO SCREEN 100.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_emp
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_emp .
+
+  CLEAR: gs_emp.
+
+  SELECT SINGLE vkorg
+    INTO gs_emp-vkorg
+    FROM zt34_emp
+    WHERE pernr = sy-uname.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form refresh
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM refresh .
+  DATA: lv_scroll TYPE lvc_s_stbl,
+        ls_layout TYPE lvc_s_layo,
+        ls_sort   TYPE LINE OF lvc_t_sort,
+        lt_sort   LIKE TABLE OF gs_sort.
+
+  CHECK go_alv IS NOT INITIAL.
+
+  lv_scroll-row = 'X'.
+  lv_scroll-col = 'X'.
+
+  CALL METHOD go_alv->get_frontend_layout
+    IMPORTING
+      es_layout = ls_layout.
+
+  ls_layout-cwidth_opt = 'X'.
+
+  CALL METHOD go_alv->set_frontend_layout
+    EXPORTING
+      is_layout = ls_layout.
+
+  " SORT
+*  CALL METHOD GO_ALV->GET_SORT_CRITERIA
+*    IMPORTING
+*      ET_SORT = LT_SORT.
+
+*  LS_SORT-FIELDNAME = 'CUSTNO'.
+*  LS_SORT-UP = 'X'.
+*
+*  APPEND LS_SORT TO LT_SORT.
+
+*  CALL METHOD GO_ALV->SET_SORT_CRITERIA
+*    EXPORTING
+*      IT_SORT = LT_SORT.
+
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      i_soft_refresh = ''
+      is_stable      = lv_scroll.     "## ### ### refresh
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_domain_values
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> GS_CUST_STATE
+*&      <-- GS_CUST_STATE_T
+*&---------------------------------------------------------------------*
+FORM get_domain_values  USING VALUE(p_domname) LIKE dd07l-domname
+                             VALUE(p_field)
+                       CHANGING c_domdt.
+
+  DATA: ls_dom LIKE dd07v,
+        lt_dom LIKE TABLE OF ls_dom.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      domname         = p_domname
+    TABLES
+      values_tab      = lt_dom
+    EXCEPTIONS
+      no_values_found = 1
+      OTHERS          = 2.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  READ TABLE lt_dom INTO ls_dom WITH KEY domvalue_l = p_field.
+  CHECK sy-subrc EQ 0.
+  c_domdt = ls_dom-ddtext.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form sort_popup
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM sort_popup .
+  gs_sort_p-fieldname = 'CPDATE'.
+  gs_sort_p-up = 'X'.
+
+*  gs_sort-subtot = 'X'.
+
+  APPEND gs_sort_p TO gt_sort_p.
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

@@ -1,0 +1,120 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_TORD01_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  EXIT  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE exit INPUT.
+
+  CASE sy-ucomm.
+    WHEN 'CANC'.
+      LEAVE TO SCREEN 0.
+    WHEN 'EXIT'.
+      LEAVE PROGRAM.
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+
+CLEAR:gs_cond.
+MOVE-CORRESPONDING zm34_tord01_s01 TO gs_cond.
+
+CASE ok_code.
+  WHEN 'BACK'.
+    PERFORM get_list CHANGING gt_list.
+    LEAVE TO SCREEN 0.
+  WHEN 'SEARCH'.
+    PERFORM get_list_search USING gs_cond
+                            CHANGING gt_list
+                                     gv_subrc.
+  WHEN 'CREATE'.
+    CALL SCREEN 0200.
+  WHEN 'CHANGE'.
+    PERFORM get_selected_list CHANGING gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ENDIF.
+    CALL SCREEN 0300.
+  WHEN 'EDIT'.
+    gv_title = 'Change Mode: Transport'.
+    PERFORM toggle_mode.
+  WHEN 'DELETE'.
+      PERFORM delete_selected_list CHANGING gv_subrc.
+      IF gv_subrc <> 0.
+        RETURN.
+      ELSE.
+        PERFORM get_list CHANGING gt_list.
+      ENDIF.
+  WHEN 'SAVE'.
+    PERFORM edit_selected_list CHANGING gv_subrc gt_list.
+*    PERFORM SAVE_0100 CHANGING gv_subrc.
+  WHEN OTHERS.
+
+ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+
+CLEAR: gs_create.
+
+CASE ok_code.
+  WHEN 'BACK'.
+    PERFORM get_list CHANGING gt_list.
+    LEAVE TO SCREEN 0.
+  WHEN 'SAVE'.
+    PERFORM create_smove.
+ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0300  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0300 INPUT.
+
+CLEAR: gs_change.
+
+CASE ok_code.
+  WHEN 'BACK'.
+    PERFORM get_list CHANGING gt_list.
+    LEAVE TO SCREEN 0.
+  WHEN 'ENTER'.
+
+  WHEN 'SAVE'.
+        PERFORM change_smove USING '300'.
+ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0101  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0101 INPUT.
+
+CASE ok_code.
+
+  WHEN 'ENTER'.
+    LEAVE TO SCREEN 0.
+  WHEN 'CANC'.
+    LEAVE TO SCREEN 0.
+
+ENDCASE.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

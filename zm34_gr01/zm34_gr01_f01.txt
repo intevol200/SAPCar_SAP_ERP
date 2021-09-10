@@ -1,0 +1,868 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_GR01_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form set_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv_0100 .
+  IF go_con IS INITIAL.
+    PERFORM set_container. "#### ##
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_CONTAINER
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_container .
+  "#### ##
+  CREATE OBJECT go_con
+    EXPORTING
+*     parent                      =
+      container_name              = 'CON1'
+*     style                       =
+*     lifetime                    = lifetime_default
+*     repid                       =
+*     dynnr                       =
+*     no_autodef_progid_dynnr     =
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+    MESSAGE a016(pn) WITH 'CREATE CON ERROR'.
+  ENDIF.
+
+  IF go_alv IS INITIAL.
+
+    CREATE OBJECT go_alv
+      EXPORTING
+*       i_shellstyle      = 0
+*       i_lifetime        =
+        i_parent          = go_con
+*       i_appl_events     = SPACE
+*       i_parentdbg       =
+*       i_applogparent    =
+*       i_graphicsparent  =
+*       i_name            =
+*       i_fcat_complete   = SPACE
+*       o_previous_sral_handler =
+      EXCEPTIONS
+        error_cntl_create = 1
+        error_cntl_init   = 2
+        error_cntl_link   = 3
+        error_dp_create   = 4
+        OTHERS            = 5.
+    IF sy-subrc <> 0.
+      MESSAGE a016(pn) WITH 'CREATE ALV ERROR'.
+    ENDIF.
+
+  ENDIF.
+
+  CREATE OBJECT go_event.
+  SET HANDLER go_event->handle_hotspot_click FOR go_alv.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form display_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv_0100 .
+  "## ALV ##
+  CALL METHOD go_alv->set_table_for_first_display
+    EXPORTING
+*     i_buffer_active               =
+*     i_bypassing_buffer            =
+*     i_consistency_check           =
+      i_structure_name              = 'ZM34_GR01_S01'
+*     is_variant                    =
+*     i_save                        =
+*     i_default                     = 'X'
+      is_layout                     = gs_layout
+*     is_print                      =
+*     it_special_groups             =
+*     it_toolbar_excluding          =
+*     it_hyperlink                  =
+*     it_alv_graphics               =
+*     it_except_qinfo               =
+*     ir_salv_adapter               =
+    CHANGING
+      it_outtab                     = gt_list
+      it_fieldcatalog               = gt_fcat
+      it_sort                       = gt_sort
+*     it_filter                     =
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_GR_LIST
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_gr_list .
+  "SQL
+  SELECT * FROM zt34_gr
+    INTO CORRESPONDING FIELDS OF TABLE gt_list
+    WHERE dflag <> 'X'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CREATE_GR
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM create_gr USING VALUE(ps_create) LIKE gs_create.
+  DATA: szname_t TYPE c LENGTH 40.
+  CLEAR: ps_create, gs_create_sapcar.
+
+  "######## ######## # ##
+  ps_create-scarno = zm34_gr01_s01-scarno.
+  ps_create-pernr = zm34_gr01_s01-pernr.
+  ps_create-grdat = zm34_gr01_s01-grdat.
+  ps_create-invno = zm34_gr01_s01-invno.
+  ps_create-szcode = zm34_gr01_s01-szcode.
+
+  IF ps_create-erdat IS INITIAL.
+    ps_create-erdat = sy-datum.
+    ps_create-ernam = sy-uname.
+    ps_create-erzet = sy-uzeit.
+  ELSE.
+    ps_create-aedat = sy-datum.
+    ps_create-aenam = sy-uname.
+    ps_create-aezet = sy-uzeit.
+  ENDIF.
+
+  INSERT zt34_gr FROM ps_create.
+
+  IF sy-subrc <> 0.
+    ROLLBACK WORK.
+    MESSAGE w016(pn) WITH 'Data was already exists'.
+  ELSE.
+    COMMIT WORK.
+
+    gs_create_sapcar-scarno = ps_create-scarno.
+    gs_create_sapcar-erdat = sy-datum.
+    gs_create_sapcar-ernam = sy-uname.
+    gs_create_sapcar-erzet = sy-uzeit.
+
+    INSERT zt34_sapcar FROM gs_create_sapcar.
+
+    IF sy-subrc <> 0.
+      ROLLBACK WORK.
+      MESSAGE w016(pn) WITH 'Data was already exists'.
+    ELSE.
+      COMMIT WORK.
+
+      PERFORM set_move_number CHANGING gs_create_smove-smvno.
+
+      gs_create_smove-scarno = ps_create-scarno.
+      gs_create_smove-zonefrom = ps_create-szcode.
+      gs_create_smove-mstats = 'U'.
+      gs_create_smove-erdat = sy-datum.
+      gs_create_smove-ernam = sy-uname.
+      gs_create_smove-erzet = sy-uzeit.
+
+      INSERT zt34_smove FROM gs_create_smove.
+
+
+      IF sy-subrc <> 0.
+        ROLLBACK WORK.
+        MESSAGE w016(pn) WITH 'Data was already exists'.
+      ELSE.
+        COMMIT WORK.
+
+        SELECT SINGLE szname
+          FROM zt34_szone_t
+          INTO szname_t
+          WHERE szcode = ps_create-szcode.
+
+        gs_scarzone-szcode = ps_create-szcode.
+        gs_scarzone-scarno = ps_create-scarno.
+        gs_scarzone-scstat = 'I'.
+        gs_scarzone-szname = szname_t.
+
+        INSERT zt34_scarzone FROM gs_scarzone.
+
+        IF sy-subrc <> 0.
+          ROLLBACK WORK.
+          MESSAGE w016(pn) WITH 'Data was already exists'.
+        ELSE.
+          COMMIT WORK.
+          MESSAGE i016(pn) WITH 'Goods Receipt was successed.'.
+        ENDIF.
+
+      ENDIF.
+
+    ENDIF.
+
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form layout
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM layout .
+
+  gs_layout-cwidth_opt = 'X'.
+  gs_layout-zebra ='X'.
+  gs_layout-sel_mode = 'A'. "D,A,C,B
+
+  gs_layout-grid_title = 'G/R Processing List'.
+
+  gs_layout-info_fname = 'COLOR'.
+  gs_layout-ctab_fname = 'CTAB'. "GT_DATA-CTAB
+  gs_layout-stylefname = 'STYLE'. "GT_DATA-STYLE
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form sort
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM sort .
+
+  gs_sort-fieldname = 'GRDAT'.
+  gs_sort-down = 'X'.
+
+  gs_sort-subtot = 'X'.
+
+  APPEND gs_sort TO gt_sort.
+
+CLEAR: gs_sort.
+
+  gs_sort-fieldname = 'INVNO'.
+  gs_sort-up = 'X'.
+
+  gs_sort-subtot = 'X'.
+
+  APPEND gs_sort TO gt_sort.
+
+CLEAR: gs_sort.
+
+  gs_sort-fieldname = 'SZCODE'.
+  gs_sort-up = 'X'.
+
+  gs_sort-subtot = 'X'.
+
+  APPEND gs_sort TO gt_sort.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form field_catalog
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM field_catalog .
+  "#### ####
+  PERFORM set_fcat USING gs_fcat 'SCARNO' 'SAP Car No.' '' 'C'.
+  PERFORM set_fcat USING gs_fcat 'PERNR' 'Employee' '' 'C'.
+  PERFORM set_fcat USING gs_fcat 'GRDAT' 'Processing Date' '' 'C'.
+  PERFORM set_fcat USING gs_fcat 'INVNO' 'Related Invoice' 'X' 'C'.
+  PERFORM set_fcat USING gs_fcat 'SZCODE' 'G/R point' '' 'C'.
+  PERFORM set_fcat USING gs_fcat 'ERDAT' 'Create Date' '' 'C'.
+  PERFORM set_fcat USING gs_fcat 'ERZET' 'Create Time' '' 'C'.
+  PERFORM set_fcat USING gs_fcat 'ERNAM' 'Create Emp.' '' 'C'.
+  PERFORM set_fcat USING gs_fcat 'AEDAT' 'Change Date' '' 'C'.
+  PERFORM set_fcat USING gs_fcat 'AEZET' 'Change Date' '' 'C'.
+  PERFORM set_fcat USING gs_fcat 'AENAM' 'Change Time' '' 'C'.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'DFLAG'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'NO_OUT' 'X'
+                          CHANGING gs_fcat gt_fcat.
+
+  "##### ####
+*PERFORM set_fcat_not_use_field USING 'AEDAT' 'X'.
+*PERFORM set_fcat_not_use_field USING 'AEZET' 'X'.
+*PERFORM set_fcat_not_use_field USING 'AENAM' 'X'.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FCAT
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_FCAT
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&---------------------------------------------------------------------*
+FORM set_fcat  USING    VALUE(ps_fcat) LIKE gs_fcat
+                        VALUE(p_fname)
+                        VALUE(p_ctext)
+                        VALUE(p_hotspot)
+                        VALUE(p_just).
+
+  CLEAR ps_fcat.
+  ps_fcat-fieldname = p_fname.
+  ps_fcat-coltext = p_ctext.
+  ps_fcat-hotspot = p_hotspot.
+  PS_FCAT-JUST = p_just.
+  CASE p_fname.
+    WHEN 'DFLAG'.
+      ps_fcat-no_out = 'x'.
+  ENDCASE.
+  APPEND ps_fcat TO gt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FCAT_NOT_USE_FIELD
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&---------------------------------------------------------------------*
+FORM set_fcat_not_use_field  USING    VALUE(p_fname)
+                                      VALUE(p_no_out).
+  CLEAR: gs_fcat.
+  gs_fcat-fieldname = p_fname.
+  gs_fcat-no_out = p_no_out.
+  APPEND gs_fcat TO gt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form alv_hotspot_click
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> E_ROW_ID
+*&      --> E_COLUMN_ID
+*&      --> ES_ROW_NO
+*&      --> SENDER
+*&---------------------------------------------------------------------*
+FORM alv_hotspot_click  USING    VALUE(p_row_id) TYPE lvc_s_row
+                                 VALUE(p_column_id) TYPE lvc_s_col
+                                 VALUE(ps_row_no) TYPE lvc_s_roid
+                                 VALUE(p_grid) TYPE REF TO cl_gui_alv_grid.
+
+  IF p_COLUMN_ID-fieldname = 'INVNO'.
+    READ TABLE gt_list INDEX pS_ROW_NO-row_id INTO gs_list.
+    IF sy-subrc = 0.
+      PERFORM get_invoice USING gs_list.
+      IF gs_list-invno IS INITIAL.
+        MESSAGE i016(pn) WITH 'Invoice information was not existed'.
+      ELSE.
+        CALL SCREEN 0101 STARTING AT 10 10.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_invoice
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_LIST
+*&---------------------------------------------------------------------*
+FORM get_invoice  USING    ps_list LIKE gs_list.
+
+  CLEAR: gs_invoice.
+
+  SELECT SINGLE * FROM zt34_invoice
+    INTO CORRESPONDING FIELDS OF gs_invoice
+    WHERE invno = ps_list-invno.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_selected_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GV_SUBRC
+*&---------------------------------------------------------------------*
+FORM get_selected_list  CHANGING p_subrc.
+
+  CLEAR: p_subrc, zm34_gr01_s01.
+  DATA: lt_index TYPE lvc_t_row,
+        ls_index LIKE LINE OF lt_index,
+        lt_rows  TYPE lvc_t_roid,
+        ls_rows  LIKE LINE OF lt_rows.
+
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+      et_index_rows = lt_index
+      et_row_no     = lt_rows.
+
+  READ TABLE lt_rows INDEX 1 INTO ls_rows.
+  IF sy-subrc <> 0.
+    p_subrc = 4.
+    MESSAGE i016(pn) WITH 'Must select single row.'.
+    RETURN.
+  ENDIF.
+
+  READ TABLE lt_rows INDEX 2 INTO ls_rows.
+  IF sy-subrc = 0.
+    p_subrc = 4.
+    MESSAGE i016(pn) WITH 'Must select single row.'.
+    RETURN.
+  ENDIF.
+
+  READ TABLE gt_list INDEX ls_rows-row_id INTO gs_list.
+  IF gs_list-dflag = 'X'.
+    p_subrc = 4.
+    MESSAGE i016(pn) WITH 'Deleted data was not changed.'.
+  ENDIF.
+  MOVE-CORRESPONDING gs_list TO zm34_gr01_s01.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form change_gr
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM change_gr .
+  DATA: szname_t TYPE c LENGTH 40.
+  CLEAR: gs_change.
+
+  "######## ######## # ##
+  gs_change-scarno = zm34_gr01_s01-scarno.
+  gs_change-pernr = zm34_gr01_s01-pernr.
+  gs_change-grdat = zm34_gr01_s01-grdat.
+  gs_change-invno = zm34_gr01_s01-invno.
+  gs_change-szcode = zm34_gr01_s01-szcode.
+  gs_change-erdat = zm34_gr01_s01-erdat.
+  gs_change-erzet = zm34_gr01_s01-erzet.
+  gs_change-ernam = zm34_gr01_s01-ernam.
+
+  IF gs_change-erdat IS INITIAL.
+    gs_change-erdat = sy-datum.
+    gs_change-ernam = sy-uname.
+    gs_change-erzet = sy-uzeit.
+  ELSE.
+    gs_change-aedat = sy-datum.
+    gs_change-aenam = sy-uname.
+    gs_change-aezet = sy-uzeit.
+  ENDIF.
+  IF    gs_list-scarno = gs_change-scarno
+    AND gs_list-pernr  = gs_change-pernr
+    AND gs_list-grdat  = gs_change-grdat
+    AND gs_list-invno  = gs_change-invno
+    AND gs_list-szcode = gs_change-szcode.
+
+    MESSAGE i018.
+
+  ELSE.
+
+    UPDATE zt34_gr
+     SET scarno = gs_change-scarno
+         pernr  = gs_change-pernr
+         grdat  = gs_change-grdat
+         invno  = gs_change-invno
+         szcode = gs_change-szcode
+         aedat  = gs_change-aedat
+         aenam  = gs_change-aenam
+         aezet  = gs_change-aezet
+     WHERE scarno = gs_change-scarno.
+
+    IF sy-subrc <> 0.
+      ROLLBACK WORK.
+      MESSAGE i016(pn) WITH 'Data was not changed.'.
+    ELSE.
+      COMMIT WORK.
+
+        SELECT SINGLE szname
+          FROM zt34_szone_t
+          INTO szname_t
+          WHERE szcode = gs_change-szcode.
+
+      UPDATE zt34_scarzone
+      SET szcode = gs_change-szcode
+          szname = szname_t
+      WHERE scarno = gs_change-scarno.
+
+      MESSAGE i016(pn) WITH 'Data was changed.'.
+    ENDIF.
+
+  ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SEARCH
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM search .
+  CLEAR: gt_list.
+  IF gs_cond-dflag = 'X'.
+    IF gs_cond-begiv IS INITIAL AND gs_cond-endiv IS INITIAL.
+      SELECT * FROM zt34_gr
+      INTO CORRESPONDING FIELDS OF TABLE @gt_list
+        WHERE dflag = 'X'.
+    ELSEIF gs_cond-begiv IS NOT INITIAL AND gs_cond-endiv IS INITIAL .
+      SELECT * FROM zt34_gr
+        INTO CORRESPONDING FIELDS OF TABLE @gt_list
+        WHERE invno = @gs_cond-begiv
+        AND   dflag = 'X'.
+    ELSEIF gs_cond-begiv IS NOT INITIAL AND gs_cond-endiv IS NOT INITIAL.
+      SELECT * FROM zt34_gr
+        INTO CORRESPONDING FIELDS OF TABLE @gt_list
+        WHERE invno BETWEEN @gs_cond-begiv AND @gs_cond-endiv
+              AND   dflag = 'X'.
+    ELSEIF gs_cond-begiv IS INITIAL AND gs_cond-endiv IS NOT INITIAL.
+      SELECT * FROM zt34_gr
+        INTO CORRESPONDING FIELDS OF TABLE @gt_list
+        WHERE invno = @gs_cond-endiv
+              AND   dflag = 'X'.
+    ENDIF.
+  ELSE.
+    IF gs_cond-begiv IS INITIAL AND gs_cond-endiv IS INITIAL.
+      SELECT * FROM zt34_gr
+        INTO CORRESPONDING FIELDS OF TABLE @gt_list
+        WHERE dflag <> 'X'.
+    ELSEIF gs_cond-begiv IS NOT INITIAL AND gs_cond-endiv IS INITIAL.
+      SELECT * FROM zt34_gr
+      INTO CORRESPONDING FIELDS OF TABLE @gt_list
+      WHERE invno = @gs_cond-begiv
+        AND dflag <> 'X'.
+    ELSEIF gs_cond-begiv IS NOT INITIAL AND gs_cond-endiv IS NOT INITIAL.
+      SELECT * FROM zt34_gr
+     INTO CORRESPONDING FIELDS OF TABLE @gt_list
+     WHERE invno BETWEEN @gs_cond-begiv AND @gs_cond-endiv
+        AND dflag <> 'X'.
+    ELSEIF gs_cond-begiv IS INITIAL AND gs_cond-endiv IS NOT INITIAL.
+      SELECT * FROM zt34_gr
+        INTO CORRESPONDING FIELDS OF TABLE @gt_list
+        WHERE invno = @gs_cond-endiv
+              AND   dflag <> 'X'.
+    ENDIF.
+  ENDIF.
+
+  PERFORM get_display_data CHANGING gt_list.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_selected_list_D
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GV_SUBRC
+*&---------------------------------------------------------------------*
+FORM get_selected_list_D  CHANGING p_subrc.
+
+  CLEAR: p_subrc, zm34_gr01_s01.
+  DATA: lt_index TYPE lvc_t_row,
+        ls_index LIKE LINE OF lt_index,
+        lt_rows  TYPE lvc_t_roid,
+        ls_rows  LIKE LINE OF lt_rows.
+
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+      et_index_rows = lt_index
+      et_row_no     = lt_rows.
+
+  READ TABLE lt_rows INDEX 1 INTO ls_rows.
+  IF sy-subrc <> 0.
+    p_subrc = 4.
+    MESSAGE i016(pn) WITH 'Must select single row.'.
+    RETURN.
+  ENDIF.
+  PERFORM popup USING 'Delete Confirmation'
+                      'Are you sure you want to delete the data?'
+                CHANGING p_subrc.
+  IF p_subrc <> 0.
+    RETURN.
+  ENDIF.
+  LOOP AT lt_rows INTO ls_rows.
+    READ TABLE gt_list INDEX ls_rows-row_id INTO gs_list.
+    IF gs_list-dflag = 'X'.
+      p_subrc = 4.
+      MESSAGE i016(pn) WITH 'Deleted data was not deleted.'.
+    ELSE.
+      PERFORM delete_gr USING gs_list.
+    ENDIF.
+  ENDLOOP.
+*  MOVE-CORRESPONDING gs_list TO zm34_gr01_s01.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DELETE_GR
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM delete_gr USING VALUE(ps_list) LIKE gs_list.
+  UPDATE zt34_gr SET dflag ='X'
+                 WHERE scarno = ps_list-scarno.
+
+  IF sy-subrc <> 0.
+    ROLLBACK WORK.
+    MESSAGE i016(pn) WITH 'Delete was failed.'.
+  ELSE.
+    COMMIT WORK.
+    UPDATE zt34_sapcar SET dflag = 'X'
+                       WHERE scarno = ps_list-scarno.
+    IF sy-subrc <> 0.
+      ROLLBACK WORK.
+      MESSAGE i016(pn) WITH 'Delete was failed.'.
+    ELSE.
+      COMMIT WORK.
+      UPDATE zt34_scarzone SET dflag = 'X'
+                           WHERE scarno = ps_list-scarno.
+      MESSAGE i016(pn) WITH 'Delete was successed.'.
+    ENDIF.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form popup
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      <-- P_SUBRC
+*&---------------------------------------------------------------------*
+FORM popup  USING    VALUE(p_title)
+                     VALUE(p_message)
+            CHANGING p_subrc.
+
+  DATA: lv_answer.
+  CLEAR: lv_answer, p_subrc.
+
+  CALL FUNCTION 'POPUP_TO_CONFIRM'
+    EXPORTING
+      titlebar              = p_title
+*     DIAGNOSE_OBJECT       = ' '
+      text_question         = p_message
+      text_button_1         = 'Yes'(001)
+      icon_button_1         = 'ICON_CHECKED'
+      text_button_2         = 'No'(002)
+      icon_button_2         = 'ICON_INCOMPLETE'
+*     DEFAULT_BUTTON        = '1'
+      display_cancel_button = ''
+*     USERDEFINED_F1_HELP   = ' '
+      start_column          = 25
+      start_row             = 6
+*     POPUP_TYPE            =
+*     IV_QUICKINFO_BUTTON_1 = ' '
+*     IV_QUICKINFO_BUTTON_2 = ' '
+    IMPORTING
+      answer                = lv_answer
+*   TABLES
+*     PARAMETER             =
+    EXCEPTIONS
+      text_not_found        = 1
+      OTHERS                = 2.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+    MESSAGE i016(pn) WITH 'Failed.'.
+  ENDIF.
+  CLEAR: p_subrc.
+  IF lv_answer = 1.
+    p_subrc = 0.
+  ELSE.
+    p_subrc = 4.
+    MESSAGE s016(pn) WITH 'Data was deleted.'.
+    RETURN.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_move_number
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GS_CREATE_SMOVE_SMVNO
+*&---------------------------------------------------------------------*
+FORM set_move_number  CHANGING p_smvno.
+
+  DATA: lv_num(2) TYPE c.
+
+  SELECT MAX( smvno )
+    INTO p_smvno
+    FROM zt34_smove.
+
+  lv_num = p_smvno+8(2) + 1.
+
+  IF lv_num < 10.
+    p_smvno = p_smvno+0(6) && '000' && lv_num.
+  ELSE.
+    p_smvno = p_smvno+0(6) && '00' && lv_num.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form refresh
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM refresh .
+
+  CALL METHOD go_alv->set_frontend_layout
+    EXPORTING
+      is_layout = gs_layout.
+
+  DATA:gs_re   TYPE lvc_s_stbl.
+  gs_re-col = 'X'.
+  gs_re-row = 'X'.
+
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      is_stable      = gs_re
+      i_soft_refresh = ' '
+    EXCEPTIONS
+      finished       = 1
+      OTHERS         = 2.
+  IF sy-subrc <> 0.
+    MESSAGE i016(pn) WITH 'Display Refresh Error'.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fcat_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fcat_value  USING VALUE(p_end)
+                           VALUE(p_field)
+                           VALUE(p_value)
+                     CHANGING ps_fcat TYPE lvc_s_fcat
+                              pt_fcat TYPE lvc_t_fcat.
+  CASE p_field.
+    WHEN 'FIELDNAME'.
+      ps_fcat-fieldname = p_value.
+    WHEN 'NO_OUT'.
+      ps_fcat-no_out = p_value.
+    WHEN 'COLTEXT'.
+      ps_fcat-coltext = p_value.
+    WHEN 'COL_POS'.
+      ps_fcat-col_pos = p_value.
+    WHEN 'JUST'.
+      ps_fcat-just = p_value.
+    WHEN 'HOTSPOT'.
+      ps_fcat-hotspot = p_value.
+  ENDCASE.
+
+  IF p_end = 'E'.
+    APPEND ps_fcat TO pt_fcat.
+    CLEAR ps_fcat.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_display_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GT_LIST
+*&---------------------------------------------------------------------*
+FORM get_display_data  CHANGING pt_list LIKE gt_list.
+
+  DATA: ls_list LIKE LINE OF pt_list[].
+
+  LOOP AT pt_list INTO ls_list.
+*"###
+*  IF ls_list-mstats = 'C'.
+*    ls_list-light = '3'.
+*  ELSEIF ls_list-mstats = 'P'.
+*    ls_list-light = '2'.
+*  ELSE.
+*    ls_list-light = '1'.
+*  ENDIF.
+
+    "###
+    IF ls_list-dflag = 'X'.
+
+      ls_list-color = 'C600'.
+
+    ENDIF.
+
+    MODIFY pt_list FROM ls_list.
+    CLEAR: ls_list.
+
+  ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form check
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM check .
+*ZM34_GR01_S01-INVNO
+  DATA: ls_invo TYPE zt34_invoice,
+        ls_gr TYPE zt34_gr,
+        lt_gr LIKE TABLE OF ls_gr.
+
+  DATA: lv_line1 LIKE sy-index,
+        lv_line2 LIKE sy-index.
+
+  SELECT SINGLE *
+    FROM zt34_invoice
+    INTO CORRESPONDING FIELDS OF  ls_invo
+    WHERE invno = zm34_gr01_s01-invno.
+
+  SELECT *
+    FROM zt34_gr
+    INTO CORRESPONDING FIELDS OF TABLE lt_gr
+    WHERE invno = zm34_gr01_s01-invno.
+
+  DESCRIBE TABLE lt_gr LINES lv_line1."#### 1# ##### ##
+  lv_line2 = ls_invo-meinm."##### ####1# ##
+
+  IF lv_line1 < lv_line2.
+    gv_subrc = 0.
+  ELSE.
+    gv_subrc = 4.
+  ENDIF.
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

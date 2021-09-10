@@ -1,0 +1,575 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_TORD03_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form move_crud_program
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM move_crud_program .
+  DATA: lv_uname    TYPE sy-uname,
+        lv_eposi(3) TYPE c.
+
+  SELECT *
+    FROM zt34_emp
+    INTO CORRESPONDING FIELDS OF gs_emp
+    WHERE pernr = sy-uname.
+  ENDSELECT.
+
+  lv_uname = sy-uname.
+  lv_eposi = gs_emp-eposi.
+
+  IF lv_eposi = 'HOD' OR lv_eposi = 'TLD'.
+    CALL TRANSACTION 'ZM34_TORD01'.
+
+  ELSE.
+    MESSAGE i005.
+    RETURN.
+
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv_0100 .
+  CREATE OBJECT go_con
+    EXPORTING
+*     parent                      =
+      container_name              = 'MYCON'
+*     style                       =
+*     lifetime                    = lifetime_default
+*     repid                       =
+*     dynnr                       =
+*     no_autodef_progid_dynnr     =
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+    MESSAGE i019.
+  ENDIF.
+
+  IF go_alv IS NOT INITIAL.
+    RETURN.
+  ENDIF.
+
+  CREATE OBJECT go_alv
+    EXPORTING
+*     i_shellstyle      = 0
+*     i_lifetime        =
+      i_parent          = go_con
+*     i_appl_events     = SPACE
+*     i_parentdbg       =
+*     i_applogparent    =
+*     i_graphicsparent  =
+*     i_name            =
+*     i_fcat_complete   = SPACE
+*     o_previous_sral_handler =
+    EXCEPTIONS
+      error_cntl_create = 1
+      error_cntl_init   = 2
+      error_cntl_link   = 3
+      error_dp_create   = 4
+      OTHERS            = 5.
+  IF sy-subrc <> 0.
+    MESSAGE i020.
+  ENDIF.
+
+  CREATE OBJECT go_event.
+  SET HANDLER go_event->handle_hotspot_click FOR go_alv.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form display_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv_0100 .
+  CALL METHOD go_alv->set_table_for_first_display
+    EXPORTING
+*     i_buffer_active               =
+*     i_bypassing_buffer            =
+*     i_consistency_check           =
+      i_structure_name              = 'ZM34_SMOVE_S01'
+*     is_variant                    =
+*     i_save                        =
+*     i_default                     = 'X'
+      is_layout                     = gs_layo
+*     is_print                      =
+*     it_special_groups             =
+*     it_toolbar_excluding          =
+*     it_hyperlink                  =
+*     it_alv_graphics               =
+*     it_except_qinfo               =
+*     ir_salv_adapter               =
+    CHANGING
+      it_outtab                     = gt_list
+      it_fieldcatalog               = gt_fcat
+      it_sort                       = gt_sort
+*     it_filter                     =
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+  IF sy-subrc <> 0.
+    MESSAGE i016(pn) WITH 'Display ALV ERROR!'.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form refresh_alv_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM refresh_alv_0100 .
+  DATA:gs_re   TYPE lvc_s_stbl.
+  gs_re-col = 'X'.
+  gs_re-row = 'X'.
+  CALL METHOD go_alv->set_frontend_layout
+    EXPORTING
+      is_layout = gs_layo.
+
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      is_stable      = gs_re
+      i_soft_refresh = ' '
+    EXCEPTIONS
+      finished       = 1
+      OTHERS         = 2.
+  IF sy-subrc <> 0.
+    MESSAGE i016(pn) WITH 'Display Refresh ERROR!'.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_default_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GS_LAYO
+*&      <-- GT_SORT
+*&---------------------------------------------------------------------*
+FORM set_default_value  CHANGING ps_layo LIKE gs_layo
+                                 pt_sort LIKE gt_sort.
+  CLEAR ps_layo.
+  ps_layo-cwidth_opt = 'X'.
+  ps_layo-zebra = 'X'.
+  ps_layo-sel_mode = 'A'.
+  ps_layo-excp_fname = 'LIGHT'.
+  ps_layo-excp_led = 'X'.
+  ps_layo-info_fname = 'COLOR'.
+
+  CLEAR: gs_sort.
+  gs_sort-fieldname = 'MVDAT'.
+  gs_sort-up = 'X'.
+  APPEND gs_sort TO pt_sort.
+
+  CLEAR: gs_sort.
+  gs_sort-spos = '1'.
+  gs_sort-fieldname = 'SMVNO'.
+  gs_sort-up = 'X'.
+  APPEND gs_sort TO pt_sort.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_field_catalog
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_field_catalog .
+  PERFORM set_fieldcat USING 'LIGHT' 'Status' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'SMVNO' 'Move Number' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'SCARNO' 'Car Number' 'C'
+                      CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'ZONEFROM' 'From.SAPCar Zone' 'C'
+                      CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'ZONETO' 'To.SAPCar Zone' 'C'
+                      CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'MVDAT' 'Move Date' 'C'
+                      CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'MVEMP' 'Move Emp' 'C'
+                      CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'MNAME'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'COLTEXT' 'EMP. Name'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'JUST' 'C'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'COL_POS' 10
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'MSTATS'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'NO_OUT' 'X'
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'MSTATS_T'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'COLTEXT' 'Progress'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'JUST' 'C'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'COL_POS' 2
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'RENTNO'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'COLTEXT' 'Rent No.'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'JUST' 'C'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'HOTSPOT' 'X'
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'ERDAT' 'Create Date' 'C'
+                      CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'ERZET' 'Create Time' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'ERNAM' 'Create EMP' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'CNAME'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'COLTEXT' 'EMP. Name'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'JUST' 'C'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'COL_POS' 16
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'AEDAT' 'Change Date' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'AEZET' 'Change Time' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fieldcat USING 'AENAM' 'Change EMP' 'C'
+                       CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'ANAME'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'COLTEXT' 'EMP. Name'
+                          CHANGING gs_fcat gt_fcat,
+                          USING '' 'JUST' 'C'
+                          CHANGING gs_fcat gt_fcat,
+                          USING 'E' 'COL_POS' 20
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM set_fcat_value: USING '' 'FIELDNAME' 'DFLAG'
+                         CHANGING gs_fcat gt_fcat,
+                         USING 'E' 'NO_OUT' 'X'
+                         CHANGING gs_fcat gt_fcat.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fcat_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fcat_value  USING VALUE(p_end)
+                           VALUE(p_field)
+                           VALUE(p_value)
+                     CHANGING ps_fcat TYPE lvc_s_fcat
+                              pt_fcat TYPE lvc_t_fcat.
+  CASE p_field.
+    WHEN 'FIELDNAME'.
+      ps_fcat-fieldname = p_value.
+    WHEN 'NO_OUT'.
+      ps_fcat-no_out = p_value.
+    WHEN 'COLTEXT'.
+      ps_fcat-coltext = p_value.
+    WHEN 'COL_POS'.
+      ps_fcat-col_pos = p_value.
+    WHEN 'JUST'.
+      ps_fcat-just = p_value.
+    WHEN 'HOTSPOT'.
+      ps_fcat-hotspot = p_value.
+  ENDCASE.
+
+  IF p_end = 'E'.
+    APPEND ps_fcat TO pt_fcat.
+    CLEAR ps_fcat.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form display_move_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_move_list CHANGING pt_list LIKE gt_list
+                                p_subrc.
+  DATA: ps_list LIKE LINE OF pt_list,
+        ls_emp  TYPE zt34_emp,
+        lt_emp  LIKE TABLE OF ls_emp.
+
+  SELECT *
+   FROM zt34_smove
+   INTO CORRESPONDING FIELDS OF TABLE pt_list
+   WHERE scarno IN pa_car
+     AND mvemp IN pa_emp
+     AND rentno IN pa_ret
+     AND mvdat IN so_dat
+     AND dflag = pa_dflag.
+
+  SELECT *
+    FROM zt34_emp
+    INTO CORRESPONDING FIELDS OF TABLE lt_emp.
+
+  IF sy-subrc <> 0.
+    p_subrc = 4.
+    MESSAGE i011.
+    RETURN.
+  ENDIF.
+
+  LOOP AT pt_list INTO ps_list.
+    CLEAR ls_emp.
+    READ TABLE lt_emp WITH KEY pernr = ps_list-mvemp
+      INTO ls_emp.
+    ps_list-mname = ls_emp-ename.
+
+    CLEAR ls_emp.
+    READ TABLE lt_emp WITH KEY pernr = ps_list-ernam
+      INTO ls_emp.
+    ps_list-cname = ls_emp-ename.
+
+    CLEAR ls_emp.
+    READ TABLE lt_emp WITH KEY pernr = ps_list-aenam
+      INTO ls_emp.
+    ps_list-aname = ls_emp-ename.
+
+    IF ps_list-mstats = 'U'.
+      ps_list-light = '1'.
+    ELSEIF ps_list-mstats = 'P'.
+      ps_list-light = '2'.
+    ELSE.
+      ps_list-light = '3'.
+    ENDIF.
+
+    IF ps_list-dflag = 'X'.
+      ps_list-color = 'C600'.
+    ENDIF.
+
+    PERFORM get_domain_fixed_value USING 'ZE34_MSTATS'
+                                         ps_list-mstats
+                                   CHANGING ps_list-mstats_t.
+    MODIFY pt_list FROM ps_list.
+    CLEAR ps_list.
+  ENDLOOP.
+
+  IF pa_st01 = 'X' AND pa_st02 = 'X' AND pa_st03 = 'X'.
+    EXIT.
+  ELSEIF pa_st01 <> 'X' AND pa_st02 <> 'X' AND pa_st03 <> 'X'.
+    MESSAGE i016(pn) WITH 'Data is not found'.
+    CLEAR pt_list.
+    RETURN.
+  ELSEIF pa_st01 <> 'X'.
+    DELETE pt_list WHERE mstats ='C'.
+    IF pa_st02 <> 'X'.
+      DELETE pt_list WHERE mstats ='P'.
+    ELSEIF pa_st03 <> 'X'.
+      DELETE pt_list WHERE mstats ='U'.
+    ENDIF.
+  ELSEIF pa_st02 <> 'X'.
+    DELETE pt_list WHERE mstats ='P'.
+    IF pa_st01 <> 'X'.
+      DELETE pt_list WHERE mstats ='C'.
+    ELSEIF pa_st03 <> 'X'.
+      DELETE pt_list WHERE mstats ='U'.
+    ENDIF.
+  ELSEIF pa_st03 <> 'X'.
+    DELETE pt_list WHERE mstats ='U'.
+    IF pa_st02 <> 'X'.
+      DELETE pt_list WHERE mstats ='P'.
+    ELSEIF pa_st01 <> 'X'.
+      DELETE pt_list WHERE mstats ='C'.
+    ENDIF.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_fieldcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fieldcat  USING VALUE(p_field)
+                         VALUE(p_col)
+                         VALUE(p_just)
+                   CHANGING ps_fcat LIKE gs_fcat
+                            pt_fcat LIKE gt_fcat.
+  CLEAR ps_fcat.
+  ps_fcat-fieldname = p_field.
+  ps_fcat-coltext = p_col.
+  ps_fcat-just = p_just.
+  APPEND ps_fcat TO pt_fcat.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_domain_fixed_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> PS_LIST_MSTATS
+*&      <-- PS_LIST_MSTATS_T
+*&---------------------------------------------------------------------*
+FORM get_domain_fixed_value   USING    VALUE(p_doname)
+                                       VALUE(p_code)
+                              CHANGING VALUE(p_text).
+  DATA: ls_domain  TYPE dd07v,
+        lt_domain  LIKE TABLE OF ls_domain,
+        lv_domname TYPE dd07l-domname.
+
+  lv_domname = p_doname.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      domname    = lv_domname
+*     TEXT       = 'X'
+*     FILL_DD07L_TAB        = ' '
+    TABLES
+      values_tab = lt_domain
+*     VALUES_DD07L          =
+*   EXCEPTIONS
+*     NO_VALUES_FOUND       = 1
+*     OTHERS     = 2
+    .
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  READ TABLE lt_domain WITH KEY domvalue_l = p_code
+                       INTO ls_domain.
+  IF sy-subrc = 0.
+    p_text = ls_domain-ddtext.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form alv_hotspot_click
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> E_ROW_ID
+*&      --> E_COLUMN_ID
+*&      --> ES_ROW_NO
+*&      --> SENDER
+*&---------------------------------------------------------------------*
+FORM alv_hotspot_click  USING    VALUE(p_row_id) TYPE lvc_s_row
+                                 VALUE(p_column_id) TYPE lvc_s_col
+                                 VALUE(ps_row_no) TYPE lvc_s_roid
+                                 VALUE(p_grid) TYPE REF TO cl_gui_alv_grid.
+
+  CASE p_column_id-fieldname.
+
+    WHEN 'RENTNO'.
+      READ TABLE gt_list INDEX ps_row_no-row_id INTO gs_list.
+      IF sy-subrc = 0.
+        PERFORM get_srent.
+        CALL SCREEN 0101 STARTING AT 10 10.
+      ENDIF.
+
+  ENDCASE.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_srent
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_srent .
+
+  DATA : ls_szone_t TYPE zt34_szone_t,
+         lt_szone_t LIKE TABLE OF ls_szone_t.
+
+  CLEAR gs_srent.
+  SELECT SINGLE *
+    INTO CORRESPONDING FIELDS OF gs_srent
+    FROM zt34_srent
+    WHERE rentno = gs_list-rentno.
+
+  "Szone Text Data
+  SELECT *
+    INTO CORRESPONDING FIELDS OF TABLE lt_szone_t
+    FROM zt34_szone_t
+    WHERE spras = sy-langu.
+
+  READ TABLE lt_szone_t INTO ls_szone_t WITH KEY szcode = gs_srent-rbegpt.
+  gs_srent-szname_b = ls_szone_t-szname.
+
+  READ TABLE lt_szone_t INTO ls_szone_t WITH KEY szcode = gs_srent-rendpt.
+  gs_srent-szname_e = ls_szone_t-szname.
+
+  "Total Time
+  IF gs_srent-rendzet EQ gs_srent-rbegzet.
+    gs_srent-rtime_tot = '240000'.
+  ELSE.
+    gs_srent-rtime_tot = ( gs_srent-rendzet ) - ( gs_srent-rBEGZET ).
+  ENDIF.
+
+  "Rent Type Fixed Value
+  PERFORM get_domain_values USING 'ZD34_RTYPE' gs_srent-rtype
+                        CHANGING gs_srent-rtype_t.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_domain_values
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> GS_SRENT_RTYPE
+*&      <-- GS_SRENT_RTYPE_T
+*&---------------------------------------------------------------------*
+FORM get_domain_values  USING VALUE(p_domname) LIKE dd07l-domname
+                             VALUE(p_field)
+                       CHANGING c_domdt.
+
+  DATA: ls_dom LIKE dd07v,
+        lt_dom LIKE TABLE OF ls_dom.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      domname         = p_domname
+    TABLES
+      values_tab      = lt_dom
+    EXCEPTIONS
+      no_values_found = 1
+      OTHERS          = 2.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  READ TABLE lt_dom INTO ls_dom WITH KEY domvalue_l = p_field.
+  CHECK sy-subrc EQ 0.
+  c_domdt = ls_dom-ddtext.
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

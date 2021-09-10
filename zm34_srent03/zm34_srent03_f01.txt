@@ -1,0 +1,734 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SRENT03_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form get_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_data CHANGING VALUE(p_subrc).
+
+  CLEAR gt_list.
+
+  PERFORM search_range_r USING gs_rentno gs_cond-rentno_s gs_cond-rentno_e gs_cond
+                         CHANGING gt_rentno.
+  PERFORM search_range_d USING gs_rdate gs_cond-rdate_s gs_cond-rdate_e gs_cond
+                         CHANGING gt_rdate.
+  PERFORM search_range_c USING gs_custno gs_cond-custno gs_cond
+                         CHANGING gt_custno.
+  PERFORM search_range_s USING gs_scarno gs_cond-scarno gs_cond
+                         CHANGING gt_scarno.
+
+  SELECT *
+  FROM zt34_srent AS a INNER JOIN zt34_cust AS b
+    ON a~custno = b~custno
+    INTO CORRESPONDING FIELDS OF TABLE gt_list
+    WHERE a~rentno IN gt_rentno
+    AND a~rdate IN gt_rdate
+    AND b~custno IN gt_custno
+    AND a~scarno IN gt_scarno.
+
+  IF sy-subrc <> 0.
+    p_subrc = 4.
+  ENDIF.
+
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_alv_100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv_100 .
+
+  IF go_con IS NOT INITIAL.
+    RETURN.
+  ENDIF.
+
+  CREATE OBJECT go_con
+    EXPORTING
+*     parent                      =
+      container_name              = 'MYCON'
+*     style                       =
+*     lifetime                    = lifetime_default
+*     repid                       =
+*     dynnr                       =
+*     no_autodef_progid_dynnr     =
+    EXCEPTIONS
+      cntl_error                  = 1
+      cntl_system_error           = 2
+      create_error                = 3
+      lifetime_error              = 4
+      lifetime_dynpro_dynpro_link = 5
+      OTHERS                      = 6.
+  IF sy-subrc <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+
+  IF go_alv IS NOT INITIAL.
+    RETURN.
+  ENDIF.
+
+
+  CREATE OBJECT go_alv
+    EXPORTING
+*     i_shellstyle      = 0
+*     i_lifetime        =
+      i_parent          = go_con
+*     i_appl_events     = SPACE
+*     i_parentdbg       =
+*     i_applogparent    =
+*     i_graphicsparent  =
+*     i_name            =
+*     i_fcat_complete   = SPACE
+*     o_previous_sral_handler =
+    EXCEPTIONS
+      error_cntl_create = 1
+      error_cntl_init   = 2
+      error_cntl_link   = 3
+      error_dp_create   = 4
+      OTHERS            = 5.
+  IF sy-subrc <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+  ENDIF.
+
+  CREATE OBJECT go_hot.
+  SET HANDLER: go_hot->handle_hotspot_click FOR go_alv.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form display_alv_100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv_100 .
+
+  IF go_alv IS INITIAL.
+    RETURN.
+  ENDIF.
+
+  "## ALV ##
+  IF gv_alv_flag = 'X'.
+
+    CALL METHOD go_alv->set_table_for_first_display
+      EXPORTING
+*       i_buffer_active               =
+*       i_bypassing_buffer            =
+*       i_consistency_check           =
+        i_structure_name              = 'ZS34_SRENT'
+*       is_variant                    =
+*       i_save                        =
+*       i_default                     = 'X'
+        is_layout                     = gs_layo
+*       is_print                      =
+*       it_special_groups             =
+*       it_toolbar_excluding          =
+*       it_hyperlink                  =
+*       it_alv_graphics               =
+*       it_except_qinfo               =
+*       ir_salv_adapter               =
+      CHANGING
+        it_outtab                     = gt_list
+        it_fieldcatalog               = gt_fcat
+        it_sort                       = gt_sort
+*       it_filter                     =
+      EXCEPTIONS
+        invalid_parameter_combination = 1
+        program_error                 = 2
+        too_many_lines                = 3
+        OTHERS                        = 4.
+    IF sy-subrc <> 0.
+*   Implement suitable error handling here
+    ENDIF.
+
+    "ALV FALG #####
+    CLEAR gv_alv_flag.
+
+    "### ALV ##
+  ELSE.
+
+    " layo refresh
+    CALL METHOD go_alv->set_frontend_layout
+      EXPORTING
+        is_layout = gs_layo.
+
+
+    DATA: ls_stable      TYPE lvc_s_stbl,
+          i_soft_refresh TYPE char01.
+    ls_stable-col = 'X'.
+    ls_stable-row = 'X'.
+*    i_soft_refresh = 'X'.
+
+    CALL METHOD go_alv->refresh_table_display
+      EXPORTING
+        is_stable      = ls_stable
+        i_soft_refresh = ''
+      EXCEPTIONS
+        finished       = 1
+        OTHERS         = 2.
+    IF sy-subrc <> 0.
+* Implement suitable error handling here
+    ENDIF.
+  ENDIF.
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form move_cond_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM move_cond_data .
+  MOVE-CORRESPONDING zs34_srent_info TO gs_cond.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_default_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_default_value.
+
+*  gs_cond-rentno_s = '00000001'.
+*  gs_cond-rentno_e = '99999999'.
+  PERFORM get_rent_list.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_rent_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_rent_list .
+
+  SELECT *
+    FROM zt34_srent AS a INNER JOIN zt34_cust AS b
+    ON a~custno = b~custno
+    INTO CORRESPONDING FIELDS OF TABLE gt_list.
+
+  PERFORM set_field_list.
+
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form layout
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM layout .
+
+  CLEAR gs_layo.
+*  gs_layo-zebra = 'X'.
+  gs_layo-sel_mode = 'A'.
+  gs_layo-cwidth_opt = 'X'.
+  gs_layo-info_fname = 'COLOR'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form field_catalog
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM field_catalog .
+
+  PERFORM reuse_fieldcat USING 'RENTNO' 'Booking Number' 'C' '' '' '' '' 'X'
+                             CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'CUSTNO' 'Cust. Number' 'C' '' '' '' '' 'X'
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'CNAME' 'Cust. Name' 'C' '' '' '' '' ''
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'SCARNO' 'SAP Car Number' 'C' '' '' '' '' 'X'
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'RDATE' 'Booking Date' 'C' '' '' '' '' ''
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'RBEGPT' 'Starting Zone' 'C' '' '' '' '' ''
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'RENDPT' 'Arrival Zone' 'C' '' '' '' '' ''
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'RBEGZET' '' 'C' '' '' 'X' '' ''
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'RENDZET' '' 'C' '' '' 'X' '' ''
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'RTIME_TOT' 'Total Time' 'C' '' '' '' '' ''
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'T_CHARGE' 'Total Charge' 'R' '' '' '' 'WAERS' ''
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'WAERS' 'Currency' 'C' '' '' '' '' ''
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'CFLAG' '' 'C' '' '' 'X' '' ''
+                           CHANGING gs_fcat gt_fcat.
+
+  PERFORM reuse_fieldcat USING 'CARNO' '' 'C' '' '' 'X' '' ''
+                          CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'CTEXT' '' 'C' '' '' 'X' '' ''
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'MANU' '' 'C' '' '' 'X' '' ''
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'MANU_T' '' 'C' '' '' 'X' '' ''
+                           CHANGING gs_fcat gt_fcat.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form reuse_fieldcat
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- GS_FCAT
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM reuse_fieldcat USING VALUE(p_field)
+                           VALUE(p_col)
+                           VALUE(p_just)
+                           VALUE(p_edit)
+                           VALUE(p_pos)
+                           VALUE(p_out)
+                           VALUE(p_cfield)
+                           VALUE(p_hotspot)
+                     CHANGING ps_fcat LIKE gs_fcat
+                              pt_fcat LIKE gt_fcat.
+  CLEAR: ps_fcat.
+
+  ps_fcat-fieldname = p_field.
+  ps_fcat-coltext = p_col.
+  ps_fcat-just = p_just.
+  ps_fcat-edit = p_edit.
+  ps_fcat-col_pos = p_pos.
+  ps_fcat-no_out = p_out.
+  ps_fcat-cfieldname = p_cfield.
+  ps_fcat-hotspot = p_hotspot.
+  APPEND ps_fcat TO pt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form search_range_r
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_RENTNO
+*&      --> GS_COND_RENTNO_S
+*&      --> GS_COND_RENTNO_E
+*&      --> GS_COND
+*&      <-- GT_RENTNO
+*&---------------------------------------------------------------------*
+FORM search_range_r USING VALUE(ps_field) LIKE gs_rentno
+                         VALUE(ps_cond_b)
+                         VALUE(ps_cond_e)
+                         VALUE(ps_cond) LIKE gs_cond
+                   CHANGING pt_field LIKE gt_rentno.
+  CLEAR: ps_field, pt_field.
+
+  IF ps_cond_e IS INITIAL AND ps_cond_b IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'NP'.
+    ps_field-low = ps_cond_b.
+    ps_field-high = ps_cond_e.
+    APPEND ps_field TO pt_field.
+  ELSEIF ps_cond_e IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'EQ'.
+    ps_field-low = ps_cond_b.
+    ps_field-high = ps_cond_e.
+    APPEND ps_field TO pt_field.
+  ENDIF.
+  ps_field-sign = 'I'.
+  ps_field-option = 'BT'.
+  ps_field-low = ps_cond_b.
+  ps_field-high = ps_cond_e.
+  APPEND ps_field TO pt_field.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form search_range_d
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_RDATE
+*&      --> GS_COND_RDATE_S
+*&      --> GS_COND_RDATE_E
+*&      --> GS_COND
+*&      <-- GT_RDATE
+*&---------------------------------------------------------------------*
+FORM search_range_d  USING VALUE(ps_field) LIKE gs_rdate
+                         VALUE(ps_cond_b)
+                         VALUE(ps_cond_e)
+                         VALUE(ps_cond) LIKE gs_cond
+                     CHANGING pt_field LIKE gt_rdate.
+
+  CLEAR: ps_field, pt_field.
+
+  IF ps_cond_e IS INITIAL AND ps_cond_b IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'NP'.
+    ps_field-low = ps_cond_b.
+    ps_field-high = ps_cond_e.
+    APPEND ps_field TO pt_field.
+  ELSEIF ps_cond_e IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'EQ'.
+    ps_field-low = ps_cond_b.
+    ps_field-high = ps_cond_e.
+    APPEND ps_field TO pt_field.
+  ENDIF.
+  ps_field-sign = 'I'.
+  ps_field-option = 'BT'.
+  ps_field-low = ps_cond_b.
+  ps_field-high = ps_cond_e.
+  APPEND ps_field TO pt_field.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form search_range_c
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_SRENTAL
+*&      --> GS_COND_SRENTAL
+*&      --> GS_COND
+*&      <-- GT_SRENTAL
+*&---------------------------------------------------------------------*
+FORM search_range_c  USING VALUE(ps_field) LIKE gs_custno
+                         VALUE(ps_cond_b)
+                         VALUE(ps_cond) LIKE gs_cond
+                   CHANGING pt_field LIKE gt_custno.
+  CLEAR: ps_field, pt_field.
+
+  IF ps_cond_b IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'NE'.
+    ps_field-low = ps_cond_b .
+    APPEND ps_field TO pt_field.
+  ELSEIF ps_cond_b IS  NOT INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'EQ'.
+    ps_field-low = ps_cond_b .
+    APPEND ps_field TO pt_field.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form search_range_s
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_SCARNO
+*&      --> GS_COND_SCARNO
+*&      --> GS_COND
+*&      <-- GT_SCARNO
+*&---------------------------------------------------------------------*
+FORM search_range_s  USING VALUE(ps_field) LIKE gs_scarno
+                           VALUE(ps_cond_b)
+                           VALUE(ps_cond) LIKE gs_cond
+                    CHANGING pt_field LIKE gt_scarno.
+
+  CLEAR: ps_field, pt_field.
+
+  IF ps_cond_b IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'NE'.
+    ps_field-low = ps_cond_b .
+    APPEND ps_field TO pt_field.
+  ELSEIF ps_cond_b IS  NOT INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'EQ'.
+    ps_field-low = ps_cond_b .
+    APPEND ps_field TO pt_field.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form alv_hotspot_click
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> E_ROW_ID
+*&      --> E_COLUMN_ID
+*&      --> ES_ROW_NO
+*&---------------------------------------------------------------------*
+FORM alv_hotspot_click  USING    VALUE(p_row_id) TYPE lvc_s_row
+                                 VALUE(p_column_id) TYPE lvc_s_col
+                                 VALUE(p_row_no) TYPE lvc_s_roid.
+
+
+  CASE p_column_id-fieldname.
+    WHEN 'RENTNO'.
+      READ TABLE gt_list INDEX p_row_no-row_id INTO gs_list.
+      IF sy-subrc = 0.
+        PERFORM get_srent.
+        CALL SCREEN 0101 STARTING AT 10 10.
+      ENDIF.
+    WHEN 'CUSTNO'.
+      READ TABLE gt_list INDEX p_row_no-row_id INTO gs_list.
+      IF sy-subrc = 0.
+        PERFORM get_customer.
+        CALL SCREEN 0102 STARTING AT 10 10.
+      ENDIF.
+    WHEN 'SCARNO'.
+      READ TABLE gt_list INDEX p_row_no-row_id INTO gs_list.
+      IF sy-subrc = 0.
+        PERFORM get_sapcar.
+        CALL SCREEN 0103 STARTING AT 10 10.
+      ENDIF.
+  ENDCASE.
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_srent
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_srent .
+  DATA : ls_szone_t TYPE zt34_szone_t,
+         lt_szone_t LIKE TABLE OF ls_szone_t.
+
+  CLEAR gs_srent.
+  SELECT SINGLE *
+    INTO CORRESPONDING FIELDS OF gs_srent
+    FROM zt34_srent
+    WHERE rentno = gs_list-rentno.
+
+  "Szone Text Data
+  SELECT *
+    INTO CORRESPONDING FIELDS OF TABLE lt_szone_t
+    FROM zt34_szone_t
+    WHERE spras = sy-langu.
+
+  READ TABLE lt_szone_t INTO ls_szone_t WITH KEY szcode = gs_srent-rbegpt.
+  gs_srent-szname_b = ls_szone_t-szname.
+
+  READ TABLE lt_szone_t INTO ls_szone_t WITH KEY szcode = gs_srent-rendpt.
+  gs_srent-szname_e = ls_szone_t-szname.
+
+  "Total Time
+  IF gs_srent-rendzet EQ gs_srent-rbegzet.
+    gs_srent-rtime_tot = '240000'.
+  ELSE.
+    gs_srent-rtime_tot = ( gs_srent-rendzet ) - ( gs_srent-rBEGZET ).
+  ENDIF.
+
+  "Rent Type Fixed Value
+  PERFORM get_domain_values USING 'ZD34_RTYPE' gs_srent-rtype
+                        CHANGING gs_srent-rtype_t.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_field_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_field_list .
+
+  LOOP AT gt_list INTO gs_list.
+
+    IF gs_list-rendzet EQ gs_list-rbegzet.
+      gs_list-rtime_tot = '240000'.
+    ELSE.
+      gs_list-rtime_tot = ( gs_list-rendzet ) - ( gs_list-rBEGZET ).
+    ENDIF.
+
+    IF gs_list-cflag = 'X'.
+      gs_list-color = 'C110'.
+    ENDIF.
+    MODIFY gt_list FROM gs_list.
+
+    CLEAR gs_list.
+
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form sort
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM sort .
+
+  CLEAR: gs_sort.
+  gs_sort-spos = '1'.
+  gs_sort-fieldname = 'RENTNO'.
+  gs_sort-up = 'X'.
+  APPEND gs_sort TO gt_sort.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_customer
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_customer .
+  CLEAR gs_cust.
+  SELECT SINGLE *
+    INTO CORRESPONDING FIELDS OF gs_cust
+    FROM zt34_cust
+    WHERE custno = gs_list-custno.
+
+  " Gesch Fixed Value
+  PERFORM get_domain_values USING 'GESCH' gs_cust-gesch
+                    CHANGING gs_cust-gesch_t.
+
+  " State Fixed Value
+  PERFORM get_domain_values USING 'ZD34_STATE' gs_cust-state
+                  CHANGING gs_cust-state_t.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_sapcar
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_sapcar .
+
+  DATA: ls_gr      TYPE zt34_gr,
+        ls_invoice TYPE zt34_invoice,
+        ls_isorder TYPE zt34_isorder,
+        ls_manu    TYPE zt34_manu,
+        ls_popup   TYPE zm34_sapcar_s02.
+  DATA: BEGIN OF ls_car.
+          INCLUDE TYPE zt34_car.
+  DATA:   ctext TYPE ze34_ctext,
+        END OF ls_car.
+
+  SELECT SINGLE invno
+    FROM zt34_gr
+    INTO CORRESPONDING FIELDS OF ls_gr
+    WHERE scarno = gs_list-scarno.
+
+  SELECT SINGLE ponum
+    FROM zt34_invoice
+    INTO CORRESPONDING FIELDS OF ls_invoice
+    WHERE invno = ls_gr-invno.
+
+  SELECT SINGLE carno
+    FROM zt34_isorder
+    INTO CORRESPONDING FIELDS OF ls_isorder
+    WHERE ponum = ls_invoice-ponum.
+
+  SELECT SINGLE *
+    FROM zt34_car AS a INNER JOIN zt34_car_t AS b
+    ON a~carno = b~carno
+    INTO CORRESPONDING FIELDS OF ls_car
+    WHERE a~carno = ls_isorder-carno
+      AND b~spras = sy-langu.
+
+  SELECT SINGLE manu_t
+    FROM zt34_manu
+    INTO CORRESPONDING FIELDS OF ls_manu
+    WHERE manu = ls_car-manu.
+
+  PERFORM get_domain_values USING 'ZD34_FUEL'
+                                       ls_car-fuel
+                                 CHANGING ls_popup-fuel_t.
+  PERFORM get_domain_values USING 'ZD34_CLASS'
+                                       ls_car-class
+                                 CHANGING ls_popup-class_t.
+  PERFORM get_domain_values USING 'ZDE34_SHIFT'
+                                       ls_car-shift
+                                 CHANGING ls_popup-shift_t.
+  CLEAR gs_sapcar.
+  gs_sapcar-scarno = gs_list-scarno.
+  gs_sapcar-carname = ls_car-ctext.
+  gs_sapcar-fuel_t = ls_popup-fuel_t.
+  gs_sapcar-manu_t = ls_manu-manu_t.
+  gs_sapcar-capa = ls_car-capa.
+  gs_sapcar-class_t = ls_popup-class_t.
+  gs_sapcar-shift_t = ls_popup-shift_t.
+  gs_sapcar-price = ls_car-price.
+  gs_sapcar-waers = ls_car-waers.
+
+  SELECT SINGLE hprice dprice
+    INTO CORRESPONDING FIELDS OF gs_sapcar
+    FROM zt34_sapcar
+    WHERE scarno = gs_list-scarno.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_domain_values
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> GS_CAR_FUEL
+*&      <-- GS_CAR_FUEL_T
+*&---------------------------------------------------------------------*
+FORM get_domain_values USING VALUE(p_domname) LIKE dd07l-domname
+                             VALUE(p_field)
+                       CHANGING c_domdt.
+
+  DATA: ls_dom LIKE dd07v,
+        lt_dom LIKE TABLE OF ls_dom.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      domname         = p_domname
+    TABLES
+      values_tab      = lt_dom
+    EXCEPTIONS
+      no_values_found = 1
+      OTHERS          = 2.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  READ TABLE lt_dom INTO ls_dom WITH KEY domvalue_l = p_field.
+  CHECK sy-subrc EQ 0.
+  c_domdt = ls_dom-ddtext.
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

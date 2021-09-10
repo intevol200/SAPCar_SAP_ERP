@@ -1,0 +1,97 @@
+CLASS lcl_event DEFINITION.
+  PUBLIC SECTION.
+    METHODS: handle_data_changed FOR EVENT data_changed OF cl_gui_alv_grid
+                                 IMPORTING er_data_changed,
+             handle_hotspot_click FOR EVENT hotspot_click OF cl_gui_alv_grid
+                                 IMPORTING e_row_id
+                                           e_column_id
+                                           es_row_no
+                                           sender.
+ENDCLASS.
+CLASS lcl_event IMPLEMENTATION.
+  METHOD: handle_data_changed.
+
+    DATA: ls_zt34_smove TYPE zt34_smove,
+          ls_list LIKE LINE OF gt_list.
+
+    CLEAR: gt_modified[].
+
+    FIELD-SYMBOLS : <fs> TYPE table.
+    ASSIGN er_data_changed->mp_mod_rows->* TO <fs>. "point.
+
+    LOOP AT <fs> INTO ls_list.
+
+      MOVE-CORRESPONDING ls_list TO ls_zt34_smove.
+      APPEND ls_zt34_smove TO gt_modified.
+
+      IF ls_zt34_smove-zonefrom = 'SZHUB01' OR ls_zt34_smove-zonefrom = 'SZHUB02'.
+
+        SELECT SINGLE SZNAME
+          FROM zt34_szone_t
+          INTO szname_t
+          WHERE szcode = ls_zt34_smove-zoneto.
+
+        CASE ls_zt34_smove-mstats.
+          WHEN 'P'.
+            UPDATE zt34_scarzone
+            SET szcode = ls_zt34_smove-zoneto
+                scstat = 'M'
+                szname = szname_t
+            WHERE scarno = ls_zt34_smove-scarno.
+          WHEN 'C'.
+            UPDATE zt34_scarzone
+            SET szcode = ls_zt34_smove-zoneto
+                scstat = 'S'
+                szname = szname_t
+            WHERE scarno = ls_zt34_smove-scarno..
+        ENDCASE.
+
+      ELSEIF ls_zt34_smove-zoneto = 'SZBURMS'.
+
+        CASE ls_zt34_smove-mstats.
+          WHEN 'P'.
+            UPDATE zt34_scarzone
+            SET scstat = 'M'
+            WHERE scarno = ls_zt34_smove-scarno.
+          WHEN 'C'.
+            UPDATE zt34_scarzone
+            SET scstat = 'R'
+            WHERE scarno = ls_zt34_smove-scarno..
+        ENDCASE.
+
+      ELSE.
+
+        CASE ls_zt34_smove-mstats.
+          WHEN 'P'.
+            UPDATE zt34_scarzone
+            SET scstat = 'M'
+            WHERE scarno = ls_zt34_smove-scarno.
+          WHEN 'C'.
+            UPDATE zt34_scarzone
+            SET scstat = 'S'
+            WHERE scarno = ls_zt34_smove-scarno..
+        ENDCASE.
+
+      ENDIF.
+
+    ENDLOOP.
+
+
+ENDMETHOD.
+
+  METHOD handle_hotspot_click.
+    PERFORM alv_hotspot_click USING e_row_id
+                                    e_column_id
+                                    es_row_no
+                                    sender.
+  ENDMETHOD.                    "HANDLE_HOTSPOT_CLICK
+
+ENDCLASS.
+
+DATA: go_event TYPE REF TO lcl_event.
+
+*CREATE OBJECT go_envent.
+*  set HANDLER go_envent->handle_data_changed FOR go_alv.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

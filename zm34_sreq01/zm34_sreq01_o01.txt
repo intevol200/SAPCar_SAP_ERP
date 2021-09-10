@@ -1,0 +1,61 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SREQ01_O01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Module STATUS_0100 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE STATUS_0100 OUTPUT.
+  SET PF-STATUS 'S100'.
+  SET TITLEBAR 'T100'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_ALV_0100 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_ALV_0100 OUTPUT.
+
+  IF GO_CON IS INITIAL.
+    PERFORM CREATE_ALV_0100.
+  ENDIF.
+
+  PERFORM DISPLAY_ALV_0100.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module CLEAR_OKCODE OUTPUT
+*&---------------------------------------------------------------------*
+MODULE CLEAR_OKCODE OUTPUT.
+  CLEAR OK_CODE.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_DROPDOWN OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_DROPDOWN OUTPUT.
+
+  CLEAR: VALUE, VALUES.
+
+**### ## ### ##
+  SELECT VENNO AS KEY
+         VNAME AS TEXT
+    FROM ZT34_VENDOR
+    INTO CORRESPONDING FIELDS OF TABLE VALUES
+    WHERE VTYPE EQ 'P'.
+
+  SORT VALUES BY KEY.
+
+**DROPDOWN ##
+  CALL FUNCTION 'VRM_SET_VALUES'
+    EXPORTING
+*     ID              = 'GS_USER-VENNO'
+      ID              = 'GV_VENDOR'
+      VALUES          = VALUES
+    EXCEPTIONS
+      ID_ILLEGAL_NAME = 1
+      OTHERS          = 2.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

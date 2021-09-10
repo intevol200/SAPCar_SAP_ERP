@@ -1,0 +1,84 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_CAR03_O01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Module STATUS_0100 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE STATUS_0100 OUTPUT.
+
+  PERFORM EXCLUDING_FCODE.
+
+  SET PF-STATUS 'S100' EXCLUDING GT_FCODE.
+  SET TITLEBAR 'T100'.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_ALV_0100 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_ALV_0100 OUTPUT.
+  IF GO_CON IS INITIAL.
+    PERFORM CREATE_ALV_0100.
+  ENDIF.
+
+  PERFORM DISPLAY_ALV_0100.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module MOVE_TO_SCREEN_0100 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE MOVE_TO_SCREEN_0100 OUTPUT.
+
+  CLEAR GS_CAR.
+*
+*  MOVE-CORRESPONDING GS_SEARCH TO GS_CAR.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module STATUS_0200 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE STATUS_0200 OUTPUT.
+  SET PF-STATUS 'S200'.
+  SET TITLEBAR 'T200'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module STATUS_0300 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE STATUS_0300 OUTPUT.
+  SET PF-STATUS 'S300'.
+  SET TITLEBAR 'T300'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module REFRESH_ALV OUTPUT
+*&---------------------------------------------------------------------*
+MODULE REFRESH_ALV OUTPUT.
+*  CALL METHOD GO_ALV->REFRESH_TABLE_DISPLAY
+*    EXPORTING
+*      IS_STABLE      = GS_FCAT
+*      I_SOFT_REFRESH = 'X'
+*    EXCEPTIONS
+*      FINISHED       = 1
+*      OTHERS         = 2.
+*  IF SY-SUBRC <> 0.
+**   Implement suitable error handling here
+*  ENDIF.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module MODIFY_SCREEN OUTPUT
+*&---------------------------------------------------------------------*
+MODULE MODIFY_SCREEN OUTPUT.
+
+  IF GV_CMFLAG EQ 'M'.
+
+    LOOP AT SCREEN.
+      IF SCREEN-GROUP1 = 'G1'.
+        SCREEN-INPUT     = 0.
+        MODIFY SCREEN.
+      ENDIF.
+    ENDLOOP.
+
+  ENDIF.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

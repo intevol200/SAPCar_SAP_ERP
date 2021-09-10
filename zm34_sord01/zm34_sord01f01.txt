@@ -1,0 +1,570 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SORD01F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form GET_PRDATA
+*&---------------------------------------------------------------------*
+FORM GET_PRDATA .
+
+  CLEAR: GS_PRCONDI.
+
+  SELECT SINGLE *
+    INTO CORRESPONDING FIELDS OF GS_PRCONDI
+    FROM ZT34_HSREQ
+   WHERE PRNUM EQ GV_PRNUM.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_0100
+*&---------------------------------------------------------------------*
+FORM SET_ALV_0100 .
+
+  IF GO_CON100 IS NOT INITIAL. RETURN. ENDIF.
+
+  CREATE OBJECT GO_CON100
+    EXPORTING
+      CONTAINER_NAME = 'CUSTCON100'.
+
+  CREATE OBJECT GO_ALV100
+    EXPORTING
+      I_PARENT = GO_CON100.
+*      I_SHELLSTYLE = WS_THICKFRAME.
+  PERFORM DISPLAY_ALV_0100.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_0100
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV_0100 .
+
+  DATA: LS_LAYO TYPE LVC_S_LAYO.
+*--------------------------------------------------------------------*
+
+**LAYOUT, FIELDCATALOG DATA ##.
+  PERFORM  SET_LAYOUT CHANGING LS_LAYO.
+  PERFORM  SET_FIELDCAT USING GS_FCAT100
+                        CHANGING GT_FCAT100.
+
+  PERFORM EXCLUDE_OF_TOOLBAR_BUTTON USING 'GT_EXCLUDE'.
+
+  PERFORM SET_EVENT_HANDLER.
+
+  SORT GT_DISP100 BY ITMNM.
+
+  CALL METHOD GO_ALV100->SET_TABLE_FOR_FIRST_DISPLAY
+    EXPORTING
+      I_STRUCTURE_NAME              = 'ZT34_ISORDER'
+      IS_LAYOUT                     = LS_LAYO
+      IT_TOOLBAR_EXCLUDING          = GT_EXCLUDE
+    CHANGING
+      IT_OUTTAB                     = GT_DISP100
+      IT_FIELDCATALOG               = GT_FCAT100
+      IT_SORT                       = GT_SORT100
+    EXCEPTIONS
+      INVALID_PARAMETER_COMBINATION = 1
+      PROGRAM_ERROR                 = 2
+      TOO_MANY_LINES                = 3
+      OTHERS                        = 4.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_PRITEM_DATA
+*&---------------------------------------------------------------------*
+FORM GET_PRITEM_DATA .
+
+  CLEAR: GT_DISP100.
+
+  SELECT *
+    FROM ZT34_ISREQ
+    INTO CORRESPONDING FIELDS OF TABLE GT_DISP100
+   WHERE PRNUM EQ GS_PRCONDI-PRNUM.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FIELDCAT
+*&---------------------------------------------------------------------*
+FORM SET_FIELDCAT  USING VALUE(PS_FCAT100) LIKE GS_FCAT100
+                    CHANGING CT_FCAT100 LIKE GT_FCAT100.
+
+  CLEAR: GS_FCAT100, GT_FCAT100.
+
+  GS_FCAT100-FIELDNAME = 'MEINM'.
+  GS_FCAT100-COLTEXT = 'Amount'.
+  GS_FCAT100-EDIT = 'X'.
+  APPEND GS_FCAT100 TO GT_FCAT100.
+
+  CLEAR: GS_FCAT100.
+  GS_FCAT100-FIELDNAME = 'MSEHI'.
+  GS_FCAT100-COLTEXT = 'Unit'.
+  APPEND GS_FCAT100 TO GT_FCAT100.
+
+  CLEAR: GS_FCAT100.
+  GS_FCAT100-FIELDNAME = 'FUEL'.
+  GS_FCAT100-COLTEXT = 'Fuel Type'.
+  APPEND GS_FCAT100 TO GT_FCAT100.
+
+  CLEAR: GS_FCAT100.
+  GS_FCAT100-FIELDNAME = 'FUEL_T'.
+  GS_FCAT100-COLTEXT = 'Fuel'.
+  GS_FCAT100-COL_POS = 7.
+  APPEND GS_FCAT100 TO GT_FCAT100.
+
+  CLEAR: GS_FCAT100.
+  GS_FCAT100-FIELDNAME = 'PRNUM'.
+  GS_FCAT100-COLTEXT = 'P/R Number'.
+  GS_FCAT100-COL_POS = 1.
+  APPEND GS_FCAT100 TO GT_FCAT100.
+
+  CLEAR: GS_FCAT100.
+  GS_FCAT100-FIELDNAME = 'ITMNM'.
+  GS_FCAT100-COLTEXT = 'Req. Number'.
+  GS_FCAT100-COL_POS = 2.
+  APPEND GS_FCAT100 TO GT_FCAT100.
+
+  CLEAR: GS_FCAT100.
+  GS_FCAT100-FIELDNAME = 'WAERS'.
+  GS_FCAT100-COLTEXT = 'Currency'.
+  APPEND GS_FCAT100 TO GT_FCAT100.
+
+  CLEAR: PS_FCAT100.
+  PS_FCAT100-FIELDNAME = 'PONUM'.
+  PS_FCAT100-NO_OUT = 'X'.
+  APPEND PS_FCAT100 TO CT_FCAT100.
+
+  CLEAR: PS_FCAT100.
+  PS_FCAT100-FIELDNAME = 'OSTATS'.
+  PS_FCAT100-NO_OUT = 'X'.
+  APPEND PS_FCAT100 TO CT_FCAT100.
+
+  CLEAR: PS_FCAT100.
+  PS_FCAT100-FIELDNAME = 'DFLAG'.
+  PS_FCAT100-NO_OUT = 'X'.
+  APPEND PS_FCAT100 TO CT_FCAT100.
+
+  PS_FCAT100-FIELDNAME = 'ERDAT'.
+  PS_FCAT100-NO_OUT = 'X'.
+  APPEND PS_FCAT100 TO CT_FCAT100.
+
+  CLEAR: PS_FCAT100.
+  PS_FCAT100-FIELDNAME = 'ERZET'.
+  PS_FCAT100-NO_OUT = 'X'.
+  APPEND PS_FCAT100 TO CT_FCAT100.
+
+  CLEAR: PS_FCAT100.
+  PS_FCAT100-FIELDNAME = 'ERNAM'.
+  PS_FCAT100-NO_OUT = 'X'.
+  APPEND PS_FCAT100 TO CT_FCAT100.
+
+  CLEAR: PS_FCAT100.
+  PS_FCAT100-FIELDNAME = 'AEDAT'.
+  PS_FCAT100-NO_OUT = 'X'.
+  APPEND PS_FCAT100 TO CT_FCAT100.
+
+  CLEAR: PS_FCAT100.
+  PS_FCAT100-FIELDNAME = 'AEZET'.
+  PS_FCAT100-NO_OUT = 'X'.
+  APPEND PS_FCAT100 TO CT_FCAT100.
+
+  CLEAR: PS_FCAT100.
+  PS_FCAT100-FIELDNAME = 'AENAM'.
+  PS_FCAT100-NO_OUT = 'X'.
+  APPEND PS_FCAT100 TO CT_FCAT100.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_LAYOUT
+*&---------------------------------------------------------------------*
+FORM SET_LAYOUT  CHANGING CS_LAYO TYPE LVC_S_LAYO.
+
+  CS_LAYO-CWIDTH_OPT = 'X'.
+*  CS_LAYO-EXCP_LED = 'X'.
+  CS_LAYO-INFO_FNAME = 'COLOR'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_DOMAIN_VAL
+*&---------------------------------------------------------------------*
+FORM GET_DOMAIN_VAL.
+
+  DATA: LT_VALUE TYPE DD07V_TAB,
+        LS_VALUE LIKE LINE OF LT_VALUE,
+        LS_CAR   LIKE LINE OF GT_CAR.
+
+  FIELD-SYMBOLS: <LFS_DISP> LIKE LINE OF GT_DISP100.
+*--------------------------------------------------------------------*
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      DOMNAME    = 'ZD34_FUEL'
+    TABLES
+      VALUES_TAB = LT_VALUE.
+
+  PERFORM GET_CAR_PRICE CHANGING GT_CAR.
+
+  LOOP AT GT_DISP100 ASSIGNING <LFS_DISP>.
+
+    <LFS_DISP>-B_MEIN = <LFS_DISP>-MEINM.
+
+    READ TABLE GT_CAR INTO LS_CAR WITH KEY CARNO = <LFS_DISP>-CARNO.
+    CHECK SY-SUBRC EQ 0.
+
+    <LFS_DISP>-PRICE = <LFS_DISP>-MEINM * LS_CAR-PRICE.
+    <LFS_DISP>-WAERS = 'KRW'.
+
+    READ TABLE LT_VALUE INTO LS_VALUE WITH KEY DOMVALUE_L = <LFS_DISP>-FUEL.
+    CHECK SY-SUBRC EQ 0.
+
+    <LFS_DISP>-FUEL_T = LS_VALUE-DDTEXT.
+
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_ERROR
+*&---------------------------------------------------------------------*
+FORM CHECK_ERROR .
+
+  CLEAR: GV_SUBRC.
+
+  IF GV_PRNUM IS INITIAL.
+
+    GV_SUBRC = 4.
+    MESSAGE S016(PN) WITH 'Please select a P/R number' DISPLAY LIKE 'E'.
+    RETURN.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SAVE_PO_DATA
+*&---------------------------------------------------------------------*
+FORM SAVE_PO_DATA .
+
+  DATA: LS_ZTHEADER TYPE ZT34_HSORDER,
+        LS_ZTITEM   TYPE ZT34_ISORDER,
+        LS_DISP     LIKE LINE OF GT_DISP100,
+        LS_CAR      LIKE LINE OF GT_CAR,
+        LS_HSREQ    TYPE ZT34_HSREQ,
+        LT_ZTITEM   LIKE TABLE OF LS_ZTITEM.
+*--------------------------------------------------------------------*
+
+  MOVE-CORRESPONDING GS_PRCONDI TO LS_ZTHEADER.
+  LS_ZTHEADER-PODAT = SY-DATUM.
+  LS_ZTHEADER-PERNR = SY-UNAME.
+
+  PERFORM GET_PO_NUMBER CHANGING LS_ZTHEADER-PONUM.
+  PERFORM GET_CAR_PRICE CHANGING GT_CAR.
+
+  LOOP AT  GT_DISP100 INTO LS_DISP.
+
+    IF LS_DISP-MEINM IS INITIAL.
+
+      MESSAGE S016(PN) WITH 'Please enter the quantity.' DISPLAY LIKE 'E'.
+
+      RETURN.
+
+    ELSEIF LS_DISP-COLOR EQ 'C600'.
+
+      MESSAGE S016(PN) WITH 'The quantity is greater than the P/R quantity.' DISPLAY LIKE 'E'.
+
+      RETURN.
+
+    ENDIF.
+
+    MOVE-CORRESPONDING LS_DISP TO LS_ZTITEM.
+
+    READ TABLE GT_CAR INTO LS_CAR WITH KEY CARNO = LS_DISP-CARNO.
+    CHECK SY-SUBRC EQ 0.
+
+    LS_ZTITEM-PONUM = LS_ZTHEADER-PONUM.
+    APPEND LS_ZTITEM TO LT_ZTITEM.
+
+  ENDLOOP.
+
+  INSERT ZT34_HSORDER FROM LS_ZTHEADER.
+  INSERT ZT34_ISORDER FROM TABLE LT_ZTITEM.
+
+  SELECT SINGLE *
+    INTO LS_HSREQ
+    FROM ZT34_HSREQ
+   WHERE PRNUM EQ LS_DISP-PRNUM.
+
+  LS_HSREQ-RSTATS = 'P'.
+
+  MODIFY ZT34_HSREQ FROM LS_HSREQ.
+
+  CLEAR: GT_DISP100, GS_PRCONDI.
+
+  PERFORM REFRESH_ALV.
+
+  MESSAGE I016(PN) WITH 'Data saved successfully' DISPLAY LIKE 'S'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_PO_NUMBER
+*&---------------------------------------------------------------------*
+FORM GET_PO_NUMBER CHANGING CV_PONUM.
+
+  DATA: LV_NR    TYPE INRI-NRRANGENR VALUE 'PO',
+        LV_PONUM LIKE ZT34_HSORDER-PONUM.
+*--------------------------------------------------------------------*
+
+  CALL FUNCTION 'NUMBER_GET_NEXT'
+    EXPORTING
+      NR_RANGE_NR = LV_NR
+      OBJECT      = 'ZN34_PONUM'
+    IMPORTING
+      NUMBER      = CV_PONUM.
+
+  CV_PONUM = 'PO' && SY-DATUM+2(4) && CV_PONUM.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_CAR_PRICE
+*&---------------------------------------------------------------------*
+FORM GET_CAR_PRICE CHANGING CT_CAR LIKE GT_CAR.
+
+  SELECT *
+    FROM ZT34_CAR
+    INTO CORRESPONDING FIELDS OF TABLE CT_CAR
+   WHERE DFLAG EQ ''.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DATA_CHANGED
+*&---------------------------------------------------------------------*
+FORM DATA_CHANGED  USING    PR_DATA_CHANGED TYPE REF TO CL_ALV_CHANGED_DATA_PROTOCOL
+                            PE_UCOMM.
+
+  DATA : LS_MODI     TYPE LVC_S_MODI,
+         LS_DISP     LIKE LINE OF GT_DISP100,
+         LS_CAR      LIKE LINE OF GT_CAR,
+         L_VALUE(30) TYPE C.
+*--------------------------------------------------------------------*
+
+  SORT PR_DATA_CHANGED->MT_MOD_CELLS BY ROW_ID.
+
+  PERFORM GET_CAR_PRICE CHANGING GT_CAR.
+
+  LOOP AT PR_DATA_CHANGED->MT_MOD_CELLS INTO LS_MODI.
+    READ TABLE GT_DISP100 INTO LS_DISP INDEX LS_MODI-ROW_ID.
+    READ TABLE GT_CAR INTO LS_CAR WITH KEY CARNO = LS_DISP-CARNO.
+
+    CASE LS_MODI-FIELDNAME.
+
+      WHEN 'MEINM'.
+        CALL METHOD PR_DATA_CHANGED->GET_CELL_VALUE
+          EXPORTING
+            I_ROW_ID    = LS_MODI-ROW_ID
+            I_FIELDNAME = LS_MODI-FIELDNAME
+          IMPORTING
+            E_VALUE     = L_VALUE.
+
+        LS_DISP-PRICE = L_VALUE * LS_CAR-PRICE.
+
+        CALL METHOD PR_DATA_CHANGED->MODIFY_CELL
+          EXPORTING
+            I_ROW_ID    = LS_MODI-ROW_ID
+            I_FIELDNAME = 'PRICE'
+            I_VALUE     = LS_DISP-PRICE.
+
+    ENDCASE.
+
+  ENDLOOP.
+
+  PERFORM ALV_REFRESH.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_EVENT_HANDLER
+*&---------------------------------------------------------------------*
+FORM SET_EVENT_HANDLER .
+
+*-- Edit  ### ##
+  CALL METHOD GO_ALV100->REGISTER_EDIT_EVENT
+    EXPORTING
+      I_EVENT_ID = CL_GUI_ALV_GRID=>MC_EVT_MODIFIED.
+*// enter function
+  CALL METHOD GO_ALV100->REGISTER_EDIT_EVENT
+    EXPORTING
+      I_EVENT_ID = CL_GUI_ALV_GRID=>MC_EVT_ENTER.
+
+  CREATE OBJECT GO_HANDLER.
+  SET HANDLER GO_HANDLER->HANDLER_DATA_CHANGED FOR GO_ALV100.
+  SET HANDLER GO_HANDLER->HANDLE_DATA_CHANGED_FINISHED FOR GO_ALV100.
+  SET HANDLER GO_HANDLER->HANDLER_TOOLBAR FOR GO_ALV100.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_DDLB
+*&---------------------------------------------------------------------*
+FORM SET_DDLB USING PV_VALUE.
+
+**DDLB ## # CLEAR.
+  CLEAR: VALUE, VALUES.
+
+  CASE PV_VALUE.
+    WHEN ''.
+
+**P/R## DATA SELECT.
+      SELECT PRNUM AS KEY VNAME AS TEXT
+        FROM ZT34_HSREQ AS A JOIN ZT34_VENDOR AS B
+          ON A~VENNO EQ B~VENNO
+        INTO CORRESPONDING FIELDS OF TABLE VALUES
+       WHERE A~DFLAG EQ ''.
+
+    WHEN 'X'.
+
+**P/R## DATA SELECT.
+      SELECT PRNUM AS KEY VNAME AS TEXT
+        FROM ZT34_HSREQ AS A JOIN ZT34_VENDOR AS B
+          ON A~VENNO EQ B~VENNO
+        INTO CORRESPONDING FIELDS OF TABLE VALUES
+       WHERE A~DFLAG EQ ''
+         AND A~RSTATS EQ 'N'.
+
+  ENDCASE.
+
+  SORT VALUES BY KEY.
+
+  CALL FUNCTION 'VRM_SET_VALUES'
+    EXPORTING
+      ID     = 'GV_PRNUM'
+      VALUES = VALUES.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DATA_CHANGED_FINISHED
+*&---------------------------------------------------------------------*
+FORM DATA_CHANGED_FINISHED  USING    PV_MODIFIED
+                                     PT_GOOD_CELLS TYPE LVC_T_MODI.
+
+  DATA: LS_GOOD_CELLS LIKE LINE OF PT_GOOD_CELLS.
+
+  FIELD-SYMBOLS: <LFS_DISP> LIKE LINE OF GT_DISP100.
+*--------------------------------------------------------------------*
+
+  CHECK PV_MODIFIED EQ 'X'.
+
+  CLEAR: GV_SUBRC.
+
+  READ TABLE PT_GOOD_CELLS INTO LS_GOOD_CELLS INDEX 1.
+  READ TABLE GT_DISP100 ASSIGNING <LFS_DISP> INDEX LS_GOOD_CELLS-ROW_ID.
+
+  IF <LFS_DISP>-MEINM GT <LFS_DISP>-B_MEIN.
+
+    <LFS_DISP>-COLOR = 'C610'.
+    GV_SUBRC = 4.
+
+    MESSAGE I016(PN) WITH 'The quantity is greater than the P/R quantity.' DISPLAY LIKE 'E'.
+
+  ELSEIF  <LFS_DISP>-MEINM NE <LFS_DISP>-B_MEIN AND <LFS_DISP>-MEINM IS NOT INITIAL.
+    <LFS_DISP>-COLOR = 'C310'.
+
+  ELSEIF <LFS_DISP>-MEINM EQ <LFS_DISP>-B_MEIN.
+    CLEAR: <LFS_DISP>-COLOR.
+
+  ENDIF.
+
+  PERFORM ALV_REFRESH.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form ALV_REFRESH
+*&---------------------------------------------------------------------*
+FORM ALV_REFRESH .
+
+  DATA: LV_SCROLL TYPE LVC_S_STBL,
+        LS_LAYOUT TYPE LVC_S_LAYO.
+*--------------------------------------------------------------------*
+
+  CHECK GO_ALV100 IS NOT INITIAL.
+
+  LV_SCROLL-ROW = 'X'.
+  LV_SCROLL-COL = 'X'.
+
+  CALL METHOD GO_ALV100->GET_FRONTEND_LAYOUT
+    IMPORTING
+      ES_LAYOUT = LS_LAYOUT.
+
+  LS_LAYOUT-CWIDTH_OPT = 'X'.
+
+  CALL METHOD GO_ALV100->SET_FRONTEND_LAYOUT
+    EXPORTING
+      IS_LAYOUT = LS_LAYOUT.
+
+  CALL METHOD GO_ALV100->REFRESH_TABLE_DISPLAY
+    EXPORTING
+      I_SOFT_REFRESH = 'X'
+      IS_STABLE      = LV_SCROLL.     "## ### ### refresh
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*&      Form  EXCLUDE_OF_TOOLBAR_BUTTON
+*&---------------------------------------------------------------------*
+FORM EXCLUDE_OF_TOOLBAR_BUTTON  USING P_TABNAME TYPE FELD-NAME.
+  DATA: LV_TAB_NAME LIKE FELD-NAME.
+
+  FIELD-SYMBOLS : <TABLE> TYPE UI_FUNCTIONS.
+
+  CONCATENATE P_TABNAME '[]' INTO  LV_TAB_NAME.
+  ASSIGN     (LV_TAB_NAME)    TO <TABLE>.
+
+  PERFORM ADD_EXCLUDE_TOOLBAR_BUTTON TABLES <TABLE>
+                                      USING : CL_GUI_ALV_GRID=>MC_FC_LOC_UNDO,
+                                              CL_GUI_ALV_GRID=>MC_FC_LOC_COPY_ROW,
+                                              CL_GUI_ALV_GRID=>MC_FC_LOC_CUT,
+                                              CL_GUI_ALV_GRID=>MC_FC_LOC_DELETE_ROW,
+                                              CL_GUI_ALV_GRID=>MC_FC_LOC_INSERT_ROW,
+                                              CL_GUI_ALV_GRID=>MC_FC_LOC_APPEND_ROW.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form ADD_EXCLUDE_TOOLBAR_BUTTON
+*&---------------------------------------------------------------------*
+FORM ADD_EXCLUDE_TOOLBAR_BUTTON  TABLES   P_TABLE TYPE UI_FUNCTIONS
+                                 USING    P_VALUE TYPE UI_FUNC.
+
+  DATA: LS_EXCLUDE TYPE UI_FUNC.
+
+  LS_EXCLUDE = P_VALUE.
+  APPEND LS_EXCLUDE TO P_TABLE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form REFRESH_ALV
+*&---------------------------------------------------------------------*
+FORM REFRESH_ALV .
+
+  DATA: LV_SCROLL TYPE LVC_S_STBL,
+        LS_LAYOUT TYPE LVC_S_LAYO.
+*--------------------------------------------------------------------*
+
+  CHECK GO_ALV100 IS NOT INITIAL.
+
+  LV_SCROLL-ROW = 'X'.
+  LV_SCROLL-COL = 'X'.
+
+  CALL METHOD GO_ALV100->GET_FRONTEND_LAYOUT
+    IMPORTING
+      ES_LAYOUT = LS_LAYOUT.
+
+  LS_LAYOUT-CWIDTH_OPT = 'X'.
+
+  CALL METHOD GO_ALV100->SET_FRONTEND_LAYOUT
+    EXPORTING
+      IS_LAYOUT = LS_LAYOUT.
+
+  CALL METHOD GO_ALV100->REFRESH_TABLE_DISPLAY
+    EXPORTING
+      I_SOFT_REFRESH = 'X'
+      IS_STABLE      = LV_SCROLL.     "## ### ### refresh
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

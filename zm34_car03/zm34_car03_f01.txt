@@ -1,0 +1,654 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_CAR03_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form CREATE_ALV_0100
+*&---------------------------------------------------------------------*
+FORM CREATE_ALV_0100 .
+  CREATE OBJECT GO_CON
+    EXPORTING
+      CONTAINER_NAME              = 'CAR_CON'
+    EXCEPTIONS
+      CNTL_ERROR                  = 1
+      CNTL_SYSTEM_ERROR           = 2
+      CREATE_ERROR                = 3
+      LIFETIME_ERROR              = 4
+      LIFETIME_DYNPRO_DYNPRO_LINK = 5
+      OTHERS                      = 6.
+  IF SY-SUBRC <> 0.
+    MESSAGE E019(ZM34_MESSAGE).
+  ENDIF.
+
+  CREATE OBJECT GO_ALV
+    EXPORTING
+      I_PARENT          = GO_CON
+    EXCEPTIONS
+      ERROR_CNTL_CREATE = 1
+      ERROR_CNTL_INIT   = 2
+      ERROR_CNTL_LINK   = 3
+      ERROR_DP_CREATE   = 4
+      OTHERS            = 5.
+  IF SY-SUBRC <> 0.
+    MESSAGE E020(ZM34_MESSAGE).
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_0100
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV_0100 .
+
+  DATA: LS_LAYO TYPE LVC_S_LAYO.
+*--------------------------------------------------------------------*
+
+  IF GO_ALV IS INITIAL. RETURN. ENDIF.
+
+  CLEAR: GT_FCAT.
+
+  PERFORM SET_FIELDCAT CHANGING GS_FCAT GT_FCAT.
+  PERFORM SET_LAYOUT CHANGING LS_LAYO.
+
+  CALL METHOD GO_ALV->SET_TABLE_FOR_FIRST_DISPLAY
+    EXPORTING
+      I_STRUCTURE_NAME              = 'ZS34_CAR03'
+      IS_LAYOUT                     = LS_LAYO
+    CHANGING
+      IT_OUTTAB                     = GT_CAR
+      IT_FIELDCATALOG               = GT_FCAT
+      IT_SORT                       = GT_SORT
+    EXCEPTIONS
+      INVALID_PARAMETER_COMBINATION = 1
+      PROGRAM_ERROR                 = 2
+      TOO_MANY_LINES                = 3
+      OTHERS                        = 4.
+  IF SY-SUBRC <> 0.
+*   Implement suitable error handling here
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_CAR_DATA
+*&---------------------------------------------------------------------*
+FORM GET_CAR_DATA  CHANGING PT_CAR LIKE GT_CAR.
+
+  CLEAR: PT_CAR.
+
+*  SELECT A~CARNO, B~CTEXT, A~FUEL, A~MANU, A~DFLAG, C~MANU_T,
+*         A~CAPA, A~CLASS, A~SHIFT, A~PRICE, A~WAERS
+*    FROM ZT34_CAR AS A JOIN ZT34_CAR_T AS B
+*      ON A~CARNO EQ B~CARNO
+*    JOIN ZT34_MANU AS C
+*      ON A~MANU EQ C~MANU
+*    INTO CORRESPONDING FIELDS OF TABLE @PT_CAR
+*   WHERE A~MANU IN  @GR_MANU
+*     AND A~CARNO IN @GR_CARNO
+*     AND A~CAPA IN  @GR_CAPA
+*     AND A~CLASS IN @GR_CLASS
+*     AND B~SPRAS EQ @SY-LANGU
+*    ORDER BY C~MANU_T.
+
+***CDS View ##
+  SELECT CARNO, CTEXT, FUEL, MANU, DFLAG, MANU_T,
+         CAPA, CLASS, SHIFT, PRICE, WAERS
+    FROM ZV34_CAR
+    INTO CORRESPONDING FIELDS OF TABLE @PT_CAR
+   WHERE MANU IN  @GR_MANU
+     AND CARNO IN @GR_CARNO
+     AND CAPA IN  @GR_CAPA
+     AND CLASS IN @GR_CLASS
+     AND SPRAS EQ @SY-LANGU
+     AND DFLAG EQ @GV_DELETE
+   ORDER BY MANU_T, CARNO.
+
+  PERFORM GET_DOMAIN_DATA.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_DOMAIN_VALUES
+*&---------------------------------------------------------------------*
+FORM GET_DOMAIN_VALUES USING VALUE(P_DOMNAME) LIKE DD07L-DOMNAME
+                             VALUE(P_FIELD)
+                       CHANGING C_DOMDT.
+
+  DATA: LS_DOM LIKE DD07V,
+        LT_DOM LIKE TABLE OF LS_DOM.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      DOMNAME         = P_DOMNAME
+    TABLES
+      VALUES_TAB      = LT_DOM
+    EXCEPTIONS
+      NO_VALUES_FOUND = 1
+      OTHERS          = 2.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+  READ TABLE LT_DOM INTO LS_DOM WITH KEY DOMVALUE_L = P_FIELD.
+  CHECK SY-SUBRC EQ 0.
+  C_DOMDT = LS_DOM-DDTEXT.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SEARCH_CAR
+*&---------------------------------------------------------------------*
+FORM SEARCH_CAR  CHANGING PT_CAR LIKE GT_CAR.
+
+*  DELETE PT_CAR WHERE CARNO NE GS_CAR-CARNO.
+*  DELETE PT_CAR WHERE MANU NE GS_CAR-MANU.
+*  DELETE PT_CAR WHERE CAPA NE GS_CAR-CAPA.
+*  DELETE PT_CAR WHERE CLASS NE GS_CAR-CLASS.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form RANGE_DATA
+*&---------------------------------------------------------------------*
+FORM RANGE_DATA .
+
+  CLEAR: GR_MANU[], GR_CAPA[], GR_CARNO[], GR_CLASS[].
+
+**### RANGE
+  IF GR_MANU-HIGH IS NOT INITIAL.
+
+    GR_MANU+0(3) = 'IBT'.
+    APPEND GR_MANU.
+
+  ELSEIF GR_MANU-LOW IS NOT INITIAL.
+
+    GR_MANU+0(3) = 'IEQ'.
+    APPEND GR_MANU.
+
+  ENDIF.
+
+**#### RANGE
+  IF GR_CARNO-HIGH IS NOT INITIAL.
+
+    GR_CARNO+0(3) = 'IBT'.
+    APPEND GR_CARNO.
+
+  ELSEIF GR_CARNO-LOW IS NOT INITIAL.
+
+    GR_CARNO+0(3) = 'IEQ'.
+    APPEND GR_CARNO.
+
+  ENDIF.
+
+**#### RANGE
+  IF GR_CAPA-HIGH IS NOT INITIAL.
+
+    GR_CAPA+0(3) = 'IBT'.
+    APPEND GR_CAPA.
+
+  ELSEIF GR_CAPA-LOW IS NOT INITIAL.
+
+    GR_CAPA+0(3) = 'IEQ'.
+    APPEND GR_CAPA.
+
+  ENDIF.
+
+**#### RANGE
+  IF GR_CLASS-HIGH IS NOT INITIAL.
+
+    GR_CLASS+0(3) = 'IBT'.
+    APPEND GR_CLASS.
+
+  ELSEIF GR_CLASS-LOW IS NOT INITIAL.
+
+    GR_CLASS+0(3) = 'IEQ'.
+    APPEND GR_CLASS.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form INIT_DATA
+*&---------------------------------------------------------------------*
+FORM INIT_DATA .
+
+*  GR_MANU+0(3) = 'IBT'.
+*  GR_MANU-LOW  = 'BNZ'.
+*  GR_MANU-HIGH = 'SSY'.
+*  APPEND GR_MANU.
+*
+*  GR_CARNO+0(3) = 'IBT'.
+*  GR_CARNO-LOW  = 'AVT19'.
+*  GR_CARNO-HIGH = 'SRT20'.
+*  APPEND GR_CARNO.
+
+  GR_CAPA+0(3) = 'IBT'.
+  GR_CAPA-LOW  = 1.
+  GR_CAPA-HIGH = 10.
+  APPEND GR_CAPA.
+
+  GR_CLASS+0(3) = 'IBT'.
+  GR_CLASS-LOW  = 'F'.
+  GR_CLASS-HIGH = 'V'.
+  APPEND GR_CLASS.
+
+  GS_SORT-SPOS = '1'.
+  GS_SORT-FIELDNAME = 'LIGHT'.
+  GS_SORT-DOWN = 'X'.
+  APPEND GS_SORT TO GT_SORT.
+
+*  GS_SORT-FIELDNAME = 'MANU_T'.
+*  GS_SORT-DOWN = 'X'.
+*  APPEND GS_SORT TO GT_SORT.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form POPUP_FUNCTION
+*&---------------------------------------------------------------------*
+FORM POPUP_FUNCTION USING PV_TITLE TYPE STRING PV_QUESTION TYPE STRING
+                    CHANGING CV_ANSWER TYPE CHAR1.
+
+  CALL FUNCTION 'POPUP_TO_CONFIRM'
+    EXPORTING
+      TITLEBAR      = PV_TITLE
+*     DIAGNOSE_OBJECT             = ' '
+      TEXT_QUESTION = PV_QUESTION
+      TEXT_BUTTON_1 = 'Yes'
+    IMPORTING
+      ANSWER        = CV_ANSWER.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FIELDCAT
+*&---------------------------------------------------------------------*
+FORM SET_FIELDCAT USING VALUE(PS_FCAT) LIKE GS_FCAT
+                  CHANGING CT_FCAT LIKE GT_FCAT.
+
+
+  IF CT_FCAT IS INITIAL.
+    PERFORM REUSE_FIELDCAT USING 'LIGHT' 'Status' 'C' '' '' '' ''
+                           CHANGING PS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'CARNO' 'Car No.' 'C' '' '' '' ''
+                           CHANGING PS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'CTEXT' 'Car Name' 'C' '' '' '' ''
+                           CHANGING PS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'MANU' '' '' '' '' 'X' ''
+                           CHANGING PS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'MANU_T' 'Manufacturer' '' '' 4 '' ''
+                           CHANGING PS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'FUEL_T' 'Fuel Type' 'C' '' 5 '' ''
+                           CHANGING PS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'CAPA' 'Capacity' 'C' '' '' '' ''
+                           CHANGING PS_FCAT CT_FCAT.
+*--------------------------------------------------------------------*
+    PERFORM REUSE_FIELDCAT USING 'CLASS' '' '' '' '' 'X' ''
+                           CHANGING PS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'SHIFT' '' '' '' '' 'X' ''
+                           CHANGING PS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'FUEL' '' '' '' '' 'X' ''
+                           CHANGING PS_FCAT CT_FCAT.
+*--------------------------------------------------------------------*
+    PERFORM REUSE_FIELDCAT USING 'PRICE' 'Price' '' '' '' '' 'WAERS'
+                           CHANGING PS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'WAERS' 'Currency' 'C' '' '' '' ''
+                           CHANGING PS_FCAT CT_FCAT.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_LAYOUT
+*&---------------------------------------------------------------------*
+FORM SET_LAYOUT  CHANGING CS_LAYO TYPE LVC_S_LAYO.
+
+  CS_LAYO-CWIDTH_OPT = 'X'.
+  CS_LAYO-EXCP_FNAME = 'LIGHT'.
+  CS_LAYO-EXCP_LED = 'X'.
+  CS_LAYO-INFO_FNAME = 'COLOR'.
+  CS_LAYO-SEL_MODE = 'A'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_FIELD
+*&---------------------------------------------------------------------*
+FORM CHECK_FIELD USING VALUE(PV_VALUE) TYPE CHAR1.
+
+  CLEAR: GV_SUBRC.
+
+  CASE PV_VALUE.
+    WHEN 'C'.
+      IF GS_CAR-CARNO IS INITIAL OR GS_CAR-CTEXT IS INITIAL OR GS_CAR-MANU IS INITIAL OR
+          GS_CAR-FUEL IS INITIAL OR GS_CAR-CLASS IS INITIAL OR
+          GS_CAR-SHIFT IS INITIAL OR GS_CAR-CAPA IS INITIAL OR GS_CAR-PRICE IS INITIAL.
+
+        MESSAGE S017(ZM34_MESSAGE) DISPLAY LIKE 'E'.
+
+        GV_SUBRC = 4.
+        RETURN.
+
+      ELSEIF GS_CAR-CARNO IS NOT INITIAL AND GS_CAR-FUEL IS NOT INITIAL.
+
+        PERFORM CHECK_KEY.
+
+        IF GV_SUBRC NE 0.
+          RETURN.
+        ENDIF.
+        IF GV_SUBRC EQ 0.
+          PERFORM DATA_CHECK.
+        ENDIF.
+
+      ENDIF.
+
+    WHEN 'M'.
+
+      PERFORM DATA_CHECK.
+
+      IF GS_CAR-CTEXT IS INITIAL OR GS_CAR-MANU_T IS INITIAL OR
+          GS_CAR-CLASS IS INITIAL OR GS_CAR-SHIFT  IS INITIAL OR
+          GS_CAR-CAPA IS INITIAL OR GS_CAR-PRICE IS INITIAL.
+
+        MESSAGE S016(ZM34_MESSAGE) DISPLAY LIKE 'E'.
+
+        GV_SUBRC = 4.
+        RETURN.
+
+      ENDIF.
+
+  ENDCASE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SAVE_CAR_DATA
+*&---------------------------------------------------------------------*
+FORM SAVE_CAR_DATA .
+
+  DATA: LS_CAR   TYPE ZT34_CAR,
+        LS_CAR_T TYPE ZT34_CAR_T.
+*--------------------------------------------------------------------*
+
+  CASE GV_CMFLAG.
+    WHEN 'C'.
+      GS_CAR-WAERS =  GV_CURRENCY.
+
+      MOVE-CORRESPONDING GS_CAR TO LS_CAR.
+      MOVE-CORRESPONDING GS_CAR TO LS_CAR_T.
+      LS_CAR_T-SPRAS = SY-LANGU.
+
+      INSERT ZT34_CAR FROM LS_CAR.
+      INSERT ZT34_CAR_T FROM LS_CAR_T.
+
+      MESSAGE S015(ZM34_MESSAGE).
+
+      CLEAR: GS_CAR.
+
+    WHEN 'M'.
+      MOVE-CORRESPONDING GS_CAR TO LS_CAR.
+      MOVE-CORRESPONDING GS_CAR TO LS_CAR_T.
+
+      MODIFY ZT34_CAR FROM LS_CAR.
+
+      UPDATE ZT34_CAR_T SET CTEXT = LS_CAR_T-CTEXT
+      WHERE CARNO EQ LS_CAR_T-CARNO.
+
+      MESSAGE S001(ZM34_MESSAGE).
+
+      CLEAR: GS_CAR.
+
+  ENDCASE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_LINE
+*&---------------------------------------------------------------------*
+FORM CHECK_LINE USING VALUE(P_CODE).
+
+  DATA: LV_ROW TYPE I,
+        LT_ROW TYPE LVC_T_ROID.
+
+  DATA: LV_VALUE TYPE C LENGTH 1.
+
+*--------------------------------------------------------------------*
+
+  CLEAR: GV_SUBRC.
+
+  CALL METHOD GO_ALV->GET_SELECTED_ROWS
+    IMPORTING
+      ET_ROW_NO = LT_ROW.
+
+  LV_ROW = LINES( LT_ROW ).
+
+  IF LV_ROW EQ 0.
+    MESSAGE I004(ZM34_MESSAGE).
+    GV_SUBRC = 4.
+    RETURN.
+  ENDIF.
+
+  CASE P_CODE.
+    WHEN 'C'.
+
+      IF LV_ROW GT 1.
+        MESSAGE I012(ZM34_MESSAGE).
+        GV_SUBRC = 4.
+        EXIT.
+      ENDIF.
+
+      PERFORM GET_CAR_INFO USING LT_ROW.
+
+    WHEN 'D'.
+      "## ## ##
+      CALL FUNCTION 'POPUP_TO_CONFIRM'
+        EXPORTING
+          TITLEBAR      = 'Delete car data'
+          TEXT_QUESTION = 'Do you want to delete selected car data?'
+          TEXT_BUTTON_1 = 'Yes'
+        IMPORTING
+          ANSWER        = LV_VALUE.
+
+      CHECK LV_VALUE EQ '1'.
+
+      PERFORM DELETE_CARINFO USING LT_ROW.
+
+  ENDCASE.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_CAR_INFO
+*&---------------------------------------------------------------------*
+FORM GET_CAR_INFO USING VALUE(PT_ROW) TYPE LVC_T_ROID .
+
+  DATA: LS_ROW LIKE LINE OF PT_ROW,
+        LS_CAR LIKE LINE OF GT_CAR.
+*--------------------------------------------------------------------*
+
+  READ TABLE PT_ROW INTO LS_ROW INDEX 1.
+  CHECK SY-SUBRC EQ 0.
+
+  READ TABLE GT_CAR INTO LS_CAR INDEX LS_ROW-ROW_ID.
+  CHECK SY-SUBRC EQ 0.
+
+  MOVE-CORRESPONDING LS_CAR TO GS_CAR.
+  GS_CAR-WAERS = 'KRW'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form MODIFY_CAR_DATA
+*&---------------------------------------------------------------------*
+FORM MODIFY_CAR_DATA .
+
+  DATA: LS_CAR   TYPE ZT34_CAR,
+        LS_CAR_T TYPE ZT34_CAR_T.
+*--------------------------------------------------------------------*
+
+  MOVE-CORRESPONDING GS_CINFO TO LS_CAR.
+  MOVE-CORRESPONDING GS_CINFO TO LS_CAR_T.
+
+  MODIFY ZT34_CAR FROM LS_CAR.
+  MODIFY ZT34_CAR_T FROM LS_CAR_T.
+
+  CHECK SY-SUBRC EQ 0.
+
+  MESSAGE S001(ZM34_MESSAGE).
+
+  CLEAR: GS_CINFO, GS_CINFO_H.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form DELETE_CARINFO
+*&---------------------------------------------------------------------*
+FORM DELETE_CARINFO CHANGING PT_ROW TYPE LVC_T_ROID.
+
+  DATA: LS_CAR LIKE LINE OF GT_CAR,
+        LS_ROW LIKE LINE OF PT_ROW.
+
+*--------------------------------------------------------------------*
+
+  LOOP AT PT_ROW INTO LS_ROW.
+
+    READ TABLE GT_CAR INTO LS_CAR INDEX LS_ROW-ROW_ID.
+    CHECK SY-SUBRC EQ 0.
+
+    IF LS_CAR-DFLAG = 'X'.
+      MESSAGE S014(ZM34_MESSAGE) DISPLAY LIKE 'W'.
+      RETURN.
+    ENDIF.
+
+    UPDATE ZT34_CAR SET DFLAG = 'X'
+                    WHERE CARNO EQ LS_CAR-CARNO
+                      AND FUEL EQ LS_CAR-FUEL.
+
+  ENDLOOP.
+
+  MESSAGE S002(ZM34_MESSAGE).
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DATA_CHECK
+*&---------------------------------------------------------------------*
+FORM DATA_CHECK.
+
+  CLEAR: GS_CAR-MANU_T.
+
+  SELECT SINGLE MANU_T
+    INTO GS_CAR-MANU_T
+    FROM ZT34_MANU
+   WHERE MANU EQ GS_CAR-MANU.
+
+  IF GS_CAR-FUEL IS NOT INITIAL.
+    CLEAR: GS_CAR-FUEL_T.
+
+    PERFORM GET_DOMAIN_VALUES USING 'ZD34_FUEL' GS_CAR-FUEL
+                              CHANGING GS_CAR-FUEL_T.
+  ENDIF.
+
+  IF GS_CAR-SHIFT IS NOT INITIAL .
+    CLEAR: GS_CAR-SHIFT_T.
+
+    PERFORM GET_DOMAIN_VALUES USING 'ZDE34_SHIFT' GS_CAR-SHIFT
+                              CHANGING GS_CAR-SHIFT_T.
+  ENDIF.
+
+  IF GS_CAR-CLASS IS NOT INITIAL.
+    CLEAR: GS_CAR-CLASS_T.
+
+    PERFORM GET_DOMAIN_VALUES USING 'ZD34_CLASS' GS_CAR-CLASS
+                              CHANGING GS_CAR-CLASS_T.
+  ENDIF.
+
+  IF GS_CAR-MANU_T IS INITIAL OR GS_CAR-FUEL_T IS INITIAL OR
+     GS_CAR-SHIFT_T IS INITIAL OR GS_CAR-CLASS_T IS INITIAL.
+
+    MESSAGE S016(ZM34_MESSAGE) DISPLAY LIKE 'E'.
+    GV_SUBRC = 4.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_KEY
+*&---------------------------------------------------------------------*
+FORM CHECK_KEY .
+
+  DATA: LS_CAR TYPE ZT34_CAR.
+*--------------------------------------------------------------------*
+
+  CLEAR: GV_SUBRC.
+
+  SELECT SINGLE CARNO FUEL
+    INTO CORRESPONDING FIELDS OF LS_CAR
+    FROM ZT34_CAR
+   WHERE CARNO EQ GS_CAR-CARNO
+     AND FUEL EQ GS_CAR-FUEL
+     AND DFLAG EQ GS_CAR-DFLAG.
+
+  IF SY-SUBRC EQ 0.
+
+    GV_SUBRC = 4.
+    MESSAGE S018(ZM34_MESSAGE) DISPLAY LIKE 'E'.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SCREEN_BLOCK
+*&---------------------------------------------------------------------*
+FORM SCREEN_BLOCK .
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_DOMAIN_DATA
+*&---------------------------------------------------------------------*
+FORM GET_DOMAIN_DATA .
+
+  FIELD-SYMBOLS: <LFS_CAR> LIKE LINE OF GT_CAR.
+*--------------------------------------------------------------------*
+
+  LOOP AT GT_CAR ASSIGNING <LFS_CAR>.
+
+    CASE <LFS_CAR>-DFLAG.
+      WHEN 'X'.
+        <LFS_CAR>-LIGHT = 1.
+      WHEN ''.
+        <LFS_CAR>-LIGHT = 3.
+    ENDCASE.
+
+    PERFORM GET_DOMAIN_VALUES USING 'ZD34_FUEL' <LFS_CAR>-FUEL
+                              CHANGING <LFS_CAR>-FUEL_T.
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form REUSE_FIELDCAT
+*&---------------------------------------------------------------------*
+FORM REUSE_FIELDCAT  USING VALUE(P_FIELD)
+                           VALUE(P_COL)
+                           VALUE(P_JUST)
+                           VALUE(P_EDIT)
+                           VALUE(P_POS)
+                           VALUE(P_OUT)
+                           VALUE(P_CFIELD)
+                     CHANGING PS_FCAT LIKE GS_FCAT
+                              PT_FCAT LIKE GT_FCAT.
+  CLEAR: PS_FCAT.
+
+  PS_FCAT-FIELDNAME = P_FIELD.
+  PS_FCAT-COLTEXT = P_COL.
+  PS_FCAT-JUST = P_JUST.
+  PS_FCAT-EDIT = P_EDIT.
+  PS_FCAT-COL_POS = P_POS.
+  PS_FCAT-NO_OUT = P_OUT.
+  PS_FCAT-CFIELDNAME = P_CFIELD.
+  APPEND PS_FCAT TO PT_FCAT.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form EXCLUDING_FCODE
+*&---------------------------------------------------------------------*
+FORM EXCLUDING_FCODE .
+
+  CLEAR: GT_FCODE.
+
+  IF GV_DELETE EQ 'X'.
+
+    GS_FCODE-FCODE = 'CHANGE'.
+    APPEND GS_FCODE TO GT_FCODE.
+
+    GS_FCODE-FCODE = 'DELETE'.
+    APPEND GS_FCODE TO GT_FCODE.
+
+  ENDIF.
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

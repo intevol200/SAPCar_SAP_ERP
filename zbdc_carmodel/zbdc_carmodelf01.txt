@@ -1,0 +1,544 @@
+*&---------------------------------------------------------------------*
+*& Include          ZR34_EXCEL_UPLOADF01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_0100
+*&---------------------------------------------------------------------*
+FORM SET_ALV_0100 .
+
+  CREATE OBJECT GO_CON
+    EXPORTING
+      CONTAINER_NAME = 'CUSTCON'.
+
+  CREATE OBJECT GO_ALV
+    EXPORTING
+      I_PARENT = GO_CON.
+*      I_SHELLSTYLE = WS_THICKFRAME.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_0101
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV_0101 .
+
+  CALL METHOD GO_ALV->SET_TABLE_FOR_FIRST_DISPLAY
+    EXPORTING
+      I_STRUCTURE_NAME              = 'ZT34_CAR'
+      IS_LAYOUT                     = GS_LAYO
+    CHANGING
+      IT_OUTTAB                     = GT_DISP
+      IT_FIELDCATALOG               = GT_FCAT
+      IT_SORT                       = GT_SORT
+    EXCEPTIONS
+      INVALID_PARAMETER_COMBINATION = 1
+      PROGRAM_ERROR                 = 2
+      TOO_MANY_LINES                = 3
+      OTHERS                        = 4.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_LAYO0100
+*&---------------------------------------------------------------------*
+FORM SET_LAYO0100 CHANGING CS_LAYO TYPE LVC_S_LAYO.
+
+  CS_LAYO-CWIDTH_OPT = 'X'.
+  CS_LAYO-EXCP_FNAME = 'LIGHT'.
+  CS_LAYO-EXCP_LED = 'X'.
+  CS_LAYO-INFO_FNAME = 'COLOR'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FCAT0100
+*&---------------------------------------------------------------------*
+FORM SET_FCAT0100 CHANGING CT_FCAT LIKE GT_FCAT.
+
+  DATA: LS_FCAT LIKE LINE OF GT_FCAT.
+*--------------------------------------------------------------------*
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'LIGHT'.
+  LS_FCAT-COLTEXT   = 'Status'.
+
+  APPEND LS_FCAT TO CT_FCAT.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'CTEXT'.
+  LS_FCAT-COLTEXT   = 'Car Description'.
+  LS_FCAT-COL_POS   = '3'.
+
+  APPEND LS_FCAT TO CT_FCAT.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'MSG'.
+  LS_FCAT-COLTEXT   = 'MESSAGE'.
+  LS_FCAT-COL_POS   = '11'.
+
+  APPEND LS_FCAT TO CT_FCAT.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'DFLAG'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT.
+
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'ERDAT'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'ERZET'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'ERNAM'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'AEDAT'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'AEZET'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT.
+
+  CLEAR: LS_FCAT.
+  LS_FCAT-FIELDNAME = 'AENAM'.
+  LS_FCAT-NO_OUT = 'X'.
+
+  APPEND LS_FCAT TO CT_FCAT.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form TOOLBAR_PROS
+*&---------------------------------------------------------------------*
+FORM TOOLBAR_PROS  USING  P_OBJECT TYPE REF TO CL_ALV_EVENT_TOOLBAR_SET
+                           P_INTERACTIVE TYPE CHAR01.
+
+  DATA: LS_TOOLBAR TYPE STB_BUTTON,
+        LINES      TYPE I.
+*--------------------------------------------------------------------*
+
+  MOVE 3               TO LS_TOOLBAR-BUTN_TYPE.
+  APPEND LS_TOOLBAR    TO P_OBJECT->MT_TOOLBAR.
+  CLEAR  LS_TOOLBAR.
+  MOVE 'UPDL'          TO LS_TOOLBAR-FUNCTION.
+  MOVE ICON_XXL TO LS_TOOLBAR-ICON.
+  LS_TOOLBAR-QUICKINFO = 'Excel Upload'.
+  LS_TOOLBAR-TEXT      = 'Excel Upload'.
+  APPEND LS_TOOLBAR    TO P_OBJECT->MT_TOOLBAR.
+  CLEAR LS_TOOLBAR.
+
+  MOVE 3               TO LS_TOOLBAR-BUTN_TYPE.
+  APPEND LS_TOOLBAR    TO P_OBJECT->MT_TOOLBAR.
+  CLEAR  LS_TOOLBAR.
+  MOVE 'BDC'          TO LS_TOOLBAR-FUNCTION.
+  MOVE ICON_INSERT_FAVORITES TO LS_TOOLBAR-ICON.
+  LS_TOOLBAR-QUICKINFO = 'Car BDC'.
+  LS_TOOLBAR-TEXT      = 'Car BDC'.
+  APPEND LS_TOOLBAR    TO P_OBJECT->MT_TOOLBAR.
+  CLEAR LS_TOOLBAR.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form USER_COMMAND_PROS
+*&---------------------------------------------------------------------*
+FORM USER_COMMAND_PROS  USING    PV_UCOMM.
+
+  CASE PV_UCOMM.
+    WHEN 'UPDL'.
+
+      PERFORM EXCEL_DATA_UPLOAD.
+      PERFORM ALV_REFRESH.
+
+    WHEN 'BDC'.
+
+      PERFORM CHECK_EXCEL.
+      CHECK GV_SUBRC EQ 0.
+      PERFORM CAR_BDCDATA.
+      PERFORM ALV_REFRESH.
+
+
+  ENDCASE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form EXCEL_DATA_UPLOAD
+*&---------------------------------------------------------------------*
+FORM EXCEL_DATA_UPLOAD .
+
+  TYPES: BEGIN OF LTY_ZT34_CAR,
+           CARNO TYPE C LENGTH 15,
+           CTEXT TYPE C LENGTH 30,
+           FUEL  TYPE C LENGTH 15,
+           MANU  TYPE C LENGTH 15,
+           CAPA  TYPE C LENGTH 15,
+           CLASS TYPE C LENGTH 15,
+           SHIFT TYPE C LENGTH 15,
+           PRICE TYPE C LENGTH 15,
+           WAERS TYPE ZT34_CAR-WAERS,
+         END OF LTY_ZT34_CAR.
+
+  DATA: LT_FILETAB   TYPE FILETABLE,
+        LV_RC        TYPE I,
+        LV_FILENAME  TYPE RLGRAP-FILENAME,
+        LS_EXCEL     TYPE LTY_ZT34_CAR,
+*        LT_EXCEL     LIKE TABLE OF LS_EXCEL,
+        LT_EXCEL     TYPE TABLE OF LTY_ZT34_CAR,
+        LT_ROW_DATA  TYPE TRUXS_T_TEXT_DATA,
+        ITABNAME(28).
+
+  DATA: LS_DISP  LIKE LINE OF GT_DISP,
+        LT_FUEL  TYPE DD07V_TAB,
+        LT_CLASS TYPE DD07V_TAB,
+        LT_SHIFT TYPE DD07V_TAB.
+
+  FIELD-SYMBOLS: <LFS_STRUC>,
+                 <LFS_TAB> TYPE STANDARD TABLE.
+*--------------------------------------------------------------------*
+
+  CLEAR: GT_DISP.
+
+  CALL METHOD CL_GUI_FRONTEND_SERVICES=>FILE_OPEN_DIALOG
+    CHANGING
+      FILE_TABLE = LT_FILETAB
+      RC         = LV_RC
+    EXCEPTIONS
+      OTHERS     = 1.
+  .
+
+  IF SY-SUBRC EQ 0.
+
+    READ TABLE LT_FILETAB INTO LV_FILENAME INDEX 1.
+
+    IF LV_FILENAME = SPACE.
+      LV_FILENAME = 'C:\'.
+    ENDIF.
+  ENDIF..
+  CHECK LV_FILENAME IS NOT INITIAL.
+
+  ITABNAME = 'LT_EXCEL'.
+
+  ASSIGN LOCAL COPY OF (ITABNAME) TO <LFS_TAB>.
+
+  CALL FUNCTION 'TEXT_CONVERT_XLS_TO_SAP'
+    EXPORTING
+      I_FIELD_SEPERATOR    = 'X'
+      I_LINE_HEADER        = 'X'
+      I_TAB_RAW_DATA       = LT_ROW_DATA
+      I_FILENAME           = LV_FILENAME
+    TABLES
+      I_TAB_CONVERTED_DATA = LT_EXCEL
+    EXCEPTIONS
+      CONVERSION_FAILED    = 1
+      OTHERS               = 2.
+
+  CHECK LT_EXCEL IS NOT INITIAL.
+
+  PERFORM GET_CAR_INFO CHANGING GT_CAR GT_MANU.
+  PERFORM GET_DOM_VALUE USING 'ZD34_FUEL'   CHANGING LT_FUEL.
+  PERFORM GET_DOM_VALUE USING 'ZD34_CLASS'  CHANGING LT_CLASS.
+  PERFORM GET_DOM_VALUE USING 'ZDE34_SHIFT' CHANGING LT_SHIFT.
+
+  LOOP AT LT_EXCEL INTO LS_EXCEL.
+
+    REPLACE ALL OCCURRENCES OF ',' IN LS_EXCEL-PRICE WITH SPACE.
+
+    MOVE-CORRESPONDING LS_EXCEL TO LS_DISP.
+    CALL FUNCTION 'CURRENCY_AMOUNT_IDOC_TO_SAP'
+      EXPORTING
+        CURRENCY    = LS_DISP-WAERS
+        IDOC_AMOUNT = LS_DISP-PRICE
+      IMPORTING
+        SAP_AMOUNT  = LS_DISP-PRICE.
+
+    PERFORM CHECK_ERROR USING GT_CAR GT_MANU LT_FUEL LT_CLASS LT_SHIFT
+                        CHANGING LS_DISP.
+
+    APPEND LS_DISP TO GT_DISP.
+
+  ENDLOOP.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form EVENT_HANDLER_REGISTER
+*&---------------------------------------------------------------------*
+FORM EVENT_HANDLER_REGISTER  USING    LO_GRID TYPE REF TO CL_GUI_ALV_GRID.
+
+*- ALV Event Handler
+  CREATE OBJECT GO_ALV_EVENT_HANDLER.
+
+  SET HANDLER GO_ALV_EVENT_HANDLER->HANDLE_TOOLBAR      FOR LO_GRID.
+  SET HANDLER GO_ALV_EVENT_HANDLER->HANDLE_USER_COMMAND FOR LO_GRID.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form ALV_REFRESH
+*&---------------------------------------------------------------------*
+FORM ALV_REFRESH .
+
+  DATA: LV_SCROLL TYPE LVC_S_STBL.
+  DATA: LS_LAYOUT  TYPE LVC_S_LAYO.         "ALV ###
+*--------------------------------------------------------------------*
+
+  CHECK GO_ALV IS NOT INITIAL.
+  LV_SCROLL-ROW = 'X'.
+  LV_SCROLL-COL = 'X'.
+
+  CALL METHOD GO_ALV->GET_FRONTEND_LAYOUT
+    IMPORTING
+      ES_LAYOUT = LS_LAYOUT.
+
+  LS_LAYOUT-CWIDTH_OPT = 'X'.
+
+  CALL METHOD GO_ALV->SET_FRONTEND_LAYOUT
+    EXPORTING
+      IS_LAYOUT = LS_LAYOUT.
+
+  CALL METHOD GO_ALV->REFRESH_TABLE_DISPLAY
+    EXPORTING
+      I_SOFT_REFRESH = ''
+      IS_STABLE      = LV_SCROLL.     "## ### ### refresh
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CAR_BDCDATA
+*&---------------------------------------------------------------------*
+FORM CAR_BDCDATA .
+
+  DATA: LV_MODE   TYPE RFPDO-ALLGAZMD VALUE 'N',
+        LV_UPDATE TYPE C LENGTH 1 VALUE 'S',
+        LV_MSG    TYPE C LENGTH 100,
+        LV_PRICE  TYPE C LENGTH 15.
+
+  DATA: LS_DISP   TYPE GTY_DISP.
+
+*--------------------------------------------------------------------*
+
+  LOOP AT GT_DISP INTO LS_DISP.
+
+    CLEAR: BDCDATA, MESSTAB, LV_MSG.
+**  'X'#  ### ##  '####'   '####'
+** ### char# ### #####.
+    WRITE LS_DISP-PRICE  CURRENCY LS_DISP-WAERS TO LV_PRICE.
+
+    PERFORM DYNPRO USING : 'X'  'ZM34_CAR03_1'    '0100',
+                           ' '   'BDC_OKCODE'      '=CREATE',
+
+                           'X'  'ZM34_CAR03_1'    '0200',
+                           ' '   'BDC_OKCODE'      '=SAVE',
+                           ' '   'GS_CAR-CARNO'    LS_DISP-CARNO,
+                           ' '   'GS_CAR-CTEXT'    LS_DISP-CTEXT,
+                           ' '   'GS_CAR-MANU'     LS_DISP-MANU,
+                           ' '   'GS_CAR-FUEL'     LS_DISP-FUEL,
+                           ' '   'GS_CAR-CLASS'    LS_DISP-CLASS,
+                           ' '   'GS_CAR-SHIFT'    LS_DISP-SHIFT,
+                           ' '   'GS_CAR-CAPA'     LS_DISP-CAPA,
+                           ' '   'GS_CAR-PRICE'    LV_PRICE,
+
+                           'X'   'ZM34_CAR03_1'   '0100',
+                           ' '   'BDC_OKCODE'     '/EBACK'.
+
+
+    CALL TRANSACTION 'ZM34_CAR03_1' USING BDCDATA
+                         MODE LV_MODE
+                         UPDATE LV_UPDATE
+                         MESSAGES INTO MESSTAB.
+
+    IF SY-SUBRC NE 0.
+      CALL FUNCTION 'RKC_MSG_STRING'
+        EXPORTING
+          ID      = SY-MSGID
+          MTYPE   = SY-MSGTY
+          NUMBER  = SY-MSGNO
+          PAR1    = SY-MSGV1
+          PAR2    = SY-MSGV2
+          PAR3    = SY-MSGV3
+          PAR4    = SY-MSGV4
+        IMPORTING
+          MSG_LIN = LV_MSG.
+
+*      LS_DISP-DFLAG = 'E'.  "### error# dflag# 'E'##
+      LS_DISP-MSG = LV_MSG.
+    ELSE.
+      LS_DISP-MSG = 'SUCCESS'.
+    ENDIF.
+
+    MODIFY GT_DISP FROM LS_DISP.
+
+  ENDLOOP.
+
+  MESSAGE I016(PN) WITH 'DATA SAVE SUCCESS' DISPLAY LIKE 'S'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DYNPRO
+*&---------------------------------------------------------------------*
+FORM DYNPRO  USING   A  B  C.
+
+  IF A = 'X'.
+    GS_BDCDATA-DYNBEGIN = A.
+    GS_BDCDATA-PROGRAM = B.
+    GS_BDCDATA-DYNPRO = C.
+  ELSE.
+    GS_BDCDATA-FNAM = B.
+    GS_BDCDATA-FVAL = C.
+  ENDIF.
+
+  APPEND GS_BDCDATA TO BDCDATA.
+  CLEAR GS_BDCDATA.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_ERROR
+*&---------------------------------------------------------------------*
+FORM CHECK_ERROR USING VALUE(PT_CAR) LIKE GT_CAR
+                        VALUE(PT_MANU) LIKE GT_MANU
+                        VALUE(PT_FUEL) TYPE DD07V_TAB
+                        VALUE(PT_CLASS) TYPE DD07V_TAB
+                        VALUE(PT_SHIFT) TYPE DD07V_TAB
+                  CHANGING CS_DISP LIKE LINE OF GT_DISP.
+
+  DATA: LS_CAR   TYPE ZT34_CAR,
+        LS_MANU  TYPE ZT34_MANU,
+        LS_VALUE LIKE LINE OF PT_FUEL.
+*--------------------------------------------------------------------*
+
+  CLEAR: GV_SUBRC.
+
+  IF CS_DISP-CARNO IS INITIAL  OR CS_DISP-CTEXT IS INITIAL OR
+     CS_DISP-MANU  IS INITIAL  OR CS_DISP-FUEL  IS INITIAL OR
+     CS_DISP-CLASS IS INITIAL  OR CS_DISP-SHIFT IS INITIAL OR
+     CS_DISP-CAPA  IS INITIAL  OR CS_DISP-PRICE IS INITIAL OR CS_DISP-WAERS IS INITIAL.
+
+    GV_SUBRC = 4.
+    CS_DISP-LIGHT = 1.
+    CS_DISP-MSG = 'An empty value exists, please check.'.
+
+    EXIT.
+
+  ENDIF.
+
+  CHECK GV_SUBRC EQ 0.
+
+  READ TABLE PT_CAR INTO LS_CAR WITH KEY CARNO = CS_DISP-CARNO
+                                         FUEL  = CS_DISP-FUEL.
+
+  IF SY-SUBRC EQ 0.
+
+    GV_SUBRC = 4.
+    CS_DISP-LIGHT = 1.
+    CS_DISP-MSG = 'Car model number and fuel are duplicated.'.
+    EXIT.
+
+  ELSEIF SY-SUBRC NE 0.
+
+    READ TABLE PT_MANU INTO LS_MANU WITH KEY MANU = CS_DISP-MANU.
+
+    IF SY-SUBRC NE 0.
+
+      GV_SUBRC = 4.
+      CS_DISP-LIGHT = 1.
+      CS_DISP-MSG = 'Manufacture does not exist'.
+      RETURN.
+
+    ELSE.
+      READ TABLE PT_FUEL INTO LS_VALUE WITH KEY DOMVALUE_L = CS_DISP-FUEL.
+      IF SY-SUBRC NE 0.
+
+        GV_SUBRC = 4.
+        CS_DISP-LIGHT = 1.
+        CS_DISP-MSG = 'Fuel type does not exist'.
+        RETURN.
+
+      ELSE.
+
+        READ TABLE PT_CLASS INTO LS_VALUE WITH KEY DOMVALUE_L = CS_DISP-CLASS.
+
+        IF SY-SUBRC NE 0.
+
+          GV_SUBRC = 4.
+          CS_DISP-LIGHT = 1.
+          CS_DISP-MSG = 'Class type does not exist'.
+          RETURN.
+
+        ELSE.
+
+          READ TABLE PT_SHIFT INTO LS_VALUE WITH KEY DOMVALUE_L = CS_DISP-SHIFT.
+
+          IF SY-SUBRC NE 0.
+
+            GV_SUBRC = 4.
+            CS_DISP-LIGHT = 1.
+            CS_DISP-MSG = 'SHIFT type does not exist'.
+            RETURN.
+
+          ELSE.
+
+            CS_DISP-LIGHT = 3.
+            CS_DISP-MSG = 'No Error'.
+
+          ENDIF.
+
+        ENDIF.
+
+      ENDIF.
+
+    ENDIF.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_CAR_INFO
+*&---------------------------------------------------------------------*
+FORM GET_CAR_INFO  CHANGING CT_CAR LIKE GT_CAR CT_MANU LIKE GT_MANU.
+
+  SELECT *
+    INTO CORRESPONDING FIELDS OF TABLE CT_CAR
+    FROM ZT34_CAR.
+
+  SELECT *
+    INTO TABLE CT_MANU
+    FROM ZT34_MANU.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_DOM_VALUE
+*&---------------------------------------------------------------------*
+FORM GET_DOM_VALUE  USING    VALUE(PV_DOMNAME)
+                    CHANGING CT_TAB TYPE DD07V_TAB.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      DOMNAME    = PV_DOMNAME
+    TABLES
+      VALUES_TAB = CT_TAB.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_EXCEL
+*&---------------------------------------------------------------------*
+FORM CHECK_EXCEL .
+
+  CHECK GV_SUBRC NE 0.
+  MESSAGE I016(PN) WITH 'There is an error in the excel data, please check.' DISPLAY LIKE 'E'.
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

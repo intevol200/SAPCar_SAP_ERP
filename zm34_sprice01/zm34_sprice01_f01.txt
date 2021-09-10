@@ -1,0 +1,843 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SPRICE01_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form set_default_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_default_value.
+
+*  PERFORM get_sprice_list.
+
+  gs_cond-scpcd_s = 'AAA'.
+  gs_cond-scpcd_e = 'ZZZ'.
+  gs_cond-waers = 'KRW'.
+  gs_cond-waers_a = 'KRW'.
+
+  PERFORM get_sprice_list.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form move_cond_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM move_cond_data .
+  MOVE-CORRESPONDING zs34_sprice TO gs_cond.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_selected_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GV_SUBRC
+*&---------------------------------------------------------------------*
+FORM get_selected_list  CHANGING p_subrc.
+
+  CLEAR p_subrc.
+
+  DATA: lt_index TYPE lvc_t_row,
+        ls_index LIKE LINE OF lt_index,
+        lt_rows  TYPE lvc_t_roid,
+        ls_rows  LIKE LINE OF lt_rows.
+
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+      et_index_rows = lt_index
+      et_row_no     = lt_rows.
+
+  READ TABLE lt_rows INDEX 1 INTO ls_rows.
+  IF sy-subrc <> 0.
+    p_subrc = 4.
+    MESSAGE i004.
+    RETURN.
+  ENDIF.
+
+  READ TABLE lt_rows INDEX 2 INTO ls_rows.
+  IF sy-subrc = 0.
+    p_subrc = 4.
+    MESSAGE i004.
+    RETURN.
+  ENDIF.
+
+
+
+  READ TABLE gt_list INDEX ls_rows-row_id INTO gs_list.
+
+
+  MOVE-CORRESPONDING gs_list TO zs34_sprice.
+
+
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form delete_selected_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GV_SUBRC
+*&---------------------------------------------------------------------*
+FORM delete_selected_list CHANGING p_subrc.
+
+  CLEAR p_subrc.
+  CLEAR gs_list.
+
+  DATA: lt_index TYPE lvc_t_row,
+        ls_index LIKE LINE OF lt_index,
+        lt_rows  TYPE lvc_t_roid,
+        ls_rows  LIKE LINE OF lt_rows.
+
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+      et_index_rows = lt_index
+      et_row_no     = lt_rows.
+
+  READ TABLE lt_rows INDEX 1 INTO ls_rows.
+  IF sy-subrc <> 0.
+    p_subrc = 4.
+    MESSAGE i004.
+    RETURN.
+  ENDIF.
+  PERFORM popup USING 'DELETE'
+                          'Do you want to delete data?'
+                CHANGING p_subrc.
+  IF p_subrc <> 0.
+    RETURN.
+  ENDIF.
+
+  LOOP AT lt_rows INTO ls_rows.
+    READ TABLE gt_list INDEX ls_rows-row_id INTO gs_list.
+    IF gs_list-dflag = 'X'.
+      MESSAGE i014.
+    ENDIF.
+    UPDATE zt34_sprice
+      SET dflag = 'X'
+      WHERE scpcd = gs_list-scpcd.
+  ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_alv_100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv_100 .
+
+  IF go_con IS INITIAL.
+    CREATE OBJECT go_con
+      EXPORTING
+*       parent                      =
+        container_name              = 'MYCON'
+*       style                       =
+*       lifetime                    = lifetime_default
+*       repid                       =
+*       dynnr                       =
+*       no_autodef_progid_dynnr     =
+      EXCEPTIONS
+        cntl_error                  = 1
+        cntl_system_error           = 2
+        create_error                = 3
+        lifetime_error              = 4
+        lifetime_dynpro_dynpro_link = 5
+        OTHERS                      = 6.
+    IF sy-subrc <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+    ENDIF.
+
+
+    IF go_alv IS INITIAL.
+
+      CREATE OBJECT go_alv
+        EXPORTING
+*         i_shellstyle      = 0
+*         i_lifetime        =
+          i_parent          = go_con
+*         i_appl_events     = SPACE
+*         i_parentdbg       =
+*         i_applogparent    =
+*         i_graphicsparent  =
+*         i_name            =
+*         i_fcat_complete   = SPACE
+*         o_previous_sral_handler =
+        EXCEPTIONS
+          error_cntl_create = 1
+          error_cntl_init   = 2
+          error_cntl_link   = 3
+          error_dp_create   = 4
+          OTHERS            = 5.
+      IF sy-subrc <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+      ENDIF.
+
+    ENDIF.
+
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form display_alv_100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv_100 .
+
+
+
+
+
+  "## ALV ##
+  IF gv_alv_flag = 'X'.
+
+    CALL METHOD go_alv->set_table_for_first_display
+      EXPORTING
+*       i_buffer_active               =
+*       i_bypassing_buffer            =
+*       i_consistency_check           =
+        i_structure_name              = 'ZT34_SPRICE'
+*       is_variant                    =
+*       i_save                        =
+*       i_default                     = 'X'
+        is_layout                     = gs_layo
+*       is_print                      =
+*       it_special_groups             =
+*       it_toolbar_excluding          =
+*       it_hyperlink                  =
+*       it_alv_graphics               =
+*       it_except_qinfo               =
+*       ir_salv_adapter               =
+      CHANGING
+        it_outtab                     = gt_list
+        it_fieldcatalog               = gt_fcat
+        it_sort                       = gt_sort
+*       it_filter                     =
+      EXCEPTIONS
+        invalid_parameter_combination = 1
+        program_error                 = 2
+        too_many_lines                = 3
+        OTHERS                        = 4.
+    IF sy-subrc <> 0.
+*   Implement suitable error handling here
+    ENDIF.
+
+    "ALV FALG #####
+    CLEAR gv_alv_flag.
+
+
+
+    "### ALV ##
+  ELSE.
+    DATA: ls_stable      TYPE lvc_s_stbl,
+          i_soft_refresh TYPE char01.
+    ls_stable-col = 'X'.
+    ls_stable-row = 'X'.
+    i_soft_refresh = 'X'.
+
+    " layo refresh
+    CALL METHOD go_alv->set_frontend_layout
+      EXPORTING
+        is_layout = gs_layo.
+
+    "refresh display
+    CALL METHOD go_alv->refresh_table_display
+      EXPORTING
+        is_stable      = ls_stable
+        i_soft_refresh = ' '
+      EXCEPTIONS
+        finished       = 1
+        OTHERS         = 2.
+
+
+    IF sy-subrc <> 0.
+* Implement suitable error handling here
+    ENDIF.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_sprice_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_sprice_data CHANGING VALUE(p_subrc).
+
+  CLEAR gt_list.
+
+  PERFORM search_range USING gs_scpcd gs_cond-scpcd_s gs_cond-scpcd_e gs_cond
+                       CHANGING gt_scpcd.
+  PERFORM search_range_s USING gs_srental gs_cond-srental_s gs_cond-srental_e gs_cond
+                       CHANGING gt_srental.
+  PERFORM search_range_s USING gs_sdrive gs_cond-sdrive_s gs_cond-sdrive_e gs_cond
+                     CHANGING gt_sdrive.
+*
+*  PERFORM search_range USING gs_scpcd gs_cond-scpcd_s gs_cond-scpcd_e gs_cond
+*                       CHANGING gt_scpcd.
+*  PERFORM search_range_p USING gs_srental gs_cond-srental gs_cond
+*                         CHANGING gt_srental.
+*  PERFORM search_range_p USING gs_sdrive gs_cond-sdrive gs_cond
+*                         CHANGING gt_sdrive.
+*  IF GS_COND-DFLAG = 'X'.
+*    SELECT *
+*        FROM ZT34_SPRICE
+*        INTO CORRESPONDING FIELDS OF TABLE GT_LIST
+*         WHERE SCPCD IN GT_SCPCD
+*         AND SRENTAL IN GT_SRENTAL
+*         AND SDRIVE IN GT_SDRIVE.
+*  ELSE .
+*
+*  ENDIF.
+
+  IF gs_cond-dflag = 'X'.
+    PERFORM get_gtlist USING 'X'
+                       CHANGING gt_list.
+  ELSEIF gs_cond-dflag = ' '.
+    PERFORM get_gtlist USING ' '
+                       CHANGING gt_list.
+  ENDIF.
+
+  IF sy-subrc <> 0.
+    p_subrc = 4.
+    RETURN.
+  ENDIF.
+
+  CLEAR gs_list.
+  LOOP AT gt_list INTO gs_list.
+
+    IF gs_list-dflag = 'X'.
+      gs_list-color = 'C600'.
+    ENDIF.
+
+    MODIFY gt_list FROM gs_list.
+  ENDLOOP.
+
+*  ranges: lr_srental for gs_cond-srental.
+*
+*  DATA:lv_srental TYPE string,
+*       lv_sdrive  TYPE string,
+*       lv_dflag   TYPE string.
+*
+*  IF zs34_sprice-srental IS NOT INITIAL.
+*    lv_srental = 'srental eq ZS34_SPRICE-SRENTAL'.
+*  ENDIF.
+*
+*  IF zs34_sprice-sdrive IS NOT INITIAL.
+*    lv_sdrive = 'sdrive eq ZS34_SPRICE-SDRIVE'.
+*  ENDIF.
+*
+*  IF zs34_sprice-dflag IS INITIAL.
+*    lv_dflag = 'dflag EQ ` `'.
+*  ENDIF.
+*
+*  SELECT *
+*  FROM zt34_sprice
+*  INTO CORRESPONDING FIELDS OF TABLE gt_list
+*  WHERE scpcd IN gt_scpcd
+*  AND    (lv_srental)
+*  AND    (lv_sdrive)
+*  AND    (lv_dflag).
+***
+*
+*  PERFORM search_range_p USING gs_srental gs_cond-srental gs_cond
+*                         CHANGING gt_srental.
+*  PERFORM search_range_p USING gs_sdrive gs_cond-sdrive gs_cond
+*                         CHANGING gt_sdrive.
+*IF gs_cond-dflag = 'X'.
+*  SELECT *
+*      FROM zt34_sprice
+*      INTO CORRESPONDING FIELDS OF TABLE gt_list
+*       WHERE scpcd IN gt_scpcd
+*       AND srental IN gt_srental
+*       and sdrive in gt_sdrive.
+*  ELSE .
+*    SELECT *
+*      FROM zt34_sprice
+*      INTO CORRESPONDING FIELDS OF TABLE gt_list
+*       WHERE scpcd IN gt_scpcd
+*       AND srental IN gt_srental
+*       AND sdrive in gt_sdrive
+*       AND dflag = ''.
+*  ENDIF.
+
+
+
+
+*
+*  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_gtlist
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      <-- GT_LIST
+*&---------------------------------------------------------------------*
+FORM get_gtlist  USING VALUE(p_dflag)
+                 CHANGING pt_list LIKE gt_list.
+
+  SELECT *
+    FROM zt34_sprice
+    INTO CORRESPONDING FIELDS OF TABLE pt_list
+     WHERE scpcd IN gt_scpcd
+     AND srental IN gt_srental
+     AND sdrive IN gt_sdrive
+     AND dflag = p_dflag.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form create_sprice
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM create_sprice .
+
+  CLEAR gs_info.
+
+  gs_info-scpcd = zs34_sprice-scpcd.
+  gs_info-pname = zs34_sprice-pname.
+  gs_info-srental = zs34_sprice-srental.
+  gs_info-sdrive = zs34_sprice-sdrive.
+  gs_info-waers = zs34_sprice-waers.
+
+*  PERFORM get_price_data USING zs34_sprice-srental
+*                         CHANGING gs_info-srental.
+*  PERFORM get_price_data USING zs34_sprice-sdrive
+*                       CHANGING gs_info-sdrive.
+
+
+  INSERT zt34_sprice FROM gs_info.
+
+  IF sy-subrc <> 0.
+    ROLLBACK WORK.
+    MESSAGE i007.
+  ELSE.
+    COMMIT WORK.
+    MESSAGE i015.
+*    CLEAR zs34_sprice.
+*    LEAVE TO SCREEN 0.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form change_sprice
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM change_sprice .
+
+  CLEAR gs_info.
+
+  gs_info-scpcd = zs34_sprice-scpcd.
+  gs_info-pname = zs34_sprice-pname.
+  gs_info-srental = zs34_sprice-srental.
+  gs_info-sdrive = zs34_sprice-sdrive.
+*  PERFORM GET_PRICE_DATA USING ZS34_SPRICE-SRENTAL
+*                         CHANGING GS_INFO-SRENTAL.
+*  PERFORM GET_PRICE_DATA USING ZS34_SPRICE-SDRIVE
+*                       CHANGING GS_INFO-SDRIVE.
+  IF zs34_sprice-dflag = 'X'.
+    gs_info-dflag = 'X'.
+  ELSEIF zs34_sprice-dflag = ' '.
+    gs_info-dflag = ' '.
+  ENDIF.
+
+  UPDATE zt34_sprice
+    SET srental = gs_info-srental
+        pname = gs_info-pname
+        sdrive = gs_info-sdrive
+        dflag = gs_info-dflag
+    WHERE scpcd = gs_info-scpcd.
+
+  IF sy-subrc <> 0.
+    ROLLBACK WORK.
+    MESSAGE i009.
+  ELSE.
+    COMMIT WORK.
+    MESSAGE i001.
+    LEAVE TO SCREEN 0.
+  ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form popup
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      <-- P_SUBRC
+*&---------------------------------------------------------------------*
+FORM popup USING    VALUE(p_title)
+                     VALUE(p_message)
+            CHANGING p_subrc.
+
+  DATA: lv_answer.
+  CLEAR: lv_answer,p_subrc.
+  CALL FUNCTION 'POPUP_TO_CONFIRM'
+    EXPORTING
+      titlebar              = p_title
+*     DIAGNOSE_OBJECT       = ' '
+      text_question         = p_message
+      text_button_1         = 'Yes'(001)
+      icon_button_1         = 'ICON_CHECKED'
+      text_button_2         = 'No'(002)
+      icon_button_2         = 'ICON_INCOMPLETE'
+*     DEFAULT_BUTTON        = '1'
+      display_cancel_button = ''
+*     USERDEFINED_F1_HELP   = ' '
+      start_column          = 25
+      start_row             = 6
+*     POPUP_TYPE            =
+*     IV_QUICKINFO_BUTTON_1 = ' '
+*     IV_QUICKINFO_BUTTON_2 = ' '
+    IMPORTING
+      answer                = lv_answer
+*   TABLES
+*     PARAMETER             =
+    EXCEPTIONS
+      text_not_found        = 1
+      OTHERS                = 2.
+  IF sy-subrc <> 0.
+    MESSAGE i016(pn) WITH 'Error'.
+  ENDIF.
+
+  CLEAR: p_subrc.
+  IF lv_answer = 1.
+    p_subrc = 0.
+  ELSE.
+    p_subrc = 4.
+    MESSAGE s016(pn) WITH 'Cancelled'.
+    RETURN.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Module MOVE_WAERS OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE move_waers OUTPUT.
+  zs34_sprice-waers = 'KRW'.
+  zs34_sprice-waers_a = 'KRW'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Form field_catalog
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM field_catalog .
+  IF gt_fcat IS NOT INITIAL. RETURN. ENDIF.
+
+
+  PERFORM reuse_fieldcat USING 'SCPCD' 'Price Code' 'C' '' '' '' ''
+                             CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'PNAME' 'Price Name' 'C' '' '' '' ''
+                             CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'SRENTAL' 'Rental Price' 'R' '' '' '' 'WAERS'
+                             CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'SDRIVE' 'Driving Price' 'R' '' '' '' 'WAERS'
+                             CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'WAERS' 'Currency' 'C' '' '' '' ''
+                           CHANGING gs_fcat gt_fcat.
+  PERFORM reuse_fieldcat USING 'DFLAG' '' '' '' '' 'X' ''
+                           CHANGING gs_fcat gt_fcat.
+*   PERFORM reuse_fieldcat USING 'WAERS' 'Currency' 'C' '' '' '' ''
+*                           CHANGING gs_fcat gt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form REUSE_FIELDCAT
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&      <-- PS_FCAT
+*&      <-- CT_FCAT
+*&---------------------------------------------------------------------*
+FORM reuse_fieldcat  USING VALUE(p_field)
+                           VALUE(p_col)
+                           VALUE(p_just)
+                           VALUE(p_edit)
+                           VALUE(p_pos)
+                           VALUE(p_out)
+                           VALUE(p_cfield)
+                     CHANGING ps_fcat LIKE gs_fcat
+                              pt_fcat LIKE gt_fcat.
+  CLEAR: ps_fcat.
+
+  ps_fcat-fieldname = p_field.
+  ps_fcat-coltext = p_col.
+  ps_fcat-just = p_just.
+  ps_fcat-edit = p_edit.
+  ps_fcat-col_pos = p_pos.
+  ps_fcat-no_out = p_out.
+  ps_fcat-cfieldname = p_cfield.
+  APPEND ps_fcat TO pt_fcat.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form search_range
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_SRENTAL
+*&      --> GS_COND_HPRICE_S
+*&      --> GS_COND_HPRICE_E
+*&      --> PS_COND
+*&      <-- GT_HPRICE
+*&---------------------------------------------------------------------*
+FORM search_range  USING VALUE(ps_field) LIKE gs_scpcd
+                         VALUE(ps_cond_b)
+                         VALUE(ps_cond_e)
+                         VALUE(ps_cond) LIKE gs_cond
+                   CHANGING pt_field LIKE gt_scpcd.
+  CLEAR: ps_field, pt_field.
+
+  IF ps_cond_e IS INITIAL AND ps_cond_b IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'NP'.
+    ps_field-low = ps_cond_b.
+    ps_field-high = ps_cond_e.
+    APPEND ps_field TO pt_field.
+  ELSEIF ps_cond_e IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'EQ'.
+    ps_field-low = ps_cond_b.
+    ps_field-high = ps_cond_e.
+    APPEND ps_field TO pt_field.
+  ENDIF.
+  ps_field-sign = 'I'.
+  ps_field-option = 'BT'.
+  ps_field-low = ps_cond_b.
+  ps_field-high = ps_cond_e.
+  APPEND ps_field TO pt_field.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form search_range_p
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_SRENTAL
+*&      --> GS_COND
+*&      <-- GT_SRENTAL
+*&---------------------------------------------------------------------*
+FORM search_range_p  USING VALUE(ps_field) LIKE gs_srental
+                         VALUE(ps_cond_b)
+                         VALUE(ps_cond) LIKE gs_cond
+                   CHANGING pt_field LIKE gt_srental.
+  CLEAR: ps_field, pt_field.
+
+  IF ps_cond_b IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'NE'.
+    ps_field-low = ps_cond_b.
+    APPEND ps_field TO pt_field.
+  ELSEIF ps_cond_b IS  NOT INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'EQ'.
+    ps_field-low = ps_cond_b.
+    APPEND ps_field TO pt_field.
+  ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_sprice_default
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_sprice_default .
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_default_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_default_data .
+
+  SELECT *
+  FROM zt34_sprice
+  INTO CORRESPONDING FIELDS OF TABLE gt_list.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_sprice_list
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_sprice_list .
+
+  SELECT *
+    FROM zt34_sprice
+    INTO CORRESPONDING FIELDS OF TABLE gt_list
+    WHERE dflag <> 'X'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_price_data
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_price_data USING VALUE(p_bprice)
+                    CHANGING VALUE(p_fprice).
+  CALL FUNCTION 'CURRENCY_AMOUNT_DISPLAY_TO_SAP'
+    EXPORTING
+      currency        = 'KRW'
+      amount_display  = p_bprice
+    IMPORTING
+      amount_internal = p_fprice
+    EXCEPTIONS
+      internal_error  = 1
+      OTHERS          = 2.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_price_data_usd
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_LIST_SDRIVE
+*&      <-- ZS34_SPRICE_SDRIVE
+*&---------------------------------------------------------------------*
+FORM get_price_data_usd  USING VALUE(p_bprice)
+                         CHANGING VALUE(p_fprice).
+  CALL FUNCTION 'CURRENCY_AMOUNT_DISPLAY_TO_SAP'
+    EXPORTING
+      currency        = 'USD'
+      amount_display  = p_bprice
+    IMPORTING
+      amount_internal = p_fprice
+    EXCEPTIONS
+      internal_error  = 1
+      OTHERS          = 2.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form layout
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM layout .
+
+*  GS_LAYO-ZEBRA = 'X'.
+  gs_layo-sel_mode = 'D'.
+  gs_layo-cwidth_opt = 'X'.
+  gs_layo-info_fname = 'COLOR'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form sort
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM sort .
+
+
+  CLEAR: gs_sort.
+  gs_sort-spos = '1'.
+  gs_sort-fieldname = 'SCPCD'.
+  gs_sort-up = 'X'.
+  APPEND gs_sort TO gt_sort.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form search_range_s
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GS_SRENTAL
+*&      --> GS_COND_SRENTAL_S
+*&      --> GS_COND_SRENTAL_E
+*&      --> GS_COND
+*&      <-- GT_SRENTAL
+*&---------------------------------------------------------------------*
+FORM search_range_s  USING VALUE(ps_field) LIKE gs_srental
+                         VALUE(ps_cond_b)
+                         VALUE(ps_cond_e)
+                         VALUE(ps_cond) LIKE gs_cond
+                   CHANGING pt_field LIKE gt_srental.
+
+  CLEAR: ps_field, pt_field.
+
+  IF ps_cond_e IS INITIAL AND ps_cond_b IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'NE'.
+    ps_field-low = ps_cond_b.
+    ps_field-high = ps_cond_e.
+    APPEND ps_field TO pt_field.
+  ELSEIF ps_cond_e IS INITIAL.
+    ps_field-sign = 'I'.
+    ps_field-option = 'EQ'.
+    ps_field-low = ps_cond_b.
+    ps_field-high = ps_cond_e.
+    APPEND ps_field TO pt_field.
+  ENDIF.
+  ps_field-sign = 'I'.
+  ps_field-option = 'BT'.
+  ps_field-low = ps_cond_b.
+  ps_field-high = ps_cond_e.
+  APPEND ps_field TO pt_field.
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

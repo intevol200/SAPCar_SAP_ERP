@@ -1,0 +1,84 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SREPAIR_O01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Module STATUS_0100 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE status_0100 OUTPUT.
+  SET PF-STATUS 'S100'.
+  SET TITLEBAR 'T100'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module MOVE_TO_SCREEN_0100 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE move_to_screen_0100 OUTPUT.
+
+** Condition (ABAP -> Screen)
+*  MOVE-CORRESPONDING gs_hcond TO zs34_hsrepair_01.
+*  MOVE-CORRESPONDING gs_icond TO zs34_isrepair_01.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_DISPLAY_ALV_0100 OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE set_display_alv_0100 OUTPUT.
+
+  IF go_con IS INITIAL.
+    PERFORM create_alv_0100.
+    PERFORM display_alv_0100.
+
+  ELSE.
+*    PERFORM refresh_alv.
+
+  ENDIF.
+
+*  PERFORM DISPLAY_ALV_0100.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_DROPDOWN OUTPUT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+MODULE set_dropdown OUTPUT.
+
+  CLEAR: value, values.
+
+**### ## ### ##
+  SELECT venno vname
+    FROM zt34_vendor
+    INTO TABLE gt_vendor
+   WHERE vtype EQ 'R'
+     AND dflag EQ ''.
+
+**DROPDOWN ##
+  LOOP AT gt_vendor INTO gs_vendor.
+    value-key = gs_vendor-gv_venno.
+    value-text = gs_vendor-gv_vname.
+    APPEND value TO values.
+  ENDLOOP.
+
+  SORT values BY key.
+
+  CALL FUNCTION 'VRM_SET_VALUES'
+    EXPORTING
+*     ID              = 'GS_USER-VENNO'
+      id              = 'GV_VENDOR'
+      values          = values
+    EXCEPTIONS
+      id_illegal_name = 1
+      OTHERS          = 2.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

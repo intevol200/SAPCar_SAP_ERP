@@ -1,0 +1,58 @@
+*&---------------------------------------------------------------------*
+*& Report ZR34_CUST03
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE zr34_cust03_top                         .  " Global Data
+INCLUDE zr34_cust03_c01                         .  " Class
+INCLUDE zr34_cust03_o01                         .  " PBO-Modules
+INCLUDE zr34_cust03_i01                         .  " PAI-Modules
+INCLUDE zr34_cust03_f01                         .  " FORM-Routines
+
+START-OF-SELECTION.
+  "ALV FLAG
+  gv_alv_flag = 'X'.
+  gv_alv_flag2 = 'X'.
+
+
+  CALL SCREEN 100.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Search Customer List
+* T101 --> Display Point History
+* T100 --> Search Customer List
+* T101 --> Display Point History
+
+*Text elements
+*--------------------------------------
+* H01 Customer Condition
+
+
+*Selection texts
+*--------------------------------------
+* GV_DATE         Start Date
+* PA_CITY         City
+* PA_CUTNO         Customer Number
+* PA_DFLAG         Deleted
+* PA_DRNUM         Driver License ID
+* PA_GES1         Male
+* PA_GES2         Female
+* PA_PHONE         Phone Number
+* PA_STATE         State
+* PA_STRT         Street
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: ZM34_MESSAGE
+*004   You must select single row.
+*005   You are not a manager.
+*011   Data is not found.
+*014   Data already deleted.
+*019   ALV Container Creation ERROR!
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

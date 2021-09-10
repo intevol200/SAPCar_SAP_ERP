@@ -1,0 +1,41 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_SZONE01_TOP                         - Module Pool      ZM34_SZONE01
+*&---------------------------------------------------------------------*
+PROGRAM zm34_szone01 MESSAGE-ID ZM34_MESSAGE.
+
+DATA: ok_code  TYPE sy-ucomm,
+      gv_subrc TYPE sy-subrc,
+      gv_flag(1) TYPE c.
+
+DATA: go_con TYPE REF TO cl_gui_custom_container,
+      go_alv TYPE REF TO cl_gui_alv_grid,
+      gs_layo TYPE lvc_s_layo,
+      gs_fcat TYPE lvc_s_fcat,
+      gt_fcat TYPE lvc_t_fcat,
+      gs_re TYPE lvc_s_stbl.
+
+"alv sort
+DATA : gs_sort TYPE LINE OF lvc_t_sort,
+       gt_sort LIKE TABLE OF gs_sort.
+
+DATA: BEGIN OF gs_list.
+        INCLUDE TYPE zm34_szone_s01.
+DATA:   light TYPE c LENGTH 1,
+        color TYPE c LENGTH 4,
+      END OF gs_list,
+      gt_list LIKE TABLE OF gs_list.
+
+TABLES: zm34_szone_s01,
+        zm34_szone_s02,"Popup ####
+        zm34_szone_s03."Condition
+
+"Condition
+DATA: gs_cond TYPE zm34_szone_s03,
+      gt_state LIKE RANGE OF zt34_szone-state,
+      gs_state LIKE LINE OF gt_state.
+
+DATA: gs_szone TYPE zt34_szone,
+      gs_szone_t TYPE zt34_szone_t.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

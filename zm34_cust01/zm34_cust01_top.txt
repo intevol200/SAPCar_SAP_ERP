@@ -1,0 +1,25 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_CUST01_TOP                          - Module Pool      ZM34_CUST01
+*&---------------------------------------------------------------------*
+PROGRAM zm34_cust01 MESSAGE-ID ZM34_MESSAGE.
+
+
+" Common
+DATA: ok_code  TYPE sy-ucomm,
+      gv_subrc TYPE sy-subrc.
+
+" Cust Condition
+DATA: BEGIN OF gs_cond.
+        INCLUDE TYPE zt34_cust.
+DATA:   point   TYPE n LENGTH 6,
+        gesch_f TYPE c LENGTH 1,
+      END OF gs_cond,
+      gt_cond LIKE TABLE OF gs_cond.
+
+
+DATA: gs_cust      TYPE zt34_cust,
+      gs_cust_cond LIKE gs_cust,
+      gs_cpoint    TYPE zt34_cpoint.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

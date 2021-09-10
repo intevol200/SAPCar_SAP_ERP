@@ -1,0 +1,225 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SREQ03O01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Module STATUS_0100 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE STATUS_0100 OUTPUT.
+
+  PERFORM EXCLUDING_FCODE.
+
+  SET PF-STATUS 'S100' EXCLUDING GT_FCODE.
+  SET TITLEBAR 'T100'.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module TC_100_ACTIVE_TAB_SET OUTPUT
+*&---------------------------------------------------------------------*
+MODULE TC_100_ACTIVE_TAB_SET OUTPUT.
+
+  TC_100-ACTIVETAB = G_TC_100-PRESSED_TAB.
+  CASE G_TC_100-PRESSED_TAB.
+    WHEN C_TC_100-TAB1.
+      G_TC_100-SUBSCREEN = '0101'.
+    WHEN C_TC_100-TAB2.
+      G_TC_100-SUBSCREEN = '0102'.
+    WHEN C_TC_100-TAB3.
+      G_TC_100-SUBSCREEN = '0103'.
+    WHEN OTHERS.
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_ALV_0101 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_ALV_0101 OUTPUT.
+
+  PERFORM SET_ALV_0101.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_ALV_0200 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_ALV_0200 OUTPUT.
+
+  PERFORM SET_ALV_0200.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module STATUS_0200 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE STATUS_0200 OUTPUT.
+
+  PERFORM EXCLUDE_FCODE.
+  SET PF-STATUS 'S200' EXCLUDING GT_FCODE.
+  SET TITLEBAR 'T200'.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_CAT200 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_CAT200 OUTPUT.
+
+  LOOP AT SCREEN.
+
+    IF GS_CAR-CARNO IS INITIAL OR GV_EDIT IS NOT INITIAL.
+
+      IF SCREEN-GROUP1 EQ 'DS'.
+        SCREEN-INPUT     = 0.
+        SCREEN-INVISIBLE = 1.
+        MODIFY SCREEN.
+      ENDIF.
+
+    ENDIF.
+
+  ENDLOOP.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_ALV_0103 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_ALV_0103 OUTPUT.
+
+  PERFORM SET_ALV_0103.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module STATUS_0300 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE STATUS_0300 OUTPUT.
+  SET PF-STATUS 'S300'.
+  SET TITLEBAR 'T300'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_ALV_0102 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_ALV_0102 OUTPUT.
+
+  PERFORM SET_ALV_0102.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_DROPDOWN_0102 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_DROPDOWN_0102 OUTPUT.
+
+  CLEAR: VALUE, VALUES.
+
+**#### DATA SELECT
+  SELECT PERNR AS KEY
+         ENAME AS TEXT
+    FROM ZT34_EMP
+    INTO CORRESPONDING FIELDS OF TABLE VALUES
+    WHERE VKORG EQ 'PUR'.
+
+  SORT VALUES BY KEY.
+
+  CALL FUNCTION 'VRM_SET_VALUES'
+    EXPORTING
+      ID              = 'GR_OPERNR-LOW'
+      VALUES          = VALUES
+    EXCEPTIONS
+      ID_ILLEGAL_NAME = 1
+      OTHERS          = 2.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_DROPDOWN_0101 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_DROPDOWN_0101 OUTPUT.
+
+  CLEAR: VALUE, VALUES.
+
+**#### DATA SELECT
+  SELECT PERNR AS KEY
+         ENAME AS TEXT
+    FROM ZT34_EMP
+    INTO CORRESPONDING FIELDS OF TABLE VALUES
+    WHERE VKORG EQ 'PUR'.
+
+  SORT VALUES BY KEY.
+
+  CALL FUNCTION 'VRM_SET_VALUES'
+    EXPORTING
+      ID              = 'GR_PERNR-LOW'
+      VALUES          = VALUES
+    EXCEPTIONS
+      ID_ILLEGAL_NAME = 1
+      OTHERS          = 2.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_ALV_0300 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_ALV_0300 OUTPUT.
+
+  PERFORM SET_ALV_0300.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module STATUS_0301 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE STATUS_0301 OUTPUT.
+  SET PF-STATUS 'S301'.
+  SET TITLEBAR 'T301'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_CAT300 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_CAT300 OUTPUT.
+  LOOP AT SCREEN.
+
+    IF GS_CAR300-CARNO IS INITIAL.
+
+      IF SCREEN-GROUP1 EQ 'OG'.
+        SCREEN-INPUT     = 0.
+        SCREEN-INVISIBLE = 1.
+        MODIFY SCREEN.
+      ENDIF.
+
+    ENDIF.
+
+  ENDLOOP.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SELECT_TAB0301 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SELECT_TAB0301 OUTPUT.
+
+  CLEAR: GS_DEREQ, GT_DEREQ.
+  REFRESH CONTROL 'TAB0301' FROM SCREEN 301.
+
+  SELECT A~ITMNM A~CARNO B~CTEXT A~FUEL A~MEINM A~MSEHI
+    FROM ZT34_ISREQ AS A JOIN ZT34_CAR_T AS B
+    ON A~CARNO EQ B~CARNO
+    INTO CORRESPONDING FIELDS OF TABLE GT_DEREQ
+    WHERE A~PRNUM EQ GS_REQINFO-PRNUM
+      AND B~SPRAS EQ SY-LANGU.
+
+  SORT GT_DEREQ BY ITMNM.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module STATUS_0400 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE STATUS_0400 OUTPUT.
+  SET PF-STATUS 'S400'.
+  SET TITLEBAR 'T400'.
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module SET_ALV_0400 OUTPUT
+*&---------------------------------------------------------------------*
+MODULE SET_ALV_0400 OUTPUT.
+
+  PERFORM SET_ALV_0400.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

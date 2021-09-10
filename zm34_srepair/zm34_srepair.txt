@@ -1,0 +1,38 @@
+*&---------------------------------------------------------------------*
+*& Module Pool      ZM34_SREPAIR
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE zm34_srepair_top                        .  " Global Data
+INCLUDE zm34_srepair_c01                        .  " CLASS-Modules
+INCLUDE zm34_srepair_o01                        .  " PBO-Modules
+INCLUDE zm34_srepair_i01                        .  " PAI-Modules
+INCLUDE zm34_srepair_f01                        .  " FORM-Routines
+
+LOAD-OF-PROGRAM.
+  PERFORM get_header_data CHANGING gs_cond.
+  PERFORM get_data CHANGING gt_icond.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Create Repair Request
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+*
+* Message class: ZM34_MESSAGE
+*015   & Data Created.
+*019   ALV Container Creation ERROR!
+*020   ALV Grid Creation ERROR!
+*023   Fill the input field properly.
+*025   You should add items first.
+*026   You must select a vendor code.
+*027   Please select rows to delete.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

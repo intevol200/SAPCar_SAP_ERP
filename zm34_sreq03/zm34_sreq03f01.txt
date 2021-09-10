@@ -1,0 +1,3124 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_SREQ03F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form SEARCH_HELP_DATE
+*&---------------------------------------------------------------------*
+FORM SEARCH_HELP_DATE  CHANGING P_DATE.
+
+  CALL FUNCTION 'F4_DATE'
+    EXPORTING
+      DATE_FOR_FIRST_MONTH = SY-DATUM         " For determining the first month to be displayed
+    IMPORTING
+      SELECT_DATE          = P_DATE.           " selected date
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_0101
+*&---------------------------------------------------------------------*
+FORM SET_ALV_0101 .
+
+  CHECK GO_CON IS INITIAL.
+
+  CREATE OBJECT GO_CON
+    EXPORTING
+      CONTAINER_NAME = 'CUSCON'.
+
+  CREATE OBJECT GO_ALV
+    EXPORTING
+      I_PARENT = GO_CON.
+*      I_SHELLSTYLE = WS_THICKFRAME.
+
+  PERFORM DISPLAY_ALV_0101.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_0101
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV_0101 .
+
+  DATA: LS_LAYO TYPE LVC_S_LAYO.
+*--------------------------------------------------------------------*
+
+**LAYOUT, FIELDCATALOG DATA ##.
+  PERFORM  SET_LAYOUT CHANGING LS_LAYO.
+  PERFORM  SET_FIELDCAT CHANGING GS_FCAT GT_FCAT.
+
+*-- Edit Event #  Event Handler ##
+  PERFORM EVENT_HANDLER_REGISTER USING GO_ALV 'GRID'.
+
+  GS_ALV_VARIANT-REPORT = SY-REPID.
+  GV_ALV_HANDLE = GV_ALV_HANDLE + 1.
+  GS_ALV_VARIANT-HANDLE = GV_ALV_HANDLE.
+
+  CALL METHOD GO_ALV->SET_TABLE_FOR_FIRST_DISPLAY
+    EXPORTING
+      I_STRUCTURE_NAME              = 'ZT34_HSREQ'
+      IS_LAYOUT                     = LS_LAYO
+      IS_VARIANT                    = GS_ALV_VARIANT
+    CHANGING
+      IT_OUTTAB                     = GT_DISP
+      IT_FIELDCATALOG               = GT_FCAT
+      IT_SORT                       = GT_SORT
+    EXCEPTIONS
+      INVALID_PARAMETER_COMBINATION = 1
+      PROGRAM_ERROR                 = 2
+      TOO_MANY_LINES                = 3
+      OTHERS                        = 4.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_LAYOUT
+*&---------------------------------------------------------------------*
+FORM SET_LAYOUT CHANGING CS_LAYO TYPE LVC_S_LAYO.
+
+  CS_LAYO-CWIDTH_OPT = 'X'.
+  CS_LAYO-EXCP_FNAME = 'LIGHT'.
+  CS_LAYO-EXCP_LED = 'X'.
+  CS_LAYO-INFO_FNAME = 'COLOR'.
+  CS_LAYO-SEL_MODE = 'A'.
+  CS_LAYO-GRID_TITLE = 'Purchase Request Header Data'.
+*  CS_LAYO-SMALLTITLE = 'X'.
+*  LS_LAYO-ZEBRA = 'X'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FIELDCAT
+*&---------------------------------------------------------------------*
+FORM SET_FIELDCAT CHANGING CS_FCAT LIKE LINE OF GT_FCAT
+                           CT_FCAT LIKE GT_FCAT.
+
+  IF CT_FCAT IS INITIAL.
+    PERFORM REUSE_FIELDCAT USING 'PRNUM' 'P/R Number' 'C' 'X' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'VKORG' 'Dep. Code' '' '' '' 'X'
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'VENNO' 'Vendor No.' 'C' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ENAME' 'Emp. Name' 'C' '' 6 ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'VTEXT' 'Dep. Name' 'C' '' 4 ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'VNAME' 'Vendor Name' 'C' '' 8 ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'RSTATS_T' 'Status' 'C' '' 2 ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'RSTATS' '' 'C' '' '' 'X'
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'PERNR' 'Req. Emp' 'C' '' 5 ''
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'RQDAT' 'Req. Date' 'C' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+*--------------------------------------------------------------------*
+    PERFORM REUSE_FIELDCAT USING 'DFLAG' '' '' '' '' 'X'
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'LIGHT' 'Progress' '' '' '' ''
+                           CHANGING CS_FCAT CT_FCAT.
+*--------------------------------------------------------------------*
+    PERFORM REUSE_FIELDCAT USING 'ERDAT' '' '' '' '' 'X'
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ERZET' '' '' '' '' 'X'
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'ERNAM' '' '' '' '' 'X'
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'AEDAT' '' '' '' '' 'X'
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'AEZET' '' '' '' '' 'X'
+                           CHANGING CS_FCAT CT_FCAT.
+    PERFORM REUSE_FIELDCAT USING 'AENAM' '' '' '' '' 'X'
+                           CHANGING CS_FCAT CT_FCAT.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form INIT_DATA
+*&---------------------------------------------------------------------*
+FORM INIT_DATA .
+
+*#### ##. ## CONDITION ##.
+*  GR_PERNR+0(3) = 'IEQ'.
+*  GR_PERNR-LOW = SY-UNAME.
+*  APPEND GR_PERNR.
+
+  GR_VKORG+0(3) = 'IEQ'.
+  GR_VKORG-LOW = 'PUR'.
+  APPEND GR_VKORG.
+
+**#### ##. ## CONDITION ##.
+*  GR_OPERNR+0(3) = 'IEQ'.
+*  GR_OPERNR-LOW = SY-UNAME.
+*  APPEND GR_OPERNR.
+
+  GR_OVKORG+0(3) = 'IEQ'.
+  GR_OVKORG-LOW = 'PUR'.
+  APPEND GR_OVKORG.
+
+**P/R## RANGE ## ##
+  GR_PRNUM-SIGN   = 'I'.
+  GR_PRNUM-OPTION = 'BT'.
+*  GR_PRNUM-LOW    = 'PR' && SY-DATUM+2(4) && '0001'.
+  GR_PRNUM-LOW    = 'PR21080001'.
+  GR_PRNUM-HIGH   = 'PR' && SY-DATUM+2(4) && '0050'.
+  APPEND GR_PRNUM.
+
+**P/O## RANGE ## ##
+  GR_OPONUM-SIGN   = 'I'.
+  GR_OPONUM-OPTION = 'BT'.
+*  GR_OPONUM-LOW    = 'PO' && SY-DATUM+2(4) && '0001'.
+  GR_OPONUM-LOW    = 'PO21080001'.
+  GR_OPONUM-HIGH   = 'PO' && SY-DATUM+2(4) && '0050'.
+  APPEND GR_OPONUM.
+
+**#### RANGE ## ##
+  GR_RQDAT-SIGN   = 'I'.
+  GR_RQDAT-OPTION = 'BT'.
+  GR_RQDAT-LOW    = SY-DATUM - 31.
+  GR_RQDAT-HIGH   = SY-DATUM.
+  APPEND GR_RQDAT.
+
+**#### RANGE ## ##
+  GR_PODAT-SIGN   = 'I'.
+  GR_PODAT-OPTION = 'BT'.
+  GR_PODAT-LOW    = SY-DATUM - 31.
+  GR_PODAT-HIGH   = SY-DATUM.
+  APPEND GR_PODAT.
+
+** #### RANGE ## ##
+  GR_INVNO-SIGN   = 'I'.
+  GR_INVNO-OPTION = 'BT'.
+*  GR_INVNO-LOW    = 'IV' && SY-DATUM+2(4)  && '0001'.
+  GR_INVNO-LOW    = 'IV21080001'.
+  GR_INVNO-HIGH   = 'IV' && SY-DATUM+2(4)  && '0099'.
+  APPEND GR_INVNO.
+
+  PERFORM GET_EMP_INFO.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form INIT_DISPLAY_DATA
+*&---------------------------------------------------------------------*
+FORM INIT_DISPLAY_DATA    USING VALUE(PS_CONDI) LIKE GS_CONDI
+                           CHANGING CT_DISP LIKE GT_DISP.
+
+  DATA: LT_VALUE  TYPE DD07V_TAB,
+        LT_VENDOR TYPE TABLE OF ZT34_VENDOR.
+  DATA: LS_VALUE  TYPE DD07V,
+        LS_VENDOR LIKE LINE OF LT_VENDOR.
+
+  FIELD-SYMBOLS: <LFS_DISP> LIKE LINE OF GT_DISP.
+*--------------------------------------------------------------------*
+
+**## ### ##
+  SELECT *
+    FROM ZT34_HSREQ AS A JOIN ZT34_EMP AS B
+      ON A~PERNR EQ B~PERNR
+    JOIN ZT34_ORG AS C
+      ON A~VKORG EQ C~VKORG
+    INTO CORRESPONDING FIELDS OF TABLE CT_DISP
+   WHERE A~PRNUM IN GR_PRNUM
+     AND A~RQDAT IN GR_RQDAT
+     AND A~VKORG IN GR_VKORG
+     AND A~PERNR IN GR_PERNR
+     AND A~VENNO IN GR_VENNO
+     AND A~DFLAG EQ PS_CONDI-DFLAG.
+
+  SORT CT_DISP BY PRNUM.
+
+**### # DATA ##
+  SELECT * INTO TABLE LT_VENDOR
+    FROM ZT34_VENDOR FOR ALL ENTRIES IN CT_DISP
+   WHERE VENNO EQ CT_DISP-VENNO.
+
+**FIXED VALUE
+  PERFORM GET_FIXED_VAL USING 'ZE34_RSTATS'
+                        CHANGING LT_VALUE.
+
+**DISPLAY# DATA # ##.
+  LOOP AT CT_DISP ASSIGNING <LFS_DISP>.
+
+    READ TABLE LT_VALUE INTO LS_VALUE WITH KEY DOMVALUE_L = <LFS_DISP>-RSTATS.
+
+    CHECK SY-SUBRC EQ 0.
+    <LFS_DISP>-RSTATS_T = LS_VALUE-DDTEXT.
+
+    READ TABLE LT_VENDOR INTO LS_VENDOR WITH KEY VENNO = <LFS_DISP>-VENNO.
+
+    CHECK SY-SUBRC EQ 0.
+    <LFS_DISP>-VNAME = LS_VENDOR-VNAME.
+
+**### ## CELL COLOR ##.
+
+    CASE GS_CONDI-DFLAG.
+
+      WHEN 'X'.
+        <LFS_DISP>-COLOR = 'C600'.
+
+    ENDCASE.
+
+**### ## ### ##.
+    CASE <LFS_DISP>-RSTATS.
+
+      WHEN 'P'.
+        <LFS_DISP>-LIGHT = '3'.
+      WHEN 'N'.
+        <LFS_DISP>-LIGHT = '1'.
+
+    ENDCASE.
+
+  ENDLOOP.
+
+*  PERFORM SET_ICON USING LT_VALUE LT_VENDOR
+*                   CHANGING GT_DISP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_FIXED_VAL
+*&---------------------------------------------------------------------*
+FORM GET_FIXED_VAL USING VALUE(PV_DOMNM) TYPE DD07L-DOMNAME
+                    CHANGING CT_VALUE TYPE DD07V_TAB.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      DOMNAME    = PV_DOMNM
+    TABLES
+      VALUES_TAB = CT_VALUE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_FIXED_VAL
+*&---------------------------------------------------------------------*
+FORM GET_FIXED_VAL1 USING VALUE(PV_DOMNM) TYPE DD07L-DOMNAME
+                          VALUE(PV_VALUE)
+                    CHANGING PV_TEXT.
+
+  DATA: LT_VALUE TYPE DD07V_TAB,
+        LS_VALUE LIKE LINE OF LT_VALUE.
+*--------------------------------------------------------------------*
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      DOMNAME    = PV_DOMNM
+    TABLES
+      VALUES_TAB = LT_VALUE.
+
+  READ TABLE LT_VALUE INTO LS_VALUE WITH KEY DOMVALUE_L = PV_VALUE.
+  CHECK SY-SUBRC EQ 0.
+
+  PV_TEXT = LS_VALUE-DDTEXT.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form RANGE_DATA
+*&---------------------------------------------------------------------*
+FORM RANGE_DATA .
+
+  CLEAR: GR_PRNUM[], GR_RQDAT[], GR_VENNO[], GR_VKORG[], GR_PERNR[], GR_OPERNR[].
+
+  IF GR_PRNUM-LOW IS NOT INITIAL AND GR_PRNUM-HIGH IS NOT INITIAL.
+    GR_PRNUM-SIGN = 'I'.
+    GR_PRNUM-OPTION = 'BT'.
+    GR_PRNUM-LOW = GR_PRNUM-LOW.
+    GR_PRNUM-HIGH = GR_PRNUM-HIGH.
+    APPEND GR_PRNUM.
+
+  ELSEIF GR_PRNUM-LOW IS INITIAL AND GR_PRNUM-HIGH IS NOT INITIAL.
+    GR_PRNUM-SIGN = 'I'.
+    GR_PRNUM-OPTION = 'BT'.
+    APPEND GR_PRNUM.
+
+  ELSEIF GR_PRNUM-HIGH IS INITIAL AND GR_PRNUM-LOW IS NOT INITIAL.
+    GR_PRNUM-SIGN = 'I'.
+    GR_PRNUM-OPTION = 'EQ'.
+    APPEND GR_PRNUM.
+
+  ENDIF.
+
+  IF GR_RQDAT-LOW IS NOT INITIAL AND GR_RQDAT-HIGH IS NOT INITIAL.
+    GR_RQDAT-SIGN = 'I'.
+    GR_RQDAT-OPTION = 'BT'.
+    GR_RQDAT-LOW = GR_RQDAT-LOW.
+    GR_RQDAT-HIGH = GR_RQDAT-HIGH.
+    APPEND GR_RQDAT.
+
+  ELSEIF GR_RQDAT-LOW IS INITIAL AND GR_RQDAT-HIGH IS NOT INITIAL.
+    GR_RQDAT-SIGN = 'I'.
+    GR_RQDAT-OPTION = 'BT'.
+    APPEND GR_RQDAT.
+
+  ELSEIF GR_RQDAT-HIGH IS INITIAL AND GR_RQDAT-LOW IS NOT INITIAL.
+    GR_RQDAT-SIGN = 'I'.
+    GR_RQDAT-OPTION = 'EQ'.
+    APPEND GR_RQDAT.
+
+  ENDIF.
+
+  IF GR_PERNR-LOW IS NOT INITIAL.
+    GR_PERNR+0(3) = 'IEQ'.
+    APPEND GR_PERNR.
+  ENDIF.
+
+  IF GR_OPERNR-LOW IS NOT INITIAL.
+    GR_OPERNR+0(3) = 'IEQ'.
+    APPEND GR_OPERNR.
+  ENDIF.
+
+  IF GR_VENNO-LOW IS NOT INITIAL.
+    GR_VENNO+0(3) = 'IEQ'.
+    APPEND GR_VENNO.
+  ENDIF.
+
+  IF GR_VKORG-LOW IS NOT INITIAL.
+    GR_VKORG+0(3) = 'IEQ'.
+    APPEND GR_VKORG.
+  ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SORT_DATA
+*&---------------------------------------------------------------------*
+FORM SORT_DATA .
+
+  GS_SORT-SPOS = '1'.
+  GS_SORT-FIELDNAME = 'LIGHT'.
+  GS_SORT-UP = 'X'.
+  APPEND GS_SORT TO GT_SORT.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*&      Form  HOTSPOT_CLICK
+*&---------------------------------------------------------------------*
+FORM HOTSPOT_CLICK  USING  PS_ROW_ID    TYPE LVC_S_ROW
+                           PS_COLUMN_ID TYPE LVC_S_COL
+                           PS_ROW_NO    TYPE LVC_S_ROID.
+
+**P/R## ### ## ## ITEM DATA ##.
+  READ TABLE GT_DISP INTO GS_DISP INDEX PS_ROW_ID-INDEX.
+
+  CHECK PS_COLUMN_ID-FIELDNAME EQ 'PRNUM'.
+
+  MOVE-CORRESPONDING GS_DISP TO GS_HEADER.
+  GS_HEADER-DFLAG = GS_CONDI-DFLAG.
+
+  PERFORM GET_REQITEM.
+
+  GV_EDIT = ''.
+
+  CALL SCREEN 200 STARTING AT 10 1.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*&      Form  EVENT_HANDLER_REGISTER
+*&---------------------------------------------------------------------*
+FORM EVENT_HANDLER_REGISTER USING LO_GRID TYPE REF TO CL_GUI_ALV_GRID
+                                   LV_OBJ  TYPE CHAR30.
+
+*-- Edit
+  CALL METHOD LO_GRID->REGISTER_EDIT_EVENT
+    EXPORTING
+      I_EVENT_ID = CL_GUI_ALV_GRID=>MC_EVT_MODIFIED.
+
+*// enter function
+  CALL METHOD LO_GRID->REGISTER_EDIT_EVENT
+    EXPORTING
+      I_EVENT_ID = CL_GUI_ALV_GRID=>MC_EVT_ENTER.
+
+*- ALV Event Handler
+  CREATE OBJECT GO_ALV_EVENT_HANDLER
+    EXPORTING
+      E_OBJECT_TEXT = LV_OBJ.
+
+  SET HANDLER GO_ALV_EVENT_HANDLER->HANDLE_HOTSPOT_CLICK FOR LO_GRID.
+  SET HANDLER GO_ALV_EVENT_HANDLER->HANDLE_TOOLBAR FOR LO_GRID.
+  SET HANDLER GO_ALV_EVENT_HANDLER->HANDLE_USER_COMMAND FOR LO_GRID.
+  SET HANDLER GO_ALV_EVENT_HANDLER->HANDLE_BUTTON_CLICK FOR LO_GRID.
+  SET HANDLER GO_ALV_EVENT_HANDLER->HANDLER_DATA_CHANGED FOR LO_GRID.
+  SET HANDLER GO_ALV_EVENT_HANDLER->HANDLE_DATA_CHANGED_FINISHED FOR LO_GRID.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_0200
+*&---------------------------------------------------------------------*
+FORM SET_ALV_0200 .
+
+  CHECK GO_CON200 IS INITIAL.
+
+  CREATE OBJECT GO_CON200
+    EXPORTING
+      CONTAINER_NAME = 'CUSTCON200'.
+
+  CREATE OBJECT GO_ALV200
+    EXPORTING
+      I_PARENT      = GO_CON200
+      I_APPL_EVENTS = 'X'.
+
+*      I_SHELLSTYLE = WS_THICKFRAME.
+  PERFORM DISPLAY_ALV_0200.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_0200
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV_0200 .
+
+  DATA: LS_LAYO      TYPE LVC_S_LAYO,
+        LT_CELLSTYLE TYPE LVC_T_STYL.
+*--------------------------------------------------------------------*
+
+**LAYOUT, FIELDCATALOG DATA ##.
+  CLEAR: GS_FCAT200, GT_FCAT200.
+
+  PERFORM ADD_EXCLUDE_TOOLBAR_BUTTON  USING CL_GUI_ALV_GRID=>MC_FC_EXCL_ALL
+                                      CHANGING GT_EXCLUDE.
+
+  PERFORM SET_LAYOUT200   CHANGING LS_LAYO.
+  PERFORM SET_FIELDCAT200 CHANGING GS_FCAT200 GT_FCAT200.
+  PERFORM SET_SEARCH_F4   CHANGING GT_F4.
+  PERFORM SET_CELL_ATTRIBUTE_200_ALV.
+
+** Edit Event, Event Handler
+  PERFORM EVENT_HANDLER_REGISTER USING GO_ALV200 'GRID200'.
+
+  GS_ALV_VARIANT-REPORT = SY-REPID.
+  GV_ALV_HANDLE = GV_ALV_HANDLE + 1.
+  GS_ALV_VARIANT-HANDLE = GV_ALV_HANDLE.
+
+  CALL METHOD GO_ALV200->SET_TABLE_FOR_FIRST_DISPLAY
+    EXPORTING
+      I_STRUCTURE_NAME              = 'ZT34_ISREQ'
+      IS_LAYOUT                     = LS_LAYO
+      IS_VARIANT                    = GS_ALV_VARIANT
+      IT_TOOLBAR_EXCLUDING          = GT_EXCLUDE
+    CHANGING
+      IT_OUTTAB                     = GT_DETAIL
+      IT_FIELDCATALOG               = GT_FCAT200
+      IT_SORT                       = GT_SORT200
+    EXCEPTIONS
+      INVALID_PARAMETER_COMBINATION = 1
+      PROGRAM_ERROR                 = 2
+      TOO_MANY_LINES                = 3
+      OTHERS                        = 4.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_LAYOUT200
+*&---------------------------------------------------------------------*
+FORM SET_LAYOUT200  CHANGING CS_LAYO200 TYPE LVC_S_LAYO.
+
+  CS_LAYO200-CWIDTH_OPT = 'X'.
+  CS_LAYO200-EXCP_FNAME = 'LIGHT'.
+  CS_LAYO200-EXCP_LED = 'X'.
+  CS_LAYO200-INFO_FNAME = 'COLOR'.
+  CS_LAYO200-SEL_MODE = 'A'.
+  CS_LAYO200-STYLEFNAME = 'CELLSTYLE'.
+*  CS_LAYO200-EDIT = GV_EDIT.
+*  LS_LAYO-ZEBRA = 'X'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FIELDCAT200
+*&---------------------------------------------------------------------*
+FORM SET_FIELDCAT200  CHANGING CS_FCAT200 LIKE GS_FCAT200
+                               CT_FCAT200 LIKE GT_FCAT200.
+
+  IF CT_FCAT200 IS INITIAL.
+    PERFORM REUSE_FIELDCAT USING 'LIGHT' 'Process' 'C' '' '' ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'PRNUM' 'P/R Number' 'C' '' '' ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'MSEHI' 'Unit' 'C' '' '' ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+*--------------------------------------------------------------------*
+    PERFORM REUSE_FIELDCAT USING 'SEQ' 'Seq.' 'C' '' 2 ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'CARNO' 'Model No.' 'C' 'X' 4 ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'CTEXT' 'Model Name' 'C' '' 5 ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'FUEL' '' 'C' '' 6 ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'FUEL_T' 'Fuel Type' 'C' '' 7 ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'VKORG' 'Dep. Code' 'C' '' 8 ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'VTEXT' 'Dep. Name' 'C' '' 9 ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'PERNR' 'Req. Emp.' 'C' '' 10 ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'ENAME' 'Emp. Name' 'C' '' 11 ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'VENNO' 'Vendor Code' 'C' '' 12 ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'VNAME' 'Vendor Name' 'C' '' 13 ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'MEINM' 'Amount' '' '' 14 ''
+                           CHANGING CS_FCAT200 CT_FCAT200.
+*--------------------------------------------------------------------*
+    PERFORM REUSE_FIELDCAT USING 'DFLAG' '' '' '' '' 'X'
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'ITMNM' '' '' '' '' 'X'
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'ERDAT' '' '' '' '' 'X'
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'ERZET' '' '' '' '' 'X'
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'ERNAM' '' '' '' '' 'X'
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'AEDAT' '' '' '' '' 'X'
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'AEZET' '' '' '' '' 'X'
+                           CHANGING CS_FCAT200 CT_FCAT200.
+    PERFORM REUSE_FIELDCAT USING 'AENAM' '' '' '' '' 'X'
+                           CHANGING CS_FCAT200 CT_FCAT200.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form HOTSPOT_CLICK_200
+*&---------------------------------------------------------------------*
+FORM HOTSPOT_CLICK_200  USING  PS_ROW_ID    TYPE LVC_S_ROW
+                               PS_COLUMN_ID TYPE LVC_S_COL
+                               PS_ROW_NO    TYPE LVC_S_ROID.
+
+  CLEAR: GS_CAR.
+
+  READ TABLE GT_DETAIL INTO GS_DETAIL INDEX PS_ROW_ID-INDEX.
+
+  CHECK PS_COLUMN_ID-FIELDNAME EQ 'CARNO'.
+
+  SELECT SINGLE *
+    INTO CORRESPONDING FIELDS OF GS_CAR
+    FROM ZT34_CAR AS A JOIN ZT34_CAR_T AS B
+      ON A~CARNO EQ B~CARNO
+   WHERE A~CARNO EQ GS_DETAIL-CARNO.
+
+  SELECT SINGLE MANU_T
+    INTO GS_CAR-MANU_T
+    FROM ZT34_MANU
+   WHERE MANU EQ GS_CAR-MANU.
+
+  PERFORM GET_FIXED_VAL1 USING 'ZD34_FUEL' GS_CAR-FUEL
+                         CHANGING GS_CAR-FUEL_T.
+
+  PERFORM GET_FIXED_VAL1 USING 'ZD34_CLASS' GS_CAR-CLASS
+                         CHANGING GS_CAR-CLASS_T.
+
+  PERFORM GET_FIXED_VAL1 USING 'ZDE34_SHIFT' GS_CAR-SHIFT
+                         CHANGING GS_CAR-SHIFT_T.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_REQITEM
+*&---------------------------------------------------------------------*
+FORM GET_REQITEM.
+
+  DATA: LV_VTEXT  TYPE ZT34_ORG-VTEXT,
+        LV_SEQ    TYPE C LENGTH 1,
+        LV_ENAME  TYPE ZT34_EMP-ENAME,
+        LV_VENNM  TYPE ZT34_VENDOR-VNAME,
+        LT_DOMVAL TYPE DD07V_TAB,
+        LS_DOMVAL LIKE LINE OF LT_DOMVAL.
+
+  FIELD-SYMBOLS: <LFS_DETAIL> LIKE GS_DETAIL.
+*--------------------------------------------------------------------*
+
+  SELECT *
+    INTO CORRESPONDING FIELDS OF TABLE GT_DETAIL
+    FROM ZT34_ISREQ
+   WHERE PRNUM EQ GS_HEADER-PRNUM
+     AND DFLAG EQ ''.
+
+  SELECT *
+    INTO CORRESPONDING FIELDS OF TABLE GT_CAR
+    FROM ZT34_CAR AS A JOIN ZT34_CAR_T AS B
+      ON A~CARNO EQ B~CARNO.
+
+*  PERFORM GET_SINGLE_DATA USING 'VTEXT' GS_HEADER-VKORG
+*                          CHANGING LV_VTEXT.
+
+  SELECT SINGLE VTEXT
+    INTO LV_VTEXT
+    FROM ZT34_ORG
+   WHERE VKORG EQ GS_HEADER-VKORG.
+
+  SELECT SINGLE ENAME
+    INTO LV_ENAME
+    FROM ZT34_EMP
+   WHERE PERNR EQ GS_HEADER-PERNR.
+
+  SELECT SINGLE VNAME
+    INTO LV_VENNM
+    FROM ZT34_VENDOR
+   WHERE VENNO EQ GS_HEADER-VENNO.
+
+  PERFORM GET_FIXED_VAL USING 'ZD34_FUEL' CHANGING LT_DOMVAL.
+
+  SORT GT_DETAIL BY ITMNM.
+
+  LOOP AT GT_DETAIL ASSIGNING <LFS_DETAIL>.
+
+    LV_SEQ = LV_SEQ + 1.
+
+    <LFS_DETAIL>-VTEXT = LV_VTEXT.
+    <LFS_DETAIL>-ENAME = LV_ENAME.
+    <LFS_DETAIL>-VNAME = LV_VENNM.
+    <LFS_DETAIL>-SEQ = LV_SEQ.
+    READ TABLE GT_CAR INTO GS_CAR WITH KEY CARNO = <LFS_DETAIL>-CARNO.
+
+    CHECK SY-SUBRC EQ 0.
+
+    <LFS_DETAIL>-CTEXT = GS_CAR-CTEXT.
+    <LFS_DETAIL>-PERNR = GS_HEADER-PERNR.
+    <LFS_DETAIL>-VENNO = GS_HEADER-VENNO.
+    <LFS_DETAIL>-VKORG = GS_HEADER-VKORG.
+
+    READ TABLE LT_DOMVAL INTO LS_DOMVAL WITH KEY DOMVALUE_L = <LFS_DETAIL>-FUEL.
+    CHECK SY-SUBRC EQ 0.
+
+    <LFS_DETAIL>-FUEL_T = LS_DOMVAL-DDTEXT.
+
+    CASE GS_HEADER-LIGHT.
+      WHEN '3'.
+        <LFS_DETAIL>-LIGHT = '3'.
+      WHEN '1'.
+        <LFS_DETAIL>-LIGHT = '1'.
+    ENDCASE.
+
+    CLEAR: GS_CAR.
+
+  ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_0103
+*&---------------------------------------------------------------------*
+FORM SET_ALV_0103 .
+
+  CHECK GO_CON103 IS INITIAL.
+
+  CREATE OBJECT GO_CON103
+    EXPORTING
+      CONTAINER_NAME = 'INVCON'.
+
+  CREATE OBJECT GO_ALV103
+    EXPORTING
+      I_PARENT      = GO_CON103
+      I_APPL_EVENTS = 'X'.
+
+  PERFORM DISPLAY_ALV_0103.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_0103
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV_0103 .
+
+  IF GO_ALV103 IS INITIAL.
+    RETURN.
+  ENDIF.
+
+  DATA: LS_LAYO TYPE LVC_S_LAYO.
+*--------------------------------------------------------------------*
+
+**LAYOUT, FIELDCATALOG DATA ##.
+  PERFORM SET_LAYOUT103 CHANGING LS_LAYO.
+  PERFORM SET_FIELDCAT103 CHANGING GS_FCAT103 GT_FCAT103.
+  PERFORM SET_SORT103 CHANGING GS_SORT103 GT_SORT103.
+
+*-- Edit Event #  Event Handler ##
+  PERFORM EVENT_HANDLER_REGISTER USING GO_ALV103 'IV_GRID'.
+  PERFORM EVENT_HANDLER_REGISTER USING GO_ALV103 'GRID103'.
+
+  CALL METHOD GO_ALV103->SET_TABLE_FOR_FIRST_DISPLAY
+    EXPORTING
+      I_STRUCTURE_NAME              = 'ZT34_INVOICE'
+      IS_LAYOUT                     = LS_LAYO
+    CHANGING
+      IT_OUTTAB                     = GT_INVO
+      IT_FIELDCATALOG               = GT_FCAT103
+      IT_SORT                       = GT_SORT103
+    EXCEPTIONS
+      INVALID_PARAMETER_COMBINATION = 1
+      PROGRAM_ERROR                 = 2
+      TOO_MANY_LINES                = 3
+      OTHERS                        = 4.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form INIT_INVOICE_DATA
+*&---------------------------------------------------------------------*
+FORM INIT_INVOICE_DATA CHANGING PT_INVO LIKE GT_INVO.
+
+  DATA: LS_ORG LIKE ZT34_ORG,
+        LT_ORG LIKE TABLE OF LS_ORG.
+
+  DATA: BEGIN OF LS_SUM,
+          PONUM TYPE ZT34_ISORDER-PONUM,
+          MEINM TYPE ZT34_ISORDER-MEINM,
+          MSEHI TYPE ZT34_ISORDER-MSEHI,
+          PRICE TYPE ZT34_ISORDER-PRICE,
+          WAERS TYPE ZT34_ISORDER-WAERS,
+        END OF LS_SUM,
+        LT_SUM LIKE TABLE OF LS_SUM.
+
+  FIELD-SYMBOLS: <LFS_INVO> LIKE LINE OF PT_INVO.
+
+**RANGE ## ##
+  PERFORM INVOICE_RANGE.
+
+*--------------------------------------------------------------------*
+**## ## DATA ##
+*  SELECT A~INVNO A~PONUM A~MEINM A~MSEHI A~DFLAG
+*         B~VKORG B~PODAT C~ENAME
+*    FROM ZT34_INVOICE AS A JOIN ZT34_HSORDER AS B
+*    ON A~PONUM EQ B~PONUM
+*    JOIN ZT34_EMP AS C
+*    ON B~PERNR EQ C~PERNR
+*    INTO CORRESPONDING FIELDS OF TABLE PT_INVO
+*    WHERE A~INVNO IN GR_INVNO
+*    AND A~PONUM IN GR_PONUM
+*    AND A~ERDAT IN GR_ERDAT
+*    AND A~DFLAG EQ GV_DFLAG103.
+
+**CDS View
+  SELECT INVNO, PONUM, MEINM, MSEHI, DFLAG,
+         VKORG, PODAT, ENAME
+    FROM ZV34_INV
+    INTO CORRESPONDING FIELDS OF TABLE @PT_INVO
+   WHERE INVNO IN @GR_INVNO
+     AND PONUM IN @GR_PONUM
+     AND ERDAT IN @GR_ERDAT
+     AND DFLAG EQ @GV_DFLAG103.
+
+**## ## DATA ##
+  SELECT VKORG VTEXT
+    FROM ZT34_ORG
+    INTO CORRESPONDING FIELDS OF TABLE LT_ORG.
+
+**#### DATA ##
+  SELECT PONUM SUM( TMEINM ) MSEHI SUM( PRICE ) WAERS
+    FROM ZT34_DINVOICE
+    INTO TABLE LT_SUM
+    GROUP BY PONUM MSEHI WAERS.
+
+  SORT PT_INVO BY DFLAG PONUM.
+
+**## ### ### ##
+  LOOP AT PT_INVO ASSIGNING <LFS_INVO>.
+
+**### ### ##
+    <LFS_INVO>-BUTTON = 'Return'.
+
+**###
+    READ TABLE LT_ORG INTO LS_ORG WITH KEY VKORG = <LFS_INVO>-VKORG.
+
+    CHECK SY-SUBRC EQ 0.
+    <LFS_INVO>-VTEXT = LS_ORG-VTEXT.
+
+**## ##
+    READ TABLE LT_SUM INTO LS_SUM WITH KEY PONUM = <LFS_INVO>-PONUM.
+
+    CHECK SY-SUBRC EQ 0.
+    <LFS_INVO>-MEINM = LS_SUM-MEINM.
+    <LFS_INVO>-MSEHI = LS_SUM-MSEHI.
+
+    IF LS_SUM-MEINM EQ 0. "#### 0# ##
+      <LFS_INVO>-PRICE = 0.
+    ELSE. "##### ### ### ##
+      <LFS_INVO>-PRICE = LS_SUM-PRICE.
+    ENDIF.
+
+    <LFS_INVO>-WAERS = LS_SUM-WAERS.
+
+  ENDLOOP.
+
+  LOOP AT GT_INVO INTO GS_INVO.
+    IF GS_INVO-DFLAG = 'X'.
+      GS_INVO-CHECKBOX = 'X'.
+      GS_INVO-COLOR = 'C600'.
+      GS_INVO-BUTTON = 'Confirm'.
+    ELSE.
+      GS_INVO-BUTTON = 'Return'.
+    ENDIF.
+
+    MODIFY GT_INVO FROM GS_INVO.
+  ENDLOOP.
+
+  PERFORM ALV_REFRESH_103.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_LAYOUT103
+*&---------------------------------------------------------------------*
+FORM SET_LAYOUT103  CHANGING CS_LAYO TYPE LVC_S_LAYO.
+
+  CS_LAYO-CWIDTH_OPT = 'X'.
+  CS_LAYO-INFO_FNAME = 'COLOR'.
+  CS_LAYO-GRID_TITLE = 'Purchase Invoice Data'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FIELDCAT103
+*&---------------------------------------------------------------------*
+FORM SET_FIELDCAT103  CHANGING CS_FCAT103 LIKE GS_FCAT103
+                               CT_FCAT103 LIKE GT_FCAT103.
+
+  CLEAR: CT_FCAT103.
+
+  PERFORM REUSE_FIELDCAT USING 'INVNO' 'Invoice Number' 'C' '' '' ''
+                         CHANGING CS_FCAT103 CT_FCAT103.
+  PERFORM REUSE_FIELDCAT USING 'PONUM' 'P/O Number' 'C' 'X' '' ''
+                         CHANGING CS_FCAT103 CT_FCAT103.
+  PERFORM REUSE_FIELDCAT USING 'MEINM' 'Amount' '' '' '' ''
+                         CHANGING CS_FCAT103 CT_FCAT103.
+  PERFORM REUSE_FIELDCAT USING 'MSEHI' 'Unit' 'C' '' '' ''
+                         CHANGING CS_FCAT103 CT_FCAT103.
+*--------------------------------------------------------------------*
+  PERFORM REUSE_FIELDCAT USING 'ERDAT' 'Created Date' '' '' '' 'X'
+                         CHANGING CS_FCAT103 CT_FCAT103.
+  PERFORM REUSE_FIELDCAT USING 'ERZET' 'Created Time' '' '' '' 'X'
+                         CHANGING CS_FCAT103 CT_FCAT103.
+  PERFORM REUSE_FIELDCAT USING 'ERNAM' 'Created Emp' '' '' '' 'X'
+                         CHANGING CS_FCAT103 CT_FCAT103.
+  PERFORM REUSE_FIELDCAT USING 'AEDAT' 'Changed Date' '' '' '' 'X'
+                         CHANGING CS_FCAT103 CT_FCAT103.
+  PERFORM REUSE_FIELDCAT USING 'AEZET' 'Changed Time' '' '' '' 'X'
+                         CHANGING CS_FCAT103 CT_FCAT103.
+  PERFORM REUSE_FIELDCAT USING 'AENAM' 'Changed Emp' '' '' '' 'X'
+                         CHANGING CS_FCAT103 CT_FCAT103.
+  PERFORM REUSE_FIELDCAT USING 'DFLAG' 'Changed Emp' '' '' '' 'X'
+                       CHANGING CS_FCAT103 CT_FCAT103.
+**--------------------------------------------------------------------*
+  PERFORM CHECK_FIELDCAT USING 'PRICE' 'Total Price' '' 6 'WAERS'
+                         CHANGING CS_FCAT103 CT_FCAT103.
+  PERFORM CHECK_FIELDCAT USING 'WAERS' 'Currency' 'C' 7 ''
+                         CHANGING CS_FCAT103 CT_FCAT103.
+*--------------------------------------------------------------------*
+  PERFORM REUSE_FIELDCAT USING 'ENAME' 'Emp. Name' 'C' '' 8 ''
+                         CHANGING CS_FCAT103 CT_FCAT103.
+  PERFORM REUSE_FIELDCAT USING 'VTEXT' 'Req. Dep.' 'C' '' 9 ''
+                         CHANGING CS_FCAT103 CT_FCAT103.
+  PERFORM REUSE_FIELDCAT USING 'PODAT' 'Req. Date' 'C' '' 10 ''
+                         CHANGING CS_FCAT103 CT_FCAT103.
+
+  CLEAR CS_FCAT103.
+  CS_FCAT103-FIELDNAME = 'CHECKBOX'.
+  CS_FCAT103-COLTEXT = 'Return Check'.
+  CS_FCAT103-JUST = 'C'.
+  CS_FCAT103-CHECKBOX = 'X'.
+  CS_FCAT103-COL_POS = 11.
+  APPEND CS_FCAT103 TO CT_FCAT103.
+
+  CLEAR CS_FCAT103.
+  CS_FCAT103-FIELDNAME = 'BUTTON'.
+  CS_FCAT103-COLTEXT = 'Integrity Check'.
+  CS_FCAT103-JUST = 'C'.
+  CS_FCAT103-STYLE = CL_GUI_ALV_GRID=>MC_STYLE_BUTTON.
+  CS_FCAT103-COL_POS = 12.
+  APPEND CS_FCAT103 TO CT_FCAT103.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form REUSE_FIELTCAT
+*&---------------------------------------------------------------------*
+FORM REUSE_FIELDCAT  USING VALUE(P_FIELD)
+                           VALUE(P_COL)
+                           VALUE(P_JUST)
+                           VALUE(P_HOTSPOT)
+                           VALUE(P_POS)
+                           VALUE(P_OUT)
+
+                     CHANGING PS_FCAT LIKE GS_FCAT103
+                              PT_FCAT LIKE GT_FCAT103.
+  CLEAR: PS_FCAT.
+
+  PS_FCAT-FIELDNAME = P_FIELD.
+  PS_FCAT-COLTEXT = P_COL.
+  PS_FCAT-JUST = P_JUST.
+  PS_FCAT-HOTSPOT = P_HOTSPOT.
+  PS_FCAT-COL_POS = P_POS.
+  PS_FCAT-NO_OUT = P_OUT.
+
+  IF P_FIELD EQ 'CARNO' AND GV_EDIT EQ 'X'.
+    PS_FCAT-F4AVAILABL = 'X'.
+  ENDIF.
+
+  IF P_FIELD NE 'MEINM' AND P_FIELD NE 'CARNO'.
+    PS_FCAT-EDIT  = ''.
+
+  ELSE.
+    PS_FCAT-EDIT = GV_EDIT.
+
+  ENDIF.
+
+  APPEND PS_FCAT TO PT_FCAT.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_SORT103
+*&---------------------------------------------------------------------*
+FORM SET_SORT103  CHANGING PS_SORT LIKE GS_SORT103
+                           PT_SORT LIKE GT_SORT103.
+
+  CLEAR: PS_SORT.
+
+  "### ### ### ##
+  PS_SORT-FIELDNAME = 'CHECKBOX'.
+  PS_SORT-UP = 'X'.
+  APPEND PS_SORT TO PT_SORT.
+
+  "####, ###### #### ##
+  PS_SORT-FIELDNAME = 'INVNO'.
+  PS_SORT-UP = 'X'.
+  APPEND PS_SORT TO PT_SORT.
+
+  PS_SORT-FIELDNAME = 'PONUM'.
+  PS_SORT-UP = 'X'.
+  APPEND PS_SORT TO PT_SORT.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form INVOICE_RANGE
+*&---------------------------------------------------------------------*
+FORM INVOICE_RANGE .
+  CLEAR: GR_INVNO[], GR_PONUM[], GR_ERDAT[].
+
+  IF GR_INVNO-LOW IS NOT INITIAL AND GR_INVNO-HIGH IS NOT INITIAL.
+    GR_INVNO-SIGN = 'I'.
+    GR_INVNO-OPTION = 'BT'.
+    GR_INVNO-LOW = GR_INVNO-LOW.
+    GR_INVNO-HIGH = GR_INVNO-HIGH.
+    APPEND GR_INVNO.
+
+  ELSEIF GR_INVNO-LOW IS INITIAL AND GR_INVNO-HIGH IS NOT INITIAL.
+    GR_INVNO-SIGN = 'I'.
+    GR_INVNO-OPTION = 'BT'.
+    APPEND GR_INVNO.
+
+  ELSEIF GR_INVNO-HIGH IS INITIAL AND GR_INVNO-LOW IS NOT INITIAL.
+    GR_INVNO-SIGN = 'I'.
+    GR_INVNO-OPTION = 'EQ'.
+    APPEND GR_INVNO.
+  ENDIF.
+
+*--------------------------------------------------------------------*
+
+  IF GR_PONUM-LOW IS NOT INITIAL AND GR_PONUM-HIGH IS NOT INITIAL.
+    GR_PONUM-SIGN = 'I'.
+    GR_PONUM-OPTION = 'BT'.
+    GR_PONUM-LOW = GR_PONUM-LOW.
+    GR_PONUM-HIGH = GR_PONUM-HIGH.
+    APPEND GR_PONUM.
+
+  ELSEIF GR_PONUM-LOW IS INITIAL AND GR_PONUM-HIGH IS NOT INITIAL.
+    GR_PONUM-SIGN = 'I'.
+    GR_PONUM-OPTION = 'BT'.
+    APPEND GR_PONUM.
+
+  ELSEIF GR_PONUM-HIGH IS INITIAL AND GR_PONUM-LOW IS NOT INITIAL.
+    GR_PONUM-SIGN = 'I'.
+    GR_PONUM-OPTION = 'EQ'.
+    APPEND GR_PONUM.
+  ENDIF.
+
+*--------------------------------------------------------------------*
+
+  IF GR_ERDAT-LOW IS NOT INITIAL AND GR_ERDAT-HIGH IS NOT INITIAL.
+    GR_ERDAT-SIGN = 'I'.
+    GR_ERDAT-OPTION = 'BT'.
+    GR_ERDAT-LOW = GR_ERDAT-LOW.
+    GR_ERDAT-HIGH = GR_ERDAT-LOW.
+    APPEND GR_ERDAT.
+
+  ELSEIF GR_ERDAT-LOW IS INITIAL AND GR_ERDAT-HIGH IS NOT INITIAL.
+    GR_ERDAT-SIGN = 'I'.
+    GR_ERDAT-OPTION = 'BT'.
+    APPEND GR_ERDAT.
+
+  ELSEIF GR_ERDAT-HIGH IS INITIAL AND GR_ERDAT-LOW IS NOT INITIAL.
+    GR_ERDAT-SIGN = 'I'.
+    GR_ERDAT-OPTION = 'EQ'.
+    APPEND GR_ERDAT.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_SINGLE_dATA
+*&---------------------------------------------------------------------*
+FORM GET_SINGLE_DATA USING VALUE(PV_INFO)
+                            VALUE(PV_CONDI)
+                     CHANGING CV_DATA.
+
+*  SELECT SINGLE
+*    INTO @CV_DATA
+*    FROM ZT34_ORG
+*   WHERE VKORG EQ @PV_CONDI.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_0102
+*&---------------------------------------------------------------------*
+FORM SET_ALV_0102 .
+
+  CHECK GO_CON102 IS INITIAL.
+
+  CREATE OBJECT GO_CON102
+    EXPORTING
+      CONTAINER_NAME = 'CUSTCON102'.
+
+  CREATE OBJECT GO_ALV102
+    EXPORTING
+      I_PARENT = GO_CON102.
+*      I_APPL_EVENTS = 'X'.
+
+  PERFORM DISPLAY_ALV_0102.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_0102
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV_0102 .
+
+  DATA: LS_LAY1O2 TYPE LVC_S_LAYO.
+*--------------------------------------------------------------------*
+
+**LAYOUT, FIELDCATALOG DATA ##.
+  PERFORM  SET_LAYOUT102 CHANGING LS_LAY1O2.
+  PERFORM  SET_FIELDCAT102 CHANGING GS_FCAT102 GT_FCAT102.
+
+*-- Edit Event #  Event Handler ##
+  PERFORM EVENT_HANDLER_REGISTER USING GO_ALV102 'PO_GRID'.
+
+  CALL METHOD GO_ALV102->SET_TABLE_FOR_FIRST_DISPLAY
+    EXPORTING
+      I_STRUCTURE_NAME              = 'ZT34_HSORDER'
+      IS_LAYOUT                     = LS_LAY1O2
+    CHANGING
+      IT_OUTTAB                     = GT_DISP102
+      IT_FIELDCATALOG               = GT_FCAT102
+      IT_SORT                       = GT_SORT102
+    EXCEPTIONS
+      INVALID_PARAMETER_COMBINATION = 1
+      PROGRAM_ERROR                 = 2
+      TOO_MANY_LINES                = 3
+      OTHERS                        = 4.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form INIT_PODATA
+*&---------------------------------------------------------------------*
+FORM INIT_PODATA CHANGING PT_TABLE LIKE GT_DISP102.
+
+  DATA: LV_STATN TYPE C LENGTH 1,
+        LV_STATP TYPE C LENGTH 1,
+        LV_STATH TYPE C LENGTH 1.
+
+  DATA: BEGIN OF LS_EMP,
+          PERNR TYPE ZT34_EMP-PERNR,
+          ENAME TYPE ZT34_EMP-ENAME,
+        END OF LS_EMP,
+        LT_EMP LIKE TABLE OF LS_EMP.
+
+  DATA: BEGIN OF LS_ORG,
+          VKORG TYPE ZT34_ORG-VKORG,
+          VTEXT TYPE ZT34_ORG-VTEXT,
+        END OF LS_ORG,
+        LT_ORG LIKE TABLE OF LS_ORG.
+
+  DATA: BEGIN OF LS_ITEM,
+          PONUM  TYPE ZT34_ISORDER-PONUM,
+          OSTATS TYPE ZT34_ISORDER-OSTATS,
+        END OF LS_ITEM,
+        LT_ITEM LIKE TABLE OF LS_ITEM.
+
+  FIELD-SYMBOLS: <LFS_TABLE> LIKE LINE OF GT_DISP102.
+
+  PERFORM ORDER_RANGE.
+*--------------------------------------------------------------------*
+
+**## #### DATA
+  SELECT *
+    FROM ZT34_HSORDER
+    INTO CORRESPONDING FIELDS OF TABLE PT_TABLE
+   WHERE PONUM IN GR_OPONUM
+     AND PERNR IN GR_OPERNR
+     AND PODAT IN GR_PODAT
+     AND VKORG IN GR_OVKORG
+     AND DFLAG EQ GV_DFLAG.
+
+**## ITEM DATA.
+  SELECT PONUM OSTATS
+    INTO TABLE LT_ITEM
+    FROM ZT34_ISORDER.
+
+**#### DATA
+  SELECT PERNR ENAME
+    FROM ZT34_EMP
+    INTO TABLE LT_EMP.
+
+**#### DATA
+  SELECT VKORG VTEXT
+    FROM ZT34_ORG
+    INTO TABLE LT_ORG.
+
+*DISPLAY# DATA # ##.
+  LOOP AT PT_TABLE ASSIGNING <LFS_TABLE>.
+    LOOP AT LT_ITEM INTO LS_ITEM WHERE PONUM EQ <LFS_TABLE>-PONUM.
+
+      IF LS_ITEM-OSTATS EQ 'N'.
+        LV_STATN = 'X'.
+
+      ELSEIF LS_ITEM-OSTATS EQ 'H'.
+        LV_STATH = 'X'.
+
+      ELSEIF LS_ITEM-OSTATS EQ 'P'.
+        LV_STATP = 'X'.
+
+      ENDIF.
+    ENDLOOP.
+*--------------------------------------------------------------------*
+
+    CASE GV_DFLAG.
+
+      WHEN 'X'.
+
+        <LFS_TABLE>-COLOR = 'C600'.
+
+    ENDCASE.
+
+    IF LV_STATH IS INITIAL AND LV_STATP IS INITIAL AND LV_STATN EQ 'X'.
+      <LFS_TABLE>-LIGHT = '1'.
+
+    ELSEIF LV_STATH EQ 'X' AND LV_STATP IS INITIAL AND LV_STATN IS INITIAL.
+      <LFS_TABLE>-LIGHT = '2'.
+
+    ELSEIF LV_STATH IS INITIAL AND LV_STATP EQ 'X' AND LV_STATN IS INITIAL.
+      <LFS_TABLE>-LIGHT = '3'.
+
+    ELSEIF LV_STATH EQ 'X' AND LV_STATP IS INITIAL AND LV_STATN EQ 'X'.
+      <LFS_TABLE>-LIGHT = '1'.
+
+    ELSE.
+      <LFS_TABLE>-LIGHT = '2'.
+
+    ENDIF.
+*--------------------------------------------------------------------*
+    CLEAR: LV_STATN, LV_STATH, LV_STATP.
+
+    READ TABLE LT_EMP INTO LS_EMP WITH KEY PERNR = <LFS_TABLE>-PERNR.
+
+    CHECK SY-SUBRC EQ 0.
+    <LFS_TABLE>-ENAME = LS_EMP-ENAME.
+
+
+    READ TABLE LT_ORG INTO LS_ORG WITH KEY VKORG = <LFS_TABLE>-VKORG.
+
+    CHECK SY-SUBRC EQ 0.
+    <LFS_TABLE>-VTEXT = LS_ORG-VTEXT.
+
+  ENDLOOP.
+
+  SORT GT_DISP102 BY PONUM.
+
+  PERFORM ALV_REFRESH_102.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form HOTSPOT_CLICK_102
+*&---------------------------------------------------------------------*
+FORM HOTSPOT_CLICK_PO  USING  PS_ROW_ID    TYPE LVC_S_ROW
+                              PS_COLUMN_ID TYPE LVC_S_COL
+                              PS_ROW_NO    TYPE LVC_S_ROID.
+
+**P/O## ### ## ## ITEM DATA ##.
+  READ TABLE GT_DISP102 INTO GS_DISP102 INDEX PS_ROW_ID-INDEX.
+
+  CHECK PS_COLUMN_ID-FIELDNAME EQ 'PONUM'.
+  MOVE-CORRESPONDING GS_DISP102 TO GS_HEADER300.
+
+  PERFORM GET_ISORDER.
+
+  CALL SCREEN 300 STARTING AT 10 1.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_FIELDCAT
+*&---------------------------------------------------------------------*
+FORM CHECK_FIELDCAT  USING VALUE(P_FIELD)
+                           VALUE(P_COL)
+                           VALUE(P_JUST)
+                           VALUE(P_POS)
+                           VALUE(P_CFIELD)
+                     CHANGING PS_FCAT LIKE GS_FCAT103
+                              PT_FCAT LIKE GT_FCAT103.
+
+  CLEAR: PS_FCAT.
+
+  PS_FCAT-FIELDNAME = P_FIELD.
+  PS_FCAT-COLTEXT = P_COL.
+  PS_FCAT-JUST = P_JUST.
+  PS_FCAT-COL_POS = P_POS.
+  PS_FCAT-CFIELDNAME = P_CFIELD.
+  APPEND PS_FCAT TO PT_FCAT.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_LAYOUT102
+*&---------------------------------------------------------------------*
+FORM SET_LAYOUT102  CHANGING CS_LAYO102 TYPE LVC_S_LAYO.
+
+  CS_LAYO102-CWIDTH_OPT = 'X'.
+  CS_LAYO102-EXCP_LED = 'X'.
+  CS_LAYO102-EXCP_FNAME = 'LIGHT'.
+  CS_LAYO102-INFO_FNAME = 'COLOR'.
+  CS_LAYO102-SEL_MODE = 'A'.
+  CS_LAYO102-GRID_TITLE = 'Purchase Order Header Data'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FIELDCAT102
+*&---------------------------------------------------------------------*
+FORM SET_FIELDCAT102  CHANGING CS_FCAT102 LIKE GS_FCAT102
+                               CT_FCAT102 LIKE GT_FCAT102.
+
+  CLEAR: CT_FCAT102.
+
+  PERFORM REUSE_FIELDCAT USING 'LIGHT' 'Progress' 'C' '' 1 ''
+                         CHANGING CS_FCAT102 CT_FCAT102.
+  PERFORM REUSE_FIELDCAT USING 'VTEXT' 'Dep. Name' 'C' '' 5 ''
+                         CHANGING CS_FCAT102 CT_FCAT102.
+  PERFORM REUSE_FIELDCAT USING 'PERNR' 'Pur. Emp' 'C' '' 6 ''
+                         CHANGING CS_FCAT102 CT_FCAT102.
+  PERFORM REUSE_FIELDCAT USING 'ENAME' 'Emp. Name' 'C' '' 7 ''
+                         CHANGING CS_FCAT102 CT_FCAT102.
+*--------------------------------------------------------------------*
+  PERFORM REUSE_FIELDCAT USING 'PONUM' 'P/O Number' 'C' 'X' '' ''
+                         CHANGING CS_FCAT102 CT_FCAT102.
+  PERFORM REUSE_FIELDCAT USING 'PODAT' 'Pur. Date' 'C' '' '' ''
+                         CHANGING CS_FCAT102 CT_FCAT102.
+*--------------------------------------------------------------------*
+  PERFORM REUSE_FIELDCAT USING 'VKORG' '' '' '' '' 'X'
+                         CHANGING CS_FCAT102 CT_FCAT102.
+  PERFORM REUSE_FIELDCAT USING 'DFLAG' '' '' '' '' 'X'
+                         CHANGING CS_FCAT102 CT_FCAT102.
+  PERFORM REUSE_FIELDCAT USING 'ERDAT' '' '' '' '' 'X'
+                         CHANGING CS_FCAT102 CT_FCAT102.
+  PERFORM REUSE_FIELDCAT USING 'ERZET' '' '' '' '' 'X'
+                         CHANGING CS_FCAT102 CT_FCAT102.
+  PERFORM REUSE_FIELDCAT USING 'ERNAM' '' '' '' '' 'X'
+                         CHANGING CS_FCAT102 CT_FCAT102.
+  PERFORM REUSE_FIELDCAT USING 'AEDAT' '' '' '' '' 'X'
+                         CHANGING CS_FCAT102 CT_FCAT102.
+  PERFORM REUSE_FIELDCAT USING 'AEZET' '' '' '' '' 'X'
+                         CHANGING CS_FCAT102 CT_FCAT102.
+  PERFORM REUSE_FIELDCAT USING 'AENAM' '' '' '' '' 'X'
+                         CHANGING CS_FCAT102 CT_FCAT102.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_0300
+*&---------------------------------------------------------------------*
+FORM SET_ALV_0300 .
+
+  CHECK GO_CON300 IS INITIAL.
+
+  CREATE OBJECT GO_CON300
+    EXPORTING
+      CONTAINER_NAME = 'POCON'.
+
+  CREATE OBJECT GO_ALV300
+    EXPORTING
+      I_PARENT      = GO_CON300
+      I_APPL_EVENTS = 'X'.
+
+  PERFORM DISPLAY_ALV_0300.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_0300
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV_0300 .
+
+  DATA: LS_LAYO TYPE LVC_S_LAYO.
+*--------------------------------------------------------------------*
+
+**LAYOUT, FIELDCATALOG DATA ##.
+  PERFORM  SET_LAYOUT300 CHANGING LS_LAYO.
+  PERFORM  SET_FIELDCAT300 CHANGING GS_FCAT300 GT_FCAT300.
+
+*-- Edit Event #  Event Handler ##
+  PERFORM EVENT_HANDLER_REGISTER USING GO_ALV300 'GRID300'.
+
+  CALL METHOD GO_ALV300->SET_TABLE_FOR_FIRST_DISPLAY
+    EXPORTING
+      I_STRUCTURE_NAME              = 'ZT34_ISORDER'
+      IS_LAYOUT                     = LS_LAYO
+    CHANGING
+      IT_OUTTAB                     = GT_PODETAIL
+      IT_FIELDCATALOG               = GT_FCAT300
+      IT_SORT                       = GT_SORT300
+    EXCEPTIONS
+      INVALID_PARAMETER_COMBINATION = 1
+      PROGRAM_ERROR                 = 2
+      TOO_MANY_LINES                = 3
+      OTHERS                        = 4.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_LAYOUT300
+*&---------------------------------------------------------------------*
+FORM SET_LAYOUT300  CHANGING CS_LAYO300 TYPE LVC_S_LAYO.
+
+  CS_LAYO300-CWIDTH_OPT = 'X'.
+  CS_LAYO300-EXCP_FNAME = 'LIGHT'.
+  CS_LAYO300-EXCP_LED = 'X'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FIELDCAT300
+*&---------------------------------------------------------------------*
+FORM SET_FIELDCAT300  CHANGING CS_FCAT300 LIKE GS_FCAT300
+                               CT_FCAT300 LIKE GT_FCAT300.
+
+  IF CT_FCAT300 IS INITIAL.
+    PERFORM REUSE_FIELDCAT USING 'LIGHT' 'Process' 'C' '' '' ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'PONUM' 'P/O Number' 'C' '' '' ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'PRNUM' 'P/R Number' 'C' 'X' '' ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'MSEHI' 'Unit' 'C' '' '' ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'WAERS' 'Currency' 'C' '' '' ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+*--------------------------------------------------------------------*
+    PERFORM REUSE_FIELDCAT USING 'Status' 'Status' 'C' '' 2 ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'ITMNM' 'Seq.' 'C' '' 4 ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'CARNO' 'Model No.' 'C' 'X' 5 ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'CTEXT' 'Model Name' 'C' '' 6 ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'VKORG' 'Dep. Code' 'C' '' 7 ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'VTEXT' 'Dep. Name' 'C' '' 8 ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'PERNR' 'Req. Emp.' 'C' '' 9 ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'ENAME' 'Emp. Name' 'C' '' 10 ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'MEINM' 'Amount' '' '' 11 ''
+                           CHANGING CS_FCAT300 CT_FCAT300.
+*--------------------------------------------------------------------*
+    PERFORM REUSE_FIELDCAT USING 'FUEL' '' '' '' '' 'X'
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'OSTATS' '' '' '' '' 'X'
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'DFLAG' '' '' '' '' 'X'
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'ERDAT' '' '' '' '' 'X'
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'ERZET' '' '' '' '' 'X'
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'ERNAM' '' '' '' '' 'X'
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'AEDAT' '' '' '' '' 'X'
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'AEZET' '' '' '' '' 'X'
+                           CHANGING CS_FCAT300 CT_FCAT300.
+    PERFORM REUSE_FIELDCAT USING 'AENAM' '' '' '' '' 'X'
+                           CHANGING CS_FCAT300 CT_FCAT300.
+  ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_ISORDER
+*&---------------------------------------------------------------------*
+FORM GET_ISORDER .
+
+  DATA: LV_VTEXT TYPE ZT34_ORG-VTEXT,
+        LV_ENAME TYPE ZT34_EMP-ENAME,
+        LV_VENNM TYPE ZT34_VENDOR-VNAME,
+        LT_VALUE TYPE DD07V_TAB,
+        LS_VALUE LIKE LINE OF LT_VALUE.
+
+  FIELD-SYMBOLS: <LFS_PODETAIL> LIKE GS_PODETAIL.
+*--------------------------------------------------------------------*
+
+  SELECT *
+    FROM ZT34_ISORDER
+    INTO CORRESPONDING FIELDS OF TABLE GT_PODETAIL
+    WHERE PONUM EQ GS_HEADER300-PONUM.
+
+  SELECT *
+    INTO CORRESPONDING FIELDS OF TABLE GT_CAR
+    FROM ZT34_CAR AS A JOIN ZT34_CAR_T AS B
+      ON A~CARNO EQ B~CARNO.
+
+  SELECT SINGLE VTEXT
+    INTO LV_VTEXT
+    FROM ZT34_ORG
+   WHERE VKORG EQ GS_HEADER300-VKORG.
+
+  SELECT SINGLE ENAME
+    INTO LV_ENAME
+    FROM ZT34_EMP
+   WHERE PERNR EQ GS_HEADER300-PERNR.
+
+  PERFORM GET_FIXED_VAL USING 'ZE34_OSTATS' CHANGING LT_VALUE.
+
+  SORT GT_PODETAIL BY ITMNM.
+
+  LOOP AT GT_PODETAIL ASSIGNING <LFS_PODETAIL>.
+
+    <LFS_PODETAIL>-VTEXT = LV_VTEXT.
+    <LFS_PODETAIL>-ENAME = LV_ENAME.
+    <LFS_PODETAIL>-VNAME = LV_VENNM.
+
+    READ TABLE GT_CAR INTO GS_CAR WITH KEY CARNO = <LFS_PODETAIL>-CARNO.
+
+    CHECK SY-SUBRC EQ 0.
+
+    <LFS_PODETAIL>-CTEXT = GS_CAR-CTEXT.
+    <LFS_PODETAIL>-PERNR = GS_HEADER300-PERNR.
+    <LFS_PODETAIL>-VKORG = GS_HEADER300-VKORG.
+
+    CASE <LFS_PODETAIL>-OSTATS.
+      WHEN ''.
+        <LFS_PODETAIL>-STATUS = '#####'.
+    ENDCASE.
+
+    READ TABLE LT_VALUE INTO LS_VALUE  WITH KEY DOMVALUE_L = <LFS_PODETAIL>-OSTATS.
+    CHECK SY-SUBRC EQ 0.
+
+    <LFS_PODETAIL>-STATUS = LS_VALUE-DDTEXT.
+
+    CASE <LFS_PODETAIL>-OSTATS.
+      WHEN 'N'.
+        <LFS_PODETAIL>-LIGHT = '1'.
+
+      WHEN 'H'.
+        <LFS_PODETAIL>-LIGHT = '2'.
+
+      WHEN 'P'.
+        <LFS_PODETAIL>-LIGHT = '3'.
+
+    ENDCASE.
+
+    CLEAR GS_CAR.
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form EXCLUDING_FCODE
+*&---------------------------------------------------------------------*
+FORM EXCLUDING_FCODE .
+
+  CLEAR: GT_FCODE.
+
+**### tab ###.
+  CASE G_TC_100-PRESSED_TAB.
+
+**#### ## no_display.
+    WHEN C_TC_100-TAB1.
+
+      GS_FCODE-FCODE = 'POCR'.
+      APPEND GS_FCODE TO GT_FCODE.
+
+**DFLAG ###
+      CASE GS_CONDI-DFLAG.
+
+        WHEN 'X'.
+
+          GS_FCODE-FCODE = 'PRCH'.
+          APPEND GS_FCODE TO GT_FCODE.
+
+          GS_FCODE-FCODE = 'PRDE'.
+          APPEND GS_FCODE TO GT_FCODE.
+
+      ENDCASE.
+
+**### tab ###.
+    WHEN C_TC_100-TAB2.
+
+      GV_EDIT = ''.
+
+**### #, #### ####.
+      CASE GV_VKORG.
+
+        WHEN 'PUR'.
+        WHEN OTHERS.
+
+          GS_FCODE-FCODE = 'POCR'.
+          APPEND GS_FCODE TO GT_FCODE.
+
+      ENDCASE.
+
+**#### ## NO OUT.
+      GS_FCODE-FCODE = 'PRCR'.
+      APPEND GS_FCODE TO GT_FCODE.
+
+      GS_FCODE-FCODE = 'PRCH'.
+      APPEND GS_FCODE TO GT_FCODE.
+
+      GS_FCODE-FCODE = 'PRDE'.
+      APPEND GS_FCODE TO GT_FCODE.
+
+**### tab ###.
+    WHEN C_TC_100-TAB3.
+
+      GV_EDIT = ''.
+
+      GS_FCODE-FCODE = 'PRCR'.
+      APPEND GS_FCODE TO GT_FCODE.
+
+      GS_FCODE-FCODE = 'PRCH'.
+      APPEND GS_FCODE TO GT_FCODE.
+
+      GS_FCODE-FCODE = 'PRDE'.
+      APPEND GS_FCODE TO GT_FCODE.
+
+      GS_FCODE-FCODE = 'POCR'.
+      APPEND GS_FCODE TO GT_FCODE.
+
+  ENDCASE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_EMP_INFO
+*&---------------------------------------------------------------------*
+FORM GET_EMP_INFO .
+
+  SELECT SINGLE VKORG INTO GV_VKORG
+    FROM ZT34_EMP
+    WHERE PERNR = SY-UNAME.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_PRCHANGE
+*&---------------------------------------------------------------------*
+FORM CHECK_PRCHANGE .
+
+  DATA: LV_ROW  TYPE I,
+        LT_ROW  TYPE LVC_T_ROID,
+        LS_ROW  LIKE LINE OF LT_ROW,
+        LS_DISP LIKE LINE OF GT_DISP.
+*--------------------------------------------------------------------*
+
+  CLEAR: GV_SUBRC.
+
+  CALL METHOD GO_ALV->GET_SELECTED_ROWS
+    IMPORTING
+      ET_ROW_NO = LT_ROW.
+
+  LV_ROW = LINES( LT_ROW ).
+
+  IF LV_ROW IS INITIAL.
+
+    GV_SUBRC  = 4.
+    MESSAGE S004 DISPLAY LIKE 'E'.
+    RETURN.
+
+  ELSEIF LV_ROW GT 1.
+
+    GV_SUBRC  = 4.
+    MESSAGE S012 DISPLAY LIKE 'E'.
+    RETURN.
+
+  ELSE.
+
+    READ TABLE LT_ROW INTO LS_ROW INDEX 1.
+    CHECK SY-SUBRC EQ 0.
+
+    READ TABLE GT_DISP INTO LS_DISP INDEX LS_ROW-ROW_ID.
+    CHECK SY-SUBRC EQ 0.
+
+    CASE LS_DISP-RSTATS.
+      WHEN 'P'.
+
+        GV_SUBRC  = 4.
+        MESSAGE S029 DISPLAY LIKE 'E'.
+        RETURN.
+
+      WHEN 'N'.
+
+        MOVE-CORRESPONDING LS_DISP TO GS_HEADER.
+        GS_HEADER-DFLAG = GS_CONDI-DFLAG.
+
+        PERFORM GET_REQITEM.
+
+    ENDCASE.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form OBJECT_FREE
+*&---------------------------------------------------------------------*
+FORM OBJECT_FREE .
+
+  IF GO_ALV200 IS NOT INITIAL.
+    CALL METHOD GO_ALV200->FREE.
+    CLEAR: GO_ALV200.
+
+    CALL METHOD GO_CON200->FREE.
+    CLEAR: GO_CON200.
+
+  ELSEIF GO_ALV300 IS NOT INITIAL.
+    PERFORM FREE_ALV_300.
+
+  ELSEIF GO_ALV400 IS NOT INITIAL.
+    CALL METHOD GO_ALV400->FREE.
+    CLEAR: GO_ALV400.
+
+    CALL METHOD GO_CON400->FREE.
+    CLEAR: GO_CON400.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form HOTSPOT_CLICK_300
+*&---------------------------------------------------------------------*
+FORM HOTSPOT_CLICK_300  USING  PS_ROW_ID    TYPE LVC_S_ROW
+                               PS_COLUMN_ID TYPE LVC_S_COL
+                               PS_ROW_NO    TYPE LVC_S_ROID.
+
+  CLEAR: GS_CAR300.
+
+  CASE G_TC_100-PRESSED_TAB.
+    WHEN C_TC_100-TAB2.
+      READ TABLE GT_PODETAIL INTO GS_PODETAIL INDEX PS_ROW_ID-INDEX.
+
+      CHECK SY-SUBRC EQ 0.
+
+      IF PS_COLUMN_ID-FIELDNAME EQ 'CARNO'.
+        PERFORM GET_CARMODEL USING GS_PODETAIL-CARNO.
+
+      ELSEIF PS_COLUMN_ID-FIELDNAME EQ 'PRNUM'.
+        PERFORM GET_PRINFO USING GS_PODETAIL-PRNUM.
+
+        CALL SCREEN 301 STARTING AT 20 10.
+      ENDIF.
+*--------------------------------------------------------------------*
+    WHEN C_TC_100-TAB3.
+      READ TABLE GT_IVDETAIL INTO GS_IVDETAIL INDEX PS_ROW_ID-INDEX.
+
+      CHECK SY-SUBRC EQ 0.
+
+      IF PS_COLUMN_ID-FIELDNAME EQ 'CARNO'.
+        PERFORM GET_CARMODEL USING GS_IVDETAIL-CARNO.
+
+      ELSEIF PS_COLUMN_ID-FIELDNAME EQ 'PRNUM'.
+        PERFORM GET_PRINFO USING GS_IVDETAIL-PRNUM.
+
+        CALL SCREEN 301 STARTING AT 20 10.
+      ENDIF.
+  ENDCASE.
+
+**ALV ### ### ## ### ## FREE
+*  PERFORM FREE_ALV_300.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_PRDELETE
+*&---------------------------------------------------------------------*
+FORM CHECK_PRDELETE .
+
+  DATA: LV_ROW    TYPE I,
+        LV_ANSWER TYPE C LENGTH 1,
+        LT_ROW    TYPE LVC_T_ROID,
+        LS_ROW    LIKE LINE OF LT_ROW,
+        LS_DISP   LIKE LINE OF GT_DISP,
+        LT_HSREQ  TYPE TABLE OF ZT34_HSREQ,
+        LS_HSREQ  LIKE LINE OF LT_HSREQ,
+        LT_ISREQ  TYPE TABLE OF ZT34_ISREQ,
+        LS_ISREQ  LIKE LINE OF LT_ISREQ,
+        LS_ITEM   LIKE GS_DETAIL,
+        LT_ITEM   LIKE GT_DETAIL.
+*--------------------------------------------------------------------*
+
+  CLEAR: GV_SUBRC.
+
+**### ROW ####.
+  CALL METHOD GO_ALV->GET_SELECTED_ROWS
+    IMPORTING
+      ET_ROW_NO = LT_ROW.
+
+**ROW ## ####.
+  LV_ROW = LINES( LT_ROW ).
+
+**### ROW# ## # ####.
+  IF LV_ROW IS INITIAL.
+
+    MESSAGE S004 DISPLAY LIKE 'E'.
+    RETURN.
+
+  ELSE.
+
+    PERFORM POPUP_FUNCTION USING 'DELETE CONFIRM POPUP ' 'Are you sure you want to delete your data?'
+                           CHANGING LV_ANSWER.
+    CASE LV_ANSWER.
+      WHEN '2' OR 'A'.
+
+        MESSAGE S028 DISPLAY LIKE 'W'.
+        GV_SUBRC = 4.
+        RETURN.
+
+    ENDCASE.
+
+**### ## # PURCHASE REQUEST ITEM DATA ####.
+    PERFORM PRITEM_DATA CHANGING LT_ITEM.
+
+**### ## ## ## ## DATA DELETION MARK CHECK.
+    LOOP AT  LT_ROW INTO LS_ROW.
+
+      READ TABLE GT_DISP INTO LS_DISP INDEX LS_ROW-ROW_ID.
+      CHECK SY-SUBRC EQ 0.
+
+**#### ##### ## # ##.
+      IF LS_DISP-RSTATS EQ 'P'.
+
+        MESSAGE S016(PN) WITH TEXT-001 DISPLAY LIKE 'E'.
+        RETURN.
+
+      ENDIF.
+
+**## # DATA ### ### ## DATA ##.
+      MOVE-CORRESPONDING LS_DISP TO LS_HSREQ.
+      LS_HSREQ-DFLAG = 'X'.
+
+      APPEND LS_HSREQ TO LT_HSREQ.
+
+    ENDLOOP.
+
+**### ### ### DELETION MARK CHECK.
+    MODIFY ZT34_HSREQ FROM TABLE LT_HSREQ.
+
+**PURCHASE REQUEST ITEM ##.
+    LOOP AT LT_HSREQ INTO LS_HSREQ.
+
+      LOOP AT LT_ITEM INTO LS_ITEM WHERE PRNUM EQ LS_HSREQ-PRNUM.
+
+        UPDATE ZT34_ISREQ SET DFLAG = 'X'
+         WHERE PRNUM EQ LS_ITEM-PRNUM.
+
+      ENDLOOP.
+
+    ENDLOOP.
+
+    MESSAGE S002.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form PRITEM_DATA
+*&---------------------------------------------------------------------*
+FORM PRITEM_DATA CHANGING CT_ITEM LIKE GT_DETAIL.
+
+  SELECT PRNUM ITMNM
+    INTO CORRESPONDING FIELDS OF TABLE CT_ITEM
+    FROM ZT34_ISREQ.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form ALV_REFRESH
+*&---------------------------------------------------------------------*
+FORM ALV_REFRESH .
+
+  DATA: LV_SCROLL TYPE LVC_S_STBL.
+  DATA: LS_LAYOUT  TYPE LVC_S_LAYO.         "ALV ###
+*--------------------------------------------------------------------*
+
+  CHECK GO_ALV IS NOT INITIAL.
+  LV_SCROLL-ROW = 'X'.
+  LV_SCROLL-COL = 'X'.
+
+  CALL METHOD GO_ALV->GET_FRONTEND_LAYOUT
+    IMPORTING
+      ES_LAYOUT = LS_LAYOUT.
+
+  LS_LAYOUT-CWIDTH_OPT = 'X'.
+
+  CALL METHOD GO_ALV->SET_FRONTEND_LAYOUT
+    EXPORTING
+      IS_LAYOUT = LS_LAYOUT.
+
+  CALL METHOD GO_ALV->REFRESH_TABLE_DISPLAY
+    EXPORTING
+      I_SOFT_REFRESH = ''
+      IS_STABLE      = LV_SCROLL.     "## ### ### refresh
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form ADD_EXCLUDE_TOOLBAR_BUTTON
+*&---------------------------------------------------------------------*
+FORM ADD_EXCLUDE_TOOLBAR_BUTTON  USING  PV_TOOL_BAR
+                                 CHANGING CT_EXCLUDE LIKE GT_EXCLUDE.
+
+  DATA: LV_EXCLUDE TYPE UI_FUNC.
+*--------------------------------------------------------------------*
+
+  LV_EXCLUDE = PV_TOOL_BAR.
+  APPEND LV_EXCLUDE TO CT_EXCLUDE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form TOOLBAR_PROS
+*&---------------------------------------------------------------------*
+FORM TOOLBAR_PROS  USING  P_OBJECT TYPE REF TO CL_ALV_EVENT_TOOLBAR_SET
+                           P_INTERACTIVE TYPE CHAR01.
+
+  DATA: LS_TOOLBAR TYPE STB_BUTTON,
+        LINES      TYPE I.
+*--------------------------------------------------------------------*
+
+  CHECK GV_EDIT EQ 'X'.
+
+  MOVE 3               TO LS_TOOLBAR-BUTN_TYPE.
+  APPEND LS_TOOLBAR    TO P_OBJECT->MT_TOOLBAR.
+  CLEAR  LS_TOOLBAR.
+  MOVE 'INST'          TO LS_TOOLBAR-FUNCTION.
+  MOVE ICON_INSERT_ROW TO LS_TOOLBAR-ICON.
+  LS_TOOLBAR-QUICKINFO = 'Insert row'.
+  LS_TOOLBAR-TEXT      = 'Insert row'.
+  APPEND LS_TOOLBAR    TO P_OBJECT->MT_TOOLBAR.
+  CLEAR LS_TOOLBAR.
+
+  MOVE 3               TO LS_TOOLBAR-BUTN_TYPE.
+  APPEND LS_TOOLBAR    TO P_OBJECT->MT_TOOLBAR.
+  CLEAR  LS_TOOLBAR.
+  MOVE 'DELE'          TO LS_TOOLBAR-FUNCTION.
+  MOVE ICON_DELETE_ROW TO LS_TOOLBAR-ICON.
+  LS_TOOLBAR-QUICKINFO = 'Delete row'.
+  LS_TOOLBAR-TEXT      = 'Delete row'.
+  APPEND LS_TOOLBAR    TO P_OBJECT->MT_TOOLBAR.
+  CLEAR LS_TOOLBAR.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form USER_COMMAND_PROS
+*&---------------------------------------------------------------------*
+FORM USER_COMMAND_PROS  USING PV_UCOMM TYPE SY-UCOMM.
+
+  CASE PV_UCOMM.
+
+    WHEN 'INST'.
+      PERFORM INSERT_ROW_200.
+
+    WHEN 'DELE'.
+      PERFORM DELETE_ROW_200.
+
+  ENDCASE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form INSERT_ROW_200
+*&---------------------------------------------------------------------*
+FORM INSERT_ROW_200 .
+
+  DATA: LV_LINE TYPE I.
+*--------------------------------------------------------------------*
+
+  CLEAR: GS_DETAIL.
+
+  DESCRIBE TABLE GT_DETAIL LINES LV_LINE.
+
+  ADD 1 TO LV_LINE.
+
+  PERFORM SET_DETAIL_ROW USING LV_LINE.
+
+  INSERT GS_DETAIL INTO GT_DETAIL INDEX LV_LINE.
+
+*  PERFORM SET_CELL_ATTRIBUTE_200 USING LV_LINE.
+
+  PERFORM ALV_REFRESH_200.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DELETE_ROW_200
+*&---------------------------------------------------------------------*
+FORM DELETE_ROW_200 .
+
+  PERFORM DELETE_ROW_DATA.
+
+  PERFORM ALV_REFRESH_200.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form ALV_REFRESH_200
+*&---------------------------------------------------------------------*
+FORM ALV_REFRESH_200 .
+
+  DATA: LV_SCROLL TYPE LVC_S_STBL,
+        LS_LAYOUT TYPE LVC_S_LAYO.
+*--------------------------------------------------------------------*
+
+  CHECK GO_ALV200 IS NOT INITIAL.
+
+  LV_SCROLL-ROW = 'X'.
+  LV_SCROLL-COL = 'X'.
+
+  CALL METHOD GO_ALV200->GET_FRONTEND_LAYOUT
+    IMPORTING
+      ES_LAYOUT = LS_LAYOUT.
+
+  LS_LAYOUT-CWIDTH_OPT = 'X'.
+
+  CALL METHOD GO_ALV200->SET_FRONTEND_LAYOUT
+    EXPORTING
+      IS_LAYOUT = LS_LAYOUT.
+
+  CALL METHOD GO_ALV200->REFRESH_TABLE_DISPLAY
+    EXPORTING
+      I_SOFT_REFRESH = 'X'
+      IS_STABLE      = LV_SCROLL.     "## ### ### refresh
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_CELL_ATTRIBUTE_200
+*&---------------------------------------------------------------------*
+FORM SET_CELL_ATTRIBUTE_200 USING PV_LINE.
+
+  DATA: LS_DETAIL    LIKE LINE OF GT_DETAIL,
+        LT_CELLSTYLE TYPE LVC_T_STYL,
+        LT_CELLCOLOR TYPE LVC_T_SCOL,
+        LV_INDEX     TYPE SY-TABIX.
+*--------------------------------------------------------------------*
+
+  READ TABLE GT_DETAIL INTO LS_DETAIL INDEX PV_LINE.
+
+  CLEAR: LT_CELLSTYLE[], LT_CELLCOLOR[].
+
+  PERFORM FILL_CELLSTYLE CHANGING LS_DETAIL LT_CELLSTYLE.
+
+  CLEAR: LS_DETAIL-CELLSTYLE[].
+
+  INSERT LINES OF LT_CELLSTYLE INTO TABLE LS_DETAIL-CELLSTYLE.
+
+  MODIFY GT_DETAIL FROM LS_DETAIL INDEX PV_LINE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form FILL_CELLSTYLE
+*&---------------------------------------------------------------------*
+FORM FILL_CELLSTYLE  CHANGING CS_DETAIL LIKE GS_DETAIL
+                               CT_CELLSTYLE TYPE LVC_T_STYL.
+
+
+  DATA : LS_CELLSTYLE TYPE LVC_S_STYL,
+         LS_FIELDCAT  TYPE LVC_S_FCAT.
+*--------------------------------------------------------------------*
+
+  LOOP AT GT_FCAT200 INTO LS_FIELDCAT.
+
+    CLEAR: LS_CELLSTYLE.
+
+    LS_CELLSTYLE-FIELDNAME = LS_FIELDCAT-FIELDNAME.
+
+    IF LS_FIELDCAT-FIELDNAME = 'CARNO'.
+
+      LS_CELLSTYLE-STYLE = CL_GUI_ALV_GRID=>MC_STYLE_HOTSPOT_NO +
+      CL_GUI_ALV_GRID=>MC_STYLE_ENABLED +
+      CL_GUI_ALV_GRID=>MC_STYLE_F4.
+
+    ENDIF.
+
+    INSERT LS_CELLSTYLE INTO TABLE CT_CELLSTYLE.
+    INSERT LS_CELLSTYLE INTO TABLE CS_DETAIL-CELLSTYLE.
+
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_DETAIL_ROW
+*&---------------------------------------------------------------------*
+FORM SET_DETAIL_ROW USING PV_LINE.
+
+  DATA: LS_DETAIL LIKE GS_DETAIL.
+*--------------------------------------------------------------------*
+
+  CLEAR: GS_DETAIL.
+
+  READ TABLE GT_DETAIL INTO LS_DETAIL INDEX 1.
+  MOVE-CORRESPONDING LS_DETAIL TO GS_DETAIL.
+  CLEAR: GS_DETAIL-ITMNM, GS_DETAIL-CARNO, GS_DETAIL-CTEXT, GS_DETAIL-FUEL, GS_DETAIL-FUEL_T.
+  GS_DETAIL-FLAG = 'N'.
+  GS_DETAIL-SEQ = PV_LINE.
+  GS_DETAIL-PERNR = SY-UNAME.
+  GS_DETAIL-MEINM = 1.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DELETE_ROW_DATA
+*&---------------------------------------------------------------------*
+FORM DELETE_ROW_DATA .
+
+  DATA: LV_ROW        TYPE I,
+        LV_ANSWER     TYPE C LENGTH 1,
+        LT_ROW        TYPE LVC_T_ROID,
+        LS_ROW        LIKE LINE OF LT_ROW,
+        LS_DISP       LIKE LINE OF GT_DISP,
+        LT_ITEM       LIKE GT_DETAIL,
+        LS_ITEM       LIKE LINE OF LT_ITEM,
+        LT_DDETAIL    LIKE GT_DETAIL,
+        LS_DEL_DETAIL TYPE ZT34_ISREQ.
+
+  FIELD-SYMBOLS: <LFS_DETAIL> LIKE GS_DETAIL.
+*--------------------------------------------------------------------*
+
+  CLEAR: GV_SUBRC.
+
+  CALL METHOD GO_ALV200->GET_SELECTED_ROWS
+    IMPORTING
+      ET_ROW_NO = LT_ROW.
+
+  LV_ROW = LINES( LT_ROW ).
+
+  IF LV_ROW IS INITIAL.
+
+    GV_SUBRC  = 4.
+    MESSAGE S004 DISPLAY LIKE 'E'.
+    RETURN.
+
+  ELSE.
+
+    PERFORM CHECK_DB_DATA USING LT_ROW CHANGING LV_ANSWER.
+
+    LOOP AT  LT_ROW INTO LS_ROW.
+
+      READ TABLE GT_DETAIL ASSIGNING <LFS_DETAIL> INDEX LS_ROW-ROW_ID.
+      CHECK SY-SUBRC EQ 0.
+
+      IF <LFS_DETAIL>-FLAG IS INITIAL.
+
+        CASE LV_ANSWER.
+          WHEN '2' OR 'A'.
+            MESSAGE S031 DISPLAY LIKE 'W'.
+            GV_SUBRC = 4.
+            RETURN.
+
+          WHEN '1'.
+            <LFS_DETAIL>-DFLAG = 'X'.
+
+            IF <LFS_DETAIL>-FLAG IS INITIAL.
+
+              <LFS_DETAIL>-FLAG = 'D'.
+              MOVE-CORRESPONDING <LFS_DETAIL> TO LS_DEL_DETAIL.
+              APPEND LS_DEL_DETAIL TO GT_DEL_DETAIL.
+
+            ENDIF.
+        ENDCASE.
+
+      ELSEIF <LFS_DETAIL>-FLAG IS NOT INITIAL.
+        <LFS_DETAIL>-FLAG = 'D'.
+      ENDIF.
+
+    ENDLOOP.
+  ENDIF.
+
+  DELETE GT_DETAIL WHERE FLAG EQ 'D'.
+
+  PERFORM SEQUENCE_NUMBER.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_CELL_ATTRIBUTE_200_ALV
+*&---------------------------------------------------------------------*
+FORM SET_CELL_ATTRIBUTE_200_ALV.
+
+  DATA: LV_INDEX     TYPE SY-TABIX,
+        LS_DETAIL    LIKE GS_DETAIL,
+        LT_CELLSTYLE TYPE LVC_T_STYL.
+*--------------------------------------------------------------------*
+
+  CHECK GV_EDIT EQ 'X'.
+
+  LOOP AT GT_DETAIL INTO LS_DETAIL.
+
+    LV_INDEX = SY-TABIX.
+
+    CLEAR: LT_CELLSTYLE[].
+
+    PERFORM FILL_CELLSTYLE CHANGING LS_DETAIL LT_CELLSTYLE .
+
+    MODIFY GT_DETAIL FROM LS_DETAIL INDEX LV_INDEX.
+
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form EXCLUDE_FCODE
+*&---------------------------------------------------------------------*
+FORM EXCLUDE_FCODE .
+
+  CLEAR: GT_FCODE.
+
+  CHECK GV_EDIT IS INITIAL.
+  GS_FCODE-FCODE = 'SAVE'.
+  APPEND GS_FCODE TO GT_FCODE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SEQUENCE_NUMBER
+*&---------------------------------------------------------------------*
+FORM SEQUENCE_NUMBER .
+
+  DATA: LV_LINE TYPE I.
+
+  FIELD-SYMBOLS: <LFS_DETAIL> LIKE GS_DETAIL.
+*--------------------------------------------------------------------*
+
+  LOOP AT GT_DETAIL ASSIGNING <LFS_DETAIL>.
+    ADD 1 TO LV_LINE.
+    <LFS_DETAIL>-SEQ = LV_LINE.
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form ON_F4
+*&---------------------------------------------------------------------*
+FORM ON_F4  USING    PV_SENDER
+                     PV_FIELDNAME
+                     PV_FIELDVALUE
+                     PS_ROW_NO
+                     PR_EVENT_DATA
+                     PT_BAD_CELLS
+                     PE_DISPLAY.
+
+  DATA: SELECTFIELD  TYPE HELP_INFO-FIELDNAME,
+        LT_FIELDS    LIKE HELP_VALUE OCCURS 1 WITH HEADER LINE,
+        SELECT_VALUE TYPE HELP_INFO-FLDVALUE,
+        LV_INDEX     TYPE SY-TABIX,
+        LS_MODI      TYPE LVC_S_MODI,
+        LS_HEAD      TYPE F4TYP_HEAD_STRUC,
+        LT_HEAD      TYPE F4TYP_HEAD_STRUC OCCURS 0.
+*--------------------------------------------------------------------*
+
+*  LT_FIELDS-TABNAME = 'ZS34_CAR_SEARCH'.
+*  LT_FIELDS-FIELDNAME = 'CARNO'.
+*  LT_FIELDS-SELECTFLAG = 'X'.
+*  APPEND LT_FIELDS.
+*
+*  LT_FIELDS-TABNAME = 'ZS34_CAR_SEARCH'.
+*  LT_FIELDS-FIELDNAME = 'FUEL'.
+*  LT_FIELDS-SELECTFLAG = ''.
+*  APPEND LT_FIELDS.
+*
+*  LT_FIELDS-TABNAME = 'ZS34_CAR_SEARCH'.
+*  LT_FIELDS-FIELDNAME = 'CTEXT'.
+*  LT_FIELDS-SELECTFLAG = ''.
+*  APPEND LT_FIELDS.
+*
+*  CALL FUNCTION 'HELP_VALUES_GET_NO_DD_NAME'
+*    EXPORTING
+*      SELECTFIELD  = SELECTFIELD
+*      TITEL        = ''
+*    IMPORTING
+*      IND          = LV_INDEX
+*      SELECT_VALUE = SELECT_VALUE
+*    TABLES
+*      FIELDS       = LT_FIELDS
+*      FULL_TABLE   = GT_CARINFO.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_SEARCH_F4
+*&---------------------------------------------------------------------*
+FORM SET_SEARCH_F4  CHANGING CT_F4 LIKE GT_F4.
+
+  DATA: LS_F4 LIKE LINE OF GT_F4.
+
+  CLEAR: CT_F4.
+
+  LS_F4-FIELDNAME  = 'CARNO'.
+  LS_F4-REGISTER   = 'X'.
+  APPEND LS_F4 TO CT_F4.
+
+  CALL METHOD GO_ALV200->REGISTER_F4_FOR_FIELDS
+    EXPORTING
+      IT_F4 = CT_F4.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DATA_CHANGED
+*&---------------------------------------------------------------------*
+FORM DATA_CHANGED  USING PR_DATA_CHANGED TYPE REF TO CL_ALV_CHANGED_DATA_PROTOCOL
+                         P_UCOMM.
+
+  DATA : LS_MODI     TYPE LVC_S_MODI,
+         LS_DETAIL   LIKE LINE OF GT_DETAIL,
+         LS_CAR      LIKE GS_DETAIL,
+         LT_CAR      LIKE GT_DETAIL,
+         LT_VALUE    TYPE DD07V_TAB,
+         LS_VALUE    LIKE LINE OF LT_VALUE,
+         L_VALUE(30) TYPE C.
+*--------------------------------------------------------------------*
+
+  SORT PR_DATA_CHANGED->MT_MOD_CELLS BY ROW_ID.
+
+  PERFORM GET_CAR_INFO CHANGING LT_CAR.
+  PERFORM  GET_FIXED_VAL USING 'ZD34_FUEL' CHANGING LT_VALUE.
+
+**ROW# ### CHECK.
+  PERFORM CHECK_DUPLICATE_DATA USING PR_DATA_CHANGED.
+
+  CHECK GV_SUBRC EQ 0.
+
+  LOOP AT PR_DATA_CHANGED->MT_MOD_CELLS INTO LS_MODI.
+
+    READ TABLE GT_DETAIL INTO LS_DETAIL INDEX LS_MODI-ROW_ID.
+    CHECK SY-SUBRC EQ 0.
+
+
+    CASE LS_MODI-FIELDNAME.
+
+      WHEN 'CARNO'.
+        READ TABLE LT_CAR INTO LS_CAR WITH KEY CARNO = LS_MODI-VALUE.
+        CHECK SY-SUBRC EQ 0.
+
+        CALL METHOD PR_DATA_CHANGED->GET_CELL_VALUE
+          EXPORTING
+            I_ROW_ID    = LS_MODI-ROW_ID
+            I_FIELDNAME = LS_MODI-FIELDNAME
+          IMPORTING
+            E_VALUE     = L_VALUE.
+
+        LS_DETAIL-CTEXT = LS_CAR-CTEXT.
+
+        CALL METHOD PR_DATA_CHANGED->MODIFY_CELL
+          EXPORTING
+            I_ROW_ID    = LS_MODI-ROW_ID
+            I_FIELDNAME = 'CTEXT'
+            I_VALUE     = LS_DETAIL-CTEXT.
+
+      WHEN 'FUEL'.
+
+        READ TABLE LT_VALUE INTO LS_VALUE WITH KEY DOMVALUE_L = LS_MODI-VALUE.
+        CHECK SY-SUBRC EQ 0.
+
+        CALL METHOD PR_DATA_CHANGED->GET_CELL_VALUE
+          EXPORTING
+            I_ROW_ID    = LS_MODI-ROW_ID
+            I_FIELDNAME = LS_MODI-FIELDNAME
+          IMPORTING
+            E_VALUE     = L_VALUE.
+
+        LS_DETAIL-FUEL_T = LS_VALUE-DDTEXT.
+
+        CALL METHOD PR_DATA_CHANGED->MODIFY_CELL
+          EXPORTING
+            I_ROW_ID    = LS_MODI-ROW_ID
+            I_FIELDNAME = 'FUEL_T'
+            I_VALUE     = LS_DETAIL-FUEL_T.
+
+      WHEN 'MEINM'.
+
+        CALL METHOD PR_DATA_CHANGED->GET_CELL_VALUE
+          EXPORTING
+            I_ROW_ID    = LS_MODI-ROW_ID
+            I_FIELDNAME = LS_MODI-FIELDNAME
+          IMPORTING
+            E_VALUE     = L_VALUE.
+
+        LS_DETAIL-MEINM = LS_MODI-VALUE.
+
+        CALL METHOD PR_DATA_CHANGED->MODIFY_CELL
+          EXPORTING
+            I_ROW_ID    = LS_MODI-ROW_ID
+            I_FIELDNAME = 'MEINM'
+            I_VALUE     = LS_DETAIL-MEINM.
+
+    ENDCASE.
+
+  ENDLOOP.
+
+  LS_DETAIL-CFLAG = 'C'.
+  MODIFY GT_DETAIL FROM LS_DETAIL INDEX LS_MODI-ROW_ID.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DATA_CHANGED_FINISHED
+*&---------------------------------------------------------------------*
+FORM DATA_CHANGED_FINISHED  USING    PV_MODIFIED
+                                     PT_GOOD_CELLS TYPE LVC_T_MODI.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_CAR_INFO
+*&---------------------------------------------------------------------*
+FORM GET_CAR_INFO  CHANGING CT_CAR LIKE GT_DETAIL.
+
+  SELECT A~CARNO B~CTEXT
+    FROM ZT34_CAR AS A JOIN ZT34_CAR_T AS B
+      ON A~CARNO EQ B~CARNO
+    INTO CORRESPONDING FIELDS OF TABLE CT_CAR.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SEARCH_HELP_CAR
+*&---------------------------------------------------------------------*
+FORM SEARCH_HELP_CAR .
+
+  SELECT A~CARNO A~FUEL B~CTEXT
+    INTO TABLE GT_CARINFO
+    FROM ZT34_CAR AS A JOIN ZT34_CAR_T AS B
+      ON A~CARNO EQ B~CARNO.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SAVE_MODI_DATA
+*&---------------------------------------------------------------------*
+FORM SAVE_MODI_DATA .
+
+  DATA: LV_ITMNM      TYPE ZT34_ISREQ-PRNUM,
+        LS_DETAIL     LIKE LINE OF GT_DETAIL,
+        LS_ZTITEM     TYPE ZT34_ISREQ,
+        LS_DEL_DETAIL LIKE LINE OF GT_DEL_DETAIL,
+        LT_ZTITEM     TYPE TABLE OF ZT34_ISREQ.
+*--------------------------------------------------------------------*
+
+  SELECT MAX( ITMNM )
+    FROM ZT34_ISREQ
+    INTO LV_ITMNM
+   WHERE PRNUM EQ GS_HEADER-PRNUM.
+
+**NEW ROW OR CHANGE ROW ### ##.
+  LOOP AT GT_DETAIL INTO LS_DETAIL WHERE CFLAG EQ 'C' OR FLAG EQ 'N'.
+
+**SEQUENCE# ##, ##ROW DATA# ####.
+    IF LS_DETAIL-ITMNM IS NOT INITIAL AND LS_DETAIL-FLAG IS INITIAL.
+      MOVE-CORRESPONDING LS_DETAIL TO LS_ZTITEM.
+
+      LS_ZTITEM-AEDAT = SY-DATUM.
+      LS_ZTITEM-AENAM = SY-UNAME.
+      LS_ZTITEM-AEZET = SY-UZEIT.
+
+      APPEND LS_ZTITEM TO LT_ZTITEM.
+
+**SEQUENCE# ##, ##ROW DATA# ##.
+    ELSEIF LS_DETAIL-ITMNM IS INITIAL AND LS_DETAIL-FLAG = 'N'.
+
+      LV_ITMNM = LV_ITMNM + 1.
+      LS_DETAIL-ITMNM = LV_ITMNM.
+
+      MOVE-CORRESPONDING LS_DETAIL TO LS_ZTITEM.
+      LS_ZTITEM-ERDAT = SY-DATUM.
+      LS_ZTITEM-ERNAM = SY-UNAME.
+      LS_ZTITEM-ERZET = SY-UZEIT.
+
+      APPEND LS_ZTITEM TO LT_ZTITEM.
+
+    ENDIF.
+
+  ENDLOOP.
+
+**## DATA ## TIME STAMP.
+  LOOP AT GT_DEL_DETAIL INTO LS_DEL_DETAIL.
+
+    LS_DEL_DETAIL-AEDAT = SY-DATUM.
+    LS_DEL_DETAIL-AENAM = SY-UNAME.
+    LS_DEL_DETAIL-AEZET = SY-UZEIT.
+
+  ENDLOOP.
+
+**### ## ##.
+  MODIFY ZT34_ISREQ FROM TABLE LT_ZTITEM.
+  MODIFY ZT34_ISREQ FROM TABLE GT_DEL_DETAIL.
+  MESSAGE S001.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_MODI_DATA
+*&---------------------------------------------------------------------*
+FORM CHECK_MODI_DATA .
+
+  DATA: LS_DETAIL LIKE LINE OF GT_DETAIL.
+*--------------------------------------------------------------------*
+
+  CLEAR: GV_SUBRC.
+
+**##, ## ROW# ### ### ## ERROR.
+  LOOP AT GT_DETAIL INTO LS_DETAIL WHERE FLAG EQ 'N' OR CFLAG EQ 'C'.
+
+    IF LS_DETAIL-CTEXT IS INITIAL OR LS_DETAIL-MEINM IS INITIAL.
+
+      GV_SUBRC = 4.
+      MESSAGE S023 DISPLAY LIKE 'E'.
+    ENDIF.
+    RETURN.
+
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form BUTTON_CLICK
+*&---------------------------------------------------------------------*
+FORM BUTTON_CLICK  USING    PS_COL_ID    TYPE LVC_S_COL
+                            PS_ROW_NO    TYPE LVC_S_ROID.
+
+  DATA: LV_VALUE TYPE C LENGTH 1.
+*--------------------------------------------------------------------*
+
+  READ TABLE GT_INVO INTO GS_INVO INDEX PS_ROW_NO-ROW_ID.
+
+  CHECK SY-SUBRC EQ 0.
+
+  CLEAR LV_VALUE.
+
+  CASE GS_INVO-CHECKBOX.
+    WHEN ''.
+      CALL FUNCTION 'POPUP_TO_CONFIRM'
+        EXPORTING
+          TITLEBAR      = 'Return Invoice'
+          TEXT_QUESTION = 'Do you really want to return this invoice?'
+          TEXT_BUTTON_1 = 'Yes'
+        IMPORTING
+          ANSWER        = LV_VALUE.
+
+      IF LV_VALUE EQ '1'.
+        UPDATE ZT34_INVOICE SET DFLAG = 'X'
+                            WHERE INVNO EQ GS_INVO-INVNO.
+
+        MESSAGE I016(PN) WITH 'Invoice number' GS_INVO-INVNO 'has returned.'.
+
+      ELSEIF LV_VALUE EQ '2' OR
+             LV_VALUE EQ'A'.
+        RETURN.
+      ENDIF.
+*--------------------------------------------------------------------*
+    WHEN 'X'.
+      CALL FUNCTION 'POPUP_TO_CONFIRM'
+        EXPORTING
+          TITLEBAR      = 'Confirm Invoice'
+          TEXT_QUESTION = 'Do you really want to confirm this invoice as a normal invoice?'
+          TEXT_BUTTON_1 = 'Yes'
+        IMPORTING
+          ANSWER        = LV_VALUE.
+
+      IF LV_VALUE EQ '1'.
+        UPDATE ZT34_INVOICE SET DFLAG = ''
+                            WHERE INVNO EQ GS_INVO-INVNO.
+
+        MESSAGE I016(PN) WITH 'Invoice number' GS_INVO-INVNO 'has confirmed as a normal invoice.'.
+
+      ELSEIF LV_VALUE EQ '2' OR
+             LV_VALUE EQ'A'.
+        RETURN.
+      ENDIF.
+  ENDCASE.
+
+**### ###
+*  PERFORM FREE_ALV103.
+*  PERFORM INIT_INVOICE_DATA CHANGING GT_INVO.
+  PERFORM ALV_REFRESH_103.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form FREE_ALV_300
+*&---------------------------------------------------------------------*
+FORM FREE_ALV_300 .
+
+  CALL METHOD GO_ALV300->FREE.
+  CLEAR: GO_ALV300.
+
+  CALL METHOD GO_CON300->FREE.
+  CLEAR: GO_CON300.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_POCHANGE
+*&---------------------------------------------------------------------*
+FORM CHECK_POCHANGE .
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form ALV_REFRESH_300
+*&---------------------------------------------------------------------*
+FORM ALV_REFRESH_300 .
+
+  DATA: LV_SCROLL TYPE LVC_S_STBL.
+*--------------------------------------------------------------------*
+
+  CHECK GO_ALV300 IS NOT INITIAL.
+
+  LV_SCROLL-ROW = 'X'.
+  LV_SCROLL-COL = 'X'.
+
+  CALL METHOD GO_ALV300->REFRESH_TABLE_DISPLAY
+    EXPORTING
+      I_SOFT_REFRESH = 'X'
+      IS_STABLE      = LV_SCROLL.     "## ### ### refresh
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form FREE_ALV103
+*&---------------------------------------------------------------------*
+FORM FREE_ALV103 .
+
+  CALL METHOD GO_ALV103->FREE.
+  CLEAR: GO_ALV103.
+
+  CALL METHOD GO_CON103->FREE.
+  CLEAR: GO_CON103.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form ALV_REFRESH_103
+*&---------------------------------------------------------------------*
+FORM ALV_REFRESH_103.
+
+  DATA: LV_SCROLL TYPE LVC_S_STBL,
+        LS_LAYOUT TYPE LVC_S_LAYO.
+*--------------------------------------------------------------------*
+
+  CHECK GO_ALV103 IS NOT INITIAL.
+
+  LV_SCROLL-ROW = 'X'.
+  LV_SCROLL-COL = 'X'.
+
+  CALL METHOD GO_ALV103->GET_FRONTEND_LAYOUT
+    IMPORTING
+      ES_LAYOUT = LS_LAYOUT.
+
+  LS_LAYOUT-CWIDTH_OPT = 'X'.
+
+  CALL METHOD GO_ALV103->SET_FRONTEND_LAYOUT
+    EXPORTING
+      IS_LAYOUT = LS_LAYOUT.
+
+  CALL METHOD GO_ALV103->REFRESH_TABLE_DISPLAY
+    EXPORTING
+      I_SOFT_REFRESH = 'X'
+      IS_STABLE      = LV_SCROLL.     "## ### ### refresh
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form ALV_REFRESH_102
+*&---------------------------------------------------------------------*
+FORM ALV_REFRESH_102 .
+
+  DATA: LV_SCROLL TYPE LVC_S_STBL,
+        LS_LAYOUT TYPE LVC_S_LAYO.
+*--------------------------------------------------------------------*
+
+  CHECK GO_ALV102 IS NOT INITIAL.
+
+  LV_SCROLL-ROW = 'X'.
+  LV_SCROLL-COL = 'X'.
+
+  CALL METHOD GO_ALV102->GET_FRONTEND_LAYOUT
+    IMPORTING
+      ES_LAYOUT = LS_LAYOUT.
+
+  LS_LAYOUT-CWIDTH_OPT = 'X'.
+
+  CALL METHOD GO_ALV102->SET_FRONTEND_LAYOUT
+    EXPORTING
+      IS_LAYOUT = LS_LAYOUT.
+
+  CALL METHOD GO_ALV102->REFRESH_TABLE_DISPLAY
+    EXPORTING
+      I_SOFT_REFRESH = 'X'
+      IS_STABLE      = LV_SCROLL.     "## ### ### refresh
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form ORDER_RANGE
+*&---------------------------------------------------------------------*
+FORM ORDER_RANGE .
+
+  CLEAR: GR_PODAT[], GR_OPONUM[].
+
+  IF GR_PODAT-LOW IS NOT INITIAL AND GR_PODAT-HIGH IS NOT INITIAL.
+    GR_PODAT-SIGN = 'I'.
+    GR_PODAT-OPTION = 'BT'.
+    GR_PODAT-LOW = GR_PODAT-LOW.
+    GR_PODAT-HIGH = GR_PODAT-HIGH.
+    APPEND GR_PODAT.
+
+  ELSEIF GR_PODAT-LOW IS INITIAL AND GR_PODAT-HIGH IS NOT INITIAL.
+    GR_PODAT-SIGN = 'I'.
+    GR_PODAT-OPTION = 'BT'.
+    APPEND GR_PODAT.
+
+  ELSEIF GR_PODAT-HIGH IS INITIAL AND GR_PODAT-LOW IS NOT INITIAL.
+    GR_PODAT-SIGN = 'I'.
+    GR_PODAT-OPTION = 'EQ'.
+    APPEND GR_PODAT.
+  ENDIF.
+*--------------------------------------------------------------------*
+  IF GR_OPONUM-LOW IS NOT INITIAL AND GR_OPONUM-HIGH IS NOT INITIAL.
+    GR_OPONUM-SIGN = 'I'.
+    GR_OPONUM-OPTION = 'BT'.
+    GR_OPONUM-LOW = GR_OPONUM-LOW.
+    GR_OPONUM-HIGH = GR_OPONUM-HIGH.
+    APPEND GR_OPONUM.
+
+  ELSEIF GR_OPONUM-LOW IS INITIAL AND GR_OPONUM-HIGH IS NOT INITIAL.
+    GR_OPONUM-SIGN = 'I'.
+    GR_OPONUM-OPTION = 'BT'.
+    APPEND GR_OPONUM.
+
+  ELSEIF GR_OPONUM-HIGH IS INITIAL AND GR_OPONUM-LOW IS NOT INITIAL.
+    GR_OPONUM-SIGN = 'I'.
+    GR_OPONUM-OPTION = 'EQ'.
+    APPEND GR_OPONUM.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form POPUP_FUNCTION
+*&---------------------------------------------------------------------*
+FORM POPUP_FUNCTION  USING VALUE(PV_TITLE)
+                            VALUE(PV_QUESTION)
+                     CHANGING CV_ANSWER.
+
+  CALL FUNCTION 'POPUP_TO_CONFIRM'
+    EXPORTING
+      TITLEBAR      = PV_TITLE
+      TEXT_QUESTION = PV_QUESTION
+      TEXT_BUTTON_1 = 'Yes'
+    IMPORTING
+      ANSWER        = CV_ANSWER.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_DUPLICATE_DATA
+*&---------------------------------------------------------------------*
+FORM CHECK_DUPLICATE_DATA CHANGING CR_DATA_CHANGED TYPE REF TO CL_ALV_CHANGED_DATA_PROTOCOL.
+
+  DATA: LV_CARNO  TYPE ZT34_ISREQ-CARNO,
+        LV_FUEL   TYPE ZT34_ISREQ-FUEL,
+        LS_MODI   TYPE LVC_S_MODI,
+        LS_DETAIL LIKE GS_DETAIL.
+*--------------------------------------------------------------------*
+
+  CLEAR:GV_SUBRC.
+
+  LOOP AT CR_DATA_CHANGED->MT_MOD_CELLS INTO LS_MODI.
+
+    CASE LS_MODI-FIELDNAME.
+      WHEN 'CARNO'.
+
+        LV_CARNO = LS_MODI-VALUE.
+
+      WHEN 'FUEL'.
+
+        LV_FUEL = LS_MODI-VALUE.
+
+    ENDCASE.
+
+  ENDLOOP.
+
+  LOOP AT GT_DETAIL INTO LS_DETAIL WHERE CARNO EQ LV_CARNO
+                                     AND FUEL  EQ LV_FUEL.
+    IF LS_DETAIL-CARNO IS INITIAL.
+
+      GV_SUBRC = 4.
+
+      RETURN.
+
+    ENDIF.
+    GV_SUBRC = 4.
+    CLEAR: LS_DETAIL-CARNO, LS_DETAIL-FUEL.
+    MESSAGE I016(PN) WITH 'Data is duplicated.' DISPLAY LIKE 'E'.
+
+    RETURN.
+
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_DB_DATA
+*&---------------------------------------------------------------------*
+FORM CHECK_DB_DATA USING PT_ROW TYPE LVC_T_ROID
+                   CHANGING CV_ANSWER.
+
+  DATA: LV_FLAG   TYPE C LENGTH 1,
+        LS_ROW    TYPE LINE OF LVC_T_ROID,
+        LS_DETAIL LIKE GS_DETAIL.
+*--------------------------------------------------------------------*
+
+  LOOP AT PT_ROW INTO LS_ROW.
+
+    READ TABLE GT_DETAIL INTO LS_DETAIL INDEX LS_ROW-ROW_ID.
+    CHECK SY-SUBRC EQ 0.
+
+    IF LS_DETAIL-FLAG IS INITIAL.
+
+      LV_FLAG = 'X'.
+
+    ENDIF.
+
+  ENDLOOP.
+
+  CHECK LV_FLAG IS NOT INITIAL.
+  PERFORM POPUP_FUNCTION USING 'DELETE CONFIRM POPUP ' 'Are you sure you want to delete your data?'
+                     CHANGING CV_ANSWER.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form HOTSPOT_CLICK_IV
+*&---------------------------------------------------------------------*
+FORM HOTSPOT_CLICK_IV  USING  PS_ROW_ID    TYPE LVC_S_ROW
+                              PS_COLUMN_ID TYPE LVC_S_COL
+                              PS_ROW_NO    TYPE LVC_S_ROID.
+
+**P/O## ### ## ## ITEM DATA ##.
+  READ TABLE GT_INVO INTO GS_INVO INDEX PS_ROW_ID-INDEX.
+
+  CHECK PS_COLUMN_ID-FIELDNAME EQ 'PONUM'.
+
+  MOVE-CORRESPONDING GS_INVO TO GS_HEADER300.
+  PERFORM GET_PERNR USING GS_INVO-PONUM
+                    CHANGING GS_HEADER300-PERNR.
+
+  GS_HEADER300-DFLAG = GV_DFLAG103.
+
+  PERFORM GET_DINVOICE.
+
+  CALL SCREEN 400 STARTING AT 10 1.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_PERNR
+*&---------------------------------------------------------------------*
+FORM GET_PERNR  USING VALUE(P_PONUM) LIKE GS_INVO-PONUM
+                CHANGING P_PERNR LIKE GS_HEADER300-PERNR.
+
+  SELECT SINGLE PERNR
+    FROM ZT34_HSORDER
+    INTO P_PERNR
+    WHERE PONUM EQ P_PONUM.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_0400
+*&---------------------------------------------------------------------*
+FORM SET_ALV_0400 .
+
+  CHECK GO_CON400 IS INITIAL.
+
+  CREATE OBJECT GO_CON400
+    EXPORTING
+      CONTAINER_NAME = 'IVCON'.
+
+  CREATE OBJECT GO_ALV400
+    EXPORTING
+      I_PARENT      = GO_CON400
+      I_APPL_EVENTS = 'X'.
+
+  PERFORM DISPLAY_ALV_0400.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_0400
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV_0400 .
+
+  DATA: LS_LAYO TYPE LVC_S_LAYO.
+*--------------------------------------------------------------------*
+
+**LAYOUT, FIELDCATALOG DATA ##.
+  PERFORM  SET_LAYOUT400 CHANGING LS_LAYO.
+  PERFORM  SET_FIELDCAT400 CHANGING GS_FCAT400 GT_FCAT400.
+
+*-- Edit Event #  Event Handler ##
+  PERFORM EVENT_HANDLER_REGISTER USING GO_ALV400 'GRID300'.
+
+  CALL METHOD GO_ALV400->SET_TABLE_FOR_FIRST_DISPLAY
+    EXPORTING
+      I_STRUCTURE_NAME              = 'ZT34_DINVOICE'
+      IS_LAYOUT                     = LS_LAYO
+    CHANGING
+      IT_OUTTAB                     = GT_IVDETAIL
+      IT_FIELDCATALOG               = GT_FCAT400
+      IT_SORT                       = GT_SORT400
+    EXCEPTIONS
+      INVALID_PARAMETER_COMBINATION = 1
+      PROGRAM_ERROR                 = 2
+      TOO_MANY_LINES                = 3
+      OTHERS                        = 4.
+  IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_DINVOICE
+*&---------------------------------------------------------------------*
+FORM GET_DINVOICE .
+
+  DATA: LV_VTEXT TYPE ZT34_ORG-VTEXT,
+        LV_ENAME TYPE ZT34_EMP-ENAME,
+        LV_VENNM TYPE ZT34_VENDOR-VNAME,
+        LT_VALUE TYPE DD07V_TAB,
+        LS_VALUE LIKE LINE OF LT_VALUE.
+
+  FIELD-SYMBOLS: <LFS_IVDETAIL> LIKE GS_IVDETAIL.
+*--------------------------------------------------------------------*
+
+  SELECT *
+    FROM ZT34_DINVOICE
+    INTO CORRESPONDING FIELDS OF TABLE GT_IVDETAIL
+    WHERE PONUM EQ GS_HEADER300-PONUM.
+
+  SELECT *
+    INTO CORRESPONDING FIELDS OF TABLE GT_CAR
+    FROM ZT34_CAR AS A JOIN ZT34_CAR_T AS B
+      ON A~CARNO EQ B~CARNO.
+
+  SELECT SINGLE VTEXT
+    INTO LV_VTEXT
+    FROM ZT34_ORG
+   WHERE VKORG EQ GS_HEADER300-VKORG.
+
+  SELECT SINGLE ENAME
+    INTO LV_ENAME
+    FROM ZT34_EMP
+   WHERE PERNR EQ GS_HEADER300-PERNR.
+
+  PERFORM GET_FIXED_VAL USING 'ZE34_OSTATS' CHANGING LT_VALUE.
+
+  SORT GT_IVDETAIL BY ITMNM.
+
+  LOOP AT GT_IVDETAIL ASSIGNING <LFS_IVDETAIL>.
+
+    <LFS_IVDETAIL>-VTEXT = LV_VTEXT.
+    <LFS_IVDETAIL>-ENAME = LV_ENAME.
+    <LFS_IVDETAIL>-VNAME = LV_VENNM.
+
+    READ TABLE GT_CAR INTO GS_CAR WITH KEY CARNO = <LFS_IVDETAIL>-CARNO.
+
+    CHECK SY-SUBRC EQ 0.
+    <LFS_IVDETAIL>-CTEXT = GS_CAR-CTEXT.
+    <LFS_IVDETAIL>-PERNR = GS_HEADER300-PERNR.
+    <LFS_IVDETAIL>-VKORG = GS_HEADER300-VKORG.
+
+    CASE <LFS_IVDETAIL>-OSTATS.
+      WHEN ''.
+        <LFS_IVDETAIL>-STATUS = '#####'.
+    ENDCASE.
+
+    READ TABLE LT_VALUE INTO LS_VALUE  WITH KEY DOMVALUE_L = <LFS_IVDETAIL>-OSTATS.
+    CHECK SY-SUBRC EQ 0.
+    <LFS_IVDETAIL>-STATUS = LS_VALUE-DDTEXT.
+
+    CASE <LFS_IVDETAIL>-OSTATS.
+      WHEN 'N'.
+        <LFS_IVDETAIL>-LIGHT = '1'.
+      WHEN 'H'.
+        <LFS_IVDETAIL>-LIGHT = '2'.
+      WHEN 'P'.
+        <LFS_IVDETAIL>-LIGHT = '3'.
+    ENDCASE.
+
+    CLEAR GS_CAR.
+  ENDLOOP.
+*--------------------------------------------------------------------*
+**## ### ## ##
+  DATA: LS_COL LIKE LINE OF GS_IVDETAIL-TAB_COLOR.
+
+  LOOP AT GT_IVDETAIL INTO GS_IVDETAIL.
+    CLEAR: GS_IVDETAIL-TAB_COLOR, LS_COL.
+
+    IF GS_IVDETAIL-OSTATS EQ 'P'.
+      PERFORM CELL_COLOR USING 'TMEINM' '5'
+                         CHANGING LS_COL GS_IVDETAIL-TAB_COLOR.
+
+    ELSEIF GS_IVDETAIL-OSTATS EQ 'N'.
+      PERFORM CELL_COLOR USING 'TMEINM' '6'
+                         CHANGING LS_COL GS_IVDETAIL-TAB_COLOR.
+
+    ELSEIF GS_IVDETAIL-OSTATS EQ 'H'.
+      PERFORM CELL_COLOR USING 'TMEINM' '3'
+                         CHANGING LS_COL GS_IVDETAIL-TAB_COLOR.
+    ENDIF.
+
+    MODIFY GT_IVDETAIL FROM GS_IVDETAIL.
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_CARMODEL
+*&---------------------------------------------------------------------*
+FORM GET_CARMODEL  USING VALUE(P_CARNO).
+
+  SELECT SINGLE *
+    INTO CORRESPONDING FIELDS OF GS_CAR300
+    FROM ZT34_CAR AS A JOIN ZT34_CAR_T AS B
+      ON A~CARNO EQ B~CARNO
+   WHERE A~CARNO EQ P_CARNO.
+
+  SELECT SINGLE MANU_T
+    INTO GS_CAR300-MANU_T
+    FROM ZT34_MANU
+   WHERE MANU EQ GS_CAR300-MANU.
+
+  PERFORM GET_FIXED_VAL1 USING 'ZD34_FUEL' GS_CAR300-FUEL
+                         CHANGING GS_CAR300-FUEL_T.
+
+  PERFORM GET_FIXED_VAL1 USING 'ZD34_CLASS' GS_CAR300-CLASS
+                         CHANGING GS_CAR300-CLASS_T.
+
+  PERFORM GET_FIXED_VAL1 USING 'ZDE34_SHIFT' GS_CAR300-SHIFT
+                         CHANGING GS_CAR300-SHIFT_T.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_PRINFO
+*&---------------------------------------------------------------------*
+FORM GET_PRINFO  USING VALUE(P_PRNUM).
+
+  CLEAR: GS_CAR300.
+
+  SELECT SINGLE A~PERNR A~VKORG A~PRNUM A~RQDAT A~VENNO
+                B~ENAME B~TELNR B~EMAIL C~VTEXT
+    FROM ZT34_HSREQ AS A JOIN ZT34_EMP AS B
+    ON A~PERNR EQ B~PERNR
+    JOIN ZT34_ORG AS C
+    ON A~VKORG EQ C~VKORG
+    INTO CORRESPONDING FIELDS OF GS_REQINFO
+    WHERE PRNUM EQ P_PRNUM.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FIELDCAT400
+*&---------------------------------------------------------------------*
+FORM SET_FIELDCAT400  CHANGING CS_FCAT400 LIKE GS_FCAT400
+                               CT_FCAT400 LIKE GT_FCAT400.
+
+  IF CT_FCAT400 IS INITIAL.
+    PERFORM REUSE_FIELDCAT USING 'LIGHT' 'Process' 'C' '' '' ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'PONUM' 'P/O Number' 'C' '' '' ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'PRNUM' 'P/R Number' 'C' 'X' '' ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'PRICE' 'Total Price' '' '' '' ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'WAERS' 'Currency' 'C' '' '' ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+*--------------------------------------------------------------------*
+    PERFORM REUSE_FIELDCAT USING 'Status' 'Status' 'C' '' 2 ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'ITMNM' 'Seq.' 'C' '' 4 ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'CARNO' 'Model No.' 'C' 'X' 5 ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'CTEXT' 'Model Name' 'C' '' 6 ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'MEINM' 'Order Amount' '' '' 7 ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'MSEHI' 'Unit' 'C' '' 8 ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'TMEINM' 'Actual Taking' '' '' 9 ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'MSEHI' 'Actual Unit' 'C' '' 10 ''
+                           CHANGING CS_FCAT400 CT_FCAT400.
+*--------------------------------------------------------------------*
+    PERFORM REUSE_FIELDCAT USING 'VKORG' 'Dep. Code' 'C' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'VTEXT' 'Dep. Name' 'C' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'PERNR' 'Req. Emp.' 'C' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'ENAME' 'Emp. Name' 'C' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'FUEL' '' '' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'OSTATS' '' '' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'DFLAG' '' '' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'ERDAT' '' '' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'ERZET' '' '' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'ERNAM' '' '' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'AEDAT' '' '' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'AEZET' '' '' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+    PERFORM REUSE_FIELDCAT USING 'AENAM' '' '' '' '' 'X'
+                           CHANGING CS_FCAT400 CT_FCAT400.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_LAYOUT400
+*&---------------------------------------------------------------------*
+FORM SET_LAYOUT400  CHANGING CS_LAYO400 TYPE LVC_S_LAYO.
+
+  CS_LAYO400-CWIDTH_OPT = 'X'.
+  CS_LAYO400-EXCP_FNAME = 'LIGHT'.
+  CS_LAYO400-EXCP_LED = 'X'.
+  CS_LAYO400-CTAB_FNAME = 'TAB_COLOR'.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CELL_COLOR
+*&---------------------------------------------------------------------*
+FORM CELL_COLOR  USING VALUE(FNAME)
+                       VALUE(COLOR)
+                 CHANGING P_COL LIKE LINE OF GS_IVDETAIL-TAB_COLOR
+                          P_TAB_COLOR LIKE GS_IVDETAIL-TAB_COLOR.
+
+  CLEAR: P_COL, P_TAB_COLOR.
+
+  P_COL-FNAME = FNAME.
+  P_COL-COLOR-COL = COLOR.
+  APPEND P_COL TO P_TAB_COLOR.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_INITIAL_DATA
+*&---------------------------------------------------------------------*
+FORM CHECK_INITIAL_DATA  USING VALUE(PT_DISP) LIKE GT_DISP
+                                VALUE(PT_INVO) LIKE GT_INVO
+                                VALUE(PT_DISP102) LIKE GT_DISP102.
+
+  CASE G_TC_100-PRESSED_TAB.
+
+    WHEN C_TC_100-TAB1.
+
+      CHECK PT_DISP IS INITIAL.
+
+    WHEN C_TC_100-TAB2.
+
+      CHECK PT_INVO IS INITIAL.
+
+    WHEN C_TC_100-TAB3.
+
+      CHECK PT_DISP102 IS INITIAL.
+
+  ENDCASE.
+
+  MESSAGE I011 DISPLAY LIKE 'W'.
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

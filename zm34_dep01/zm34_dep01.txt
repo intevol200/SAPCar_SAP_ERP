@@ -1,0 +1,45 @@
+*&---------------------------------------------------------------------*
+*& Module Pool      ZM34_DEP01
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE zm34_dep01_top                          .    " Global Data
+INCLUDE ZM34_DEP01_alv.
+INCLUDE ZM34_DEP01_c01.
+INCLUDE zm34_dep01_o01                          .  " PBO-Modules
+INCLUDE zm34_dep01_i01                          .  " PAI-Modules
+INCLUDE zm34_dep01_f01                          .  " FORM-Routines
+
+LOAD-OF-PROGRAM.
+  PERFORM init_data.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Search Department
+* T200 --> Create Department
+* T300 --> Change Department
+
+*Text elements
+*--------------------------------------
+* 002 Do you want to delete?
+* 003 Do you want to change data?
+* E01 Data was not delete.
+* S01 Data was change successfully.
+* S02 Data was not change.
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: Hard coded
+*   Please choose one data.
+*
+* Message class: ME
+*000   *** General system messages
+*
+* Message class: PN
+*016   & & & &
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

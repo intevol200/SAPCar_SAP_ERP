@@ -1,0 +1,37 @@
+*&---------------------------------------------------------------------*
+*& Module Pool      ZM34_SREQ01
+*&---------------------------------------------------------------------*
+
+INCLUDE ZM34_SREQ01_TOP                         .  " Global Data
+INCLUDE ZM34_SREQ01_C01                         .  " CLASS-Modules
+INCLUDE ZM34_SREQ01_O01                         .  " PBO-Modules
+INCLUDE ZM34_SREQ01_I01                         .  " PAI-Modules
+INCLUDE ZM34_SREQ01_F01                         .  " FORM-Routines
+
+LOAD-OF-PROGRAM.
+  PERFORM GET_USER_DATA CHANGING GS_USER.
+  PERFORM GET_DATA CHANGING GT_DISP.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Create New Purchase Request
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+*
+* Message class: ZM34_MESSAGE
+*015   & Data Created.
+*019   ALV Container Creation ERROR!
+*020   ALV Grid Creation ERROR!
+*023   Fill the input field properly.
+*024   You can not request same item duplicantly.
+*025   You should add items first.
+*026   You must select a vendor code.
+*027   Please select rows to delete.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

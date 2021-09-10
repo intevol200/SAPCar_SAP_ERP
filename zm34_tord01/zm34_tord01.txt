@@ -1,0 +1,51 @@
+*&---------------------------------------------------------------------*
+*& Module Pool      ZM34_TORD01
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE ZM34_TORD01_TOP                         .    " Global Data
+ INCLUDE ZM34_TORD01_c01                         .  " class
+ INCLUDE ZM34_TORD01_O01                         .  " PBO-Modules
+ INCLUDE ZM34_TORD01_I01                         .  " PAI-Modules
+ INCLUDE ZM34_TORD01_F01                         .  " FORM-Routines
+
+ LOAD-OF-PROGRAM.
+
+ "ALV FALG
+ gv_alv_flag = 'X'.
+ gv_title = 'Display Mode: Transport'.
+ PERFORM GET_LIST_INIT CHANGING gt_list.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> &
+* T101 --> Information: SAPCAR-Zone
+* T200 --> Create: Transport
+* T300 --> Change: Transport
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+*
+* Message class: ZM34_MESSAGE
+*001   & Data changed.
+*002   & Data deleted.
+*004   You must select single row.
+*006   ALV Container Creation ERROR!
+*007   Information that already exists.
+*010   Failed to delete data.
+*011   Data is not found.
+*012   You can not select two or more data at a same time
+*014   Data already deleted.
+*018   Data is same as current version.
+*020   ALV Grid Creation ERROR!
+*021   Canceled
+*022   Success
+*032   ERROR!
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

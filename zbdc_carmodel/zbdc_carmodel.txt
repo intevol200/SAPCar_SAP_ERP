@@ -1,0 +1,29 @@
+*&---------------------------------------------------------------------*
+*& Report ZR34_EXCEL_UPLOAD
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZBDC_CARMODEL.
+
+INCLUDE ZBDC_CARMODELTOP.
+INCLUDE ZBDC_CARMODELCO1.
+INCLUDE ZBDC_CARMODELO01.
+INCLUDE ZBDC_CARMODELI01.
+INCLUDE ZBDC_CARMODELF01.
+
+START-OF-SELECTION.
+  CALL SCREEN 0100.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Car Model BDC Program
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

@@ -1,0 +1,553 @@
+*&---------------------------------------------------------------------*
+*& Include          ZBDC34_EMP_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form toolbar_pros
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> E_OBJECT
+*&      --> E_INTERACTIVE
+*&---------------------------------------------------------------------*
+FORM toolbar_pros  USING  p_object TYPE REF TO cl_alv_event_toolbar_set
+                           p_interactive TYPE char01.
+
+  DATA: ls_toolbar TYPE stb_button,
+        lines      TYPE i.
+*--------------------------------------------------------------------*
+
+  MOVE 3               TO ls_toolbar-butn_type.
+  APPEND ls_toolbar    TO p_object->mt_toolbar.
+  CLEAR  ls_toolbar.
+  MOVE 'UPDL'          TO ls_toolbar-function.
+  MOVE icon_xxl TO ls_toolbar-icon.
+  ls_toolbar-quickinfo = 'Excel Upload'.
+  ls_toolbar-text      = 'Excel Upload'.
+  APPEND ls_toolbar    TO p_object->mt_toolbar.
+  CLEAR ls_toolbar.
+
+  MOVE 3               TO ls_toolbar-butn_type.
+  APPEND ls_toolbar    TO p_object->mt_toolbar.
+  CLEAR  ls_toolbar.
+  MOVE 'BDC'          TO ls_toolbar-function.
+  MOVE icon_insert_favorites TO ls_toolbar-icon.
+  ls_toolbar-quickinfo = 'EMP BDC'.
+  ls_toolbar-text      = 'EMP BDC'.
+  APPEND ls_toolbar    TO p_object->mt_toolbar.
+  CLEAR ls_toolbar.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form user_command_pros
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> E_UCOMM
+*&---------------------------------------------------------------------*
+FORM user_command_pros  USING    pv_ucomm.
+
+  CASE pv_ucomm.
+    WHEN 'UPDL'.
+
+      PERFORM excel_data_upload.
+      PERFORM alv_refresh.
+
+    WHEN 'BDC'.
+
+      PERFORM check_excel.
+      CHECK gv_subrc EQ 0.
+      PERFORM emp_bdcdata.
+      PERFORM alv_refresh.
+
+
+  ENDCASE.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form EXCEL_DATA_UPLOAD
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM excel_data_upload .
+  TYPES: BEGIN OF lty_zt34_emp,
+           pernr TYPE c LENGTH 7,
+           vkorg  TYPE c LENGTH 3,
+           ename  TYPE c LENGTH 25,
+           eposi  TYPE c LENGTH 3,
+           gesch  TYPE c LENGTH 5,
+           telnr  TYPE c LENGTH 11,
+           email   TYPE c LENGTH 40,
+           begda TYPE c LENGTH 8,
+           salary  TYPE c LENGTH 11,
+           waers TYPE ZT34_EMP-WAERS,
+         END OF lty_zt34_emp.
+
+  DATA: lt_filetab   TYPE filetable,
+        lv_rc        TYPE i,
+        lv_filename  TYPE rlgrap-filename,
+        ls_excel     TYPE lty_zt34_emp,
+*        LT_EXCEL     LIKE TABLE OF LS_EXCEL,
+        lt_excel     TYPE TABLE OF lty_zt34_emp,
+        lt_row_data  TYPE truxs_t_text_data,
+        itabname(28).
+
+  DATA: ls_disp   LIKE LINE OF gt_disp,
+        lt_gesch  TYPE dd07v_tab.
+*        lt_waers  TYPE dd07v_tab.
+
+  FIELD-SYMBOLS: <lfs_struc>,
+                 <lfs_tab> TYPE STANDARD TABLE.
+*--------------------------------------------------------------------*
+
+  CLEAR: gt_disp.
+
+  CALL METHOD cl_gui_frontend_services=>file_open_dialog
+    CHANGING
+      file_table = lt_filetab
+      rc         = lv_rc
+    EXCEPTIONS
+      OTHERS     = 1.
+
+  IF sy-subrc EQ 0.
+
+    READ TABLE lt_filetab INTO lv_filename INDEX 1.
+
+    IF lv_filename = space.
+      lv_filename = 'C:\'.
+    ENDIF.
+  ENDIF..
+  CHECK lv_filename IS NOT INITIAL.
+
+  itabname = 'LT_EXCEL'.
+
+  ASSIGN LOCAL COPY OF (itabname) TO <lfs_tab>.
+
+  CALL FUNCTION 'TEXT_CONVERT_XLS_TO_SAP'
+    EXPORTING
+      i_field_seperator    = 'X'
+      i_line_header        = 'X'
+      i_tab_raw_data       = lt_row_data
+      i_filename           = lv_filename
+    TABLES
+      i_tab_converted_data = lt_excel
+    EXCEPTIONS
+      conversion_failed    = 1
+      OTHERS               = 2.
+
+  CHECK lt_excel IS NOT INITIAL.
+
+  PERFORM get_emp_info CHANGING gt_disp.
+  PERFORM get_dom_value USING 'GESCH'   CHANGING lt_gesch.
+*  PERFORM get_dom_value USING 'WAERS'  CHANGING lt_waers.
+
+  LOOP AT lt_excel INTO ls_excel.
+
+*    REPLACE ALL OCCURRENCES OF ',' IN ls_excel-price WITH space.
+*
+    MOVE-CORRESPONDING ls_excel TO ls_disp.
+*    CALL FUNCTION 'CURRENCY_AMOUNT_IDOC_TO_SAP'
+*      EXPORTING
+*        currency    = ls_disp-waers
+*        idoc_amount = ls_disp-price
+*      IMPORTING
+*        sap_amount  = ls_disp-price.
+
+    PERFORM check_error USING gt_disp lt_gesch "lt_waers
+                        CHANGING ls_disp.
+
+
+    APPEND ls_disp TO gt_disp.
+
+  ENDLOOP.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_CUST_INFO
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GT_DISP
+*&---------------------------------------------------------------------*
+FORM get_emp_info  CHANGING pt_disp LIKE gt_disp.
+
+  SELECT *
+    INTO CORRESPONDING FIELDS OF TABLE pt_disp
+    FROM zt34_emp.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_dom_value
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      <-- LT_FUEL
+*&---------------------------------------------------------------------*
+FORM get_dom_value  USING    VALUE(pv_domname)
+                    CHANGING ct_tab TYPE dd07v_tab.
+
+  CALL FUNCTION 'GET_DOMAIN_VALUES'
+    EXPORTING
+      DOMNAME    = PV_DOMNAME
+    TABLES
+      VALUES_TAB = CT_TAB.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form check_error
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GT_DISP
+*&      --> LT_GESCH
+*&      --> LT_STATE
+*&      <-- LS_DISP
+*&---------------------------------------------------------------------*
+FORM check_error  USING VALUE(pt_emp) LIKE gt_disp
+                        VALUE(pt_gesch) TYPE dd07v_tab
+*                        VALUE(pt_waers) TYPE dd07v_tab
+                  CHANGING cs_disp LIKE LINE OF gt_disp.
+
+  DATA: ls_emp  LIKE LINE OF gt_disp,
+        ls_value LIKE LINE OF pt_gesch.
+*--------------------------------------------------------------------*
+
+  CLEAR: gv_subrc.
+
+  IF cs_disp-pernr IS INITIAL  OR cs_disp-vkorg IS INITIAL OR
+     cs_disp-ename  IS INITIAL  OR cs_disp-eposi  IS INITIAL OR
+     cs_disp-gesch IS INITIAL  OR cs_disp-telnr IS INITIAL OR
+     cs_disp-email  IS INITIAL  OR cs_disp-begda IS INITIAL OR
+     cs_disp-salary IS INITIAL OR cs_disp-waers IS INITIAL.
+
+    gv_subrc = 4.
+    cs_disp-light = 1.
+    cs_disp-msg = 'An empty value exists, please check.'.
+
+    EXIT.
+
+  ENDIF.
+
+  CHECK gv_subrc EQ 0.
+
+  READ TABLE pt_emp INTO ls_emp WITH KEY pernr = cs_disp-pernr.
+
+  IF sy-subrc EQ 0.
+
+    gv_subrc = 4.
+    cs_disp-light = 1.
+    cs_disp-msg = 'Pernr number is duplicated.'.
+    EXIT.
+
+  ELSEIF sy-subrc NE 0.
+
+    READ TABLE PT_GESCH INTO LS_VALUE WITH KEY DOMVALUE_L = CS_DISP-GESCH.
+
+    IF sy-subrc NE 0.
+
+      gv_subrc = 4.
+      cs_disp-light = 1.
+      cs_disp-msg = 'Gesch type does not exist'.
+      RETURN.
+*
+    ELSE.
+
+            cs_disp-light = 3.
+            cs_disp-msg = 'No Error'.
+*
+   ENDIF.
+
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form alv_refresh
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM alv_refresh .
+  DATA: lv_scroll TYPE lvc_s_stbl.
+  DATA: ls_layout  TYPE lvc_s_layo.         "ALV ###
+*--------------------------------------------------------------------*
+
+  CHECK go_alv IS NOT INITIAL.
+  lv_scroll-row = 'X'.
+  lv_scroll-col = 'X'.
+
+  CALL METHOD go_alv->get_frontend_layout
+    IMPORTING
+      es_layout = ls_layout.
+
+  ls_layout-cwidth_opt = 'X'.
+
+  CALL METHOD go_alv->set_frontend_layout
+    EXPORTING
+      is_layout = ls_layout.
+
+  CALL METHOD go_alv->refresh_table_display
+    EXPORTING
+      i_soft_refresh = ''
+      is_stable      = lv_scroll.     "## ### ### refresh
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form check_excel
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM check_excel .
+  CHECK gv_subrc NE 0.
+  MESSAGE i016(pn) WITH 'There is an error in the excel data, please check.' DISPLAY LIKE 'E'.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form cust_bdcdata
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM emp_bdcdata .
+  DATA: lv_mode   TYPE rfpdo-allgazmd VALUE 'N',
+        lv_update TYPE c LENGTH 1 VALUE 'S',
+        lv_msg    TYPE c LENGTH 100,
+        lv_price  TYPE c LENGTH 15.
+
+  DATA: ls_disp   TYPE gty_disp.
+
+*--------------------------------------------------------------------*
+
+  LOOP AT gt_disp INTO ls_disp.
+
+    CLEAR: bdcdata, messtab, lv_msg.
+**  'X'#  ### ##  '####'   '####'
+** ### char# ### #####.
+*    WRITE LS_DISP-PRICE  CURRENCY LS_DISP-WAERS TO LV_PRICE.
+
+    PERFORM dynpro USING : 'X'  'ZR34_EMP03'    '0100',
+                           ' '   'BDC_OKCODE'      '=CREATE',
+
+                           'X'  'ZM34_EMP01'    '0100',
+                           ' '   'BDC_OKCODE'      '=SAVE',
+                           ' '   'GS_CUST-PERNR'    ls_disp-pernr,
+                           ' '   'GS_CUST-VKORG'     ls_disp-vkorg,
+                           ' '   'GS_CUST-ENAME'     ls_disp-ename,
+                           ' '   'GS_CUST-EPOSI'    ls_disp-eposi,
+                           ' '   'GS_CUST-GESCH'    ls_disp-gesch,
+                           ' '   'GS_CUST-TELNR'     ls_disp-telnr,
+                           ' '   'GS_CUST-EMAIL'   ls_disp-email,
+                           ' '   'GS_CUST-BEGDA'   ls_disp-begda,
+                           ' '   'GS_CUST-SALARY'   ls_disp-salary,
+                           ' '   'GS_CUST-WAERS'   ls_disp-waers,
+
+                           'X'   'ZM34_EMP01'   '0100',
+                           ' '   'BDC_OKCODE'     '/EEXIT',
+
+                           'X'  'ZR34_EMP03'    '0100',
+                           ' '   'BDC_OKCODE'     '=BACK'.
+
+
+    CALL TRANSACTION 'ZEMP03' USING bdcdata
+                         MODE lv_mode
+                         UPDATE lv_update
+                         MESSAGES INTO messtab.
+
+    IF sy-subrc NE 0.
+      CALL FUNCTION 'RKC_MSG_STRING'
+        EXPORTING
+          id      = sy-msgid
+          mtype   = sy-msgty
+          number  = sy-msgno
+          par1    = sy-msgv1
+          par2    = sy-msgv2
+          par3    = sy-msgv3
+          par4    = sy-msgv4
+        IMPORTING
+          msg_lin = lv_msg.
+
+*      LS_DISP-DFLAG = 'E'.  "### error# dflag# 'E'##
+      ls_disp-msg = lv_msg.
+    ELSE.
+      ls_disp-msg = 'SUCCESS'.
+    ENDIF.
+
+    MODIFY gt_disp FROM ls_disp.
+
+  ENDLOOP.
+
+  MESSAGE i016(pn) WITH 'DATA SAVE SUCCESS' DISPLAY LIKE 'S'.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DYNPRO
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      --> P_
+*&---------------------------------------------------------------------*
+FORM dynpro USING   a  b  c.
+
+  IF a = 'X'.
+    gs_bdcdata-dynbegin = a.
+    gs_bdcdata-program = b.
+    gs_bdcdata-dynpro = c.
+  ELSE.
+    gs_bdcdata-fnam = b.
+    gs_bdcdata-fval = c.
+  ENDIF.
+
+  APPEND gs_bdcdata TO bdcdata.
+  CLEAR gs_bdcdata.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_ALV_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_alv_0100 .
+  CREATE OBJECT go_con
+    EXPORTING
+      container_name = 'EMPCON'.
+
+  CREATE OBJECT go_alv
+    EXPORTING
+      i_parent = go_con.
+*      I_SHELLSTYLE = WS_THICKFRAME.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_LAYO0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GS_LAYO
+*&---------------------------------------------------------------------*
+FORM set_layo0100  CHANGING cs_layo TYPE lvc_s_layo.
+  cs_layo-cwidth_opt = 'X'.
+  cs_layo-excp_fname = 'LIGHT'.
+  cs_layo-excp_led = 'X'.
+  cs_layo-info_fname = 'COLOR'.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form SET_FCAT0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GT_FCAT
+*&---------------------------------------------------------------------*
+FORM set_fcat0100 CHANGING ct_fcat LIKE gt_fcat.
+  DATA: ls_fcat LIKE LINE OF gt_fcat.
+*--------------------------------------------------------------------*
+
+  CLEAR: ls_fcat.
+  ls_fcat-fieldname = 'LIGHT'.
+  ls_fcat-coltext   = 'Status'.
+
+  APPEND ls_fcat TO ct_fcat.
+
+  CLEAR: ls_fcat.
+  ls_fcat-fieldname = 'MSG'.
+  ls_fcat-coltext   = 'MESSAGE'.
+  ls_fcat-col_pos   = '13'.
+
+  APPEND ls_fcat TO ct_fcat.
+
+  CLEAR: ls_fcat.
+  ls_fcat-fieldname = 'ENDDA'.
+  ls_fcat-no_out = 'X'.
+
+  APPEND ls_fcat TO ct_fcat.
+
+  CLEAR: ls_fcat.
+  ls_fcat-fieldname = 'DFLAG'.
+  ls_fcat-no_out = 'X'.
+
+  APPEND ls_fcat TO ct_fcat.
+
+  CLEAR: ls_fcat.
+  ls_fcat-fieldname = 'ERDAT'.
+  ls_fcat-no_out = 'X'.
+
+  APPEND ls_fcat TO ct_fcat.
+
+  CLEAR: ls_fcat.
+  ls_fcat-fieldname = 'ERZET'.
+  ls_fcat-no_out = 'X'.
+
+  APPEND ls_fcat TO ct_fcat.
+
+  CLEAR: ls_fcat.
+  ls_fcat-fieldname = 'ERNAM'.
+  ls_fcat-no_out = 'X'.
+
+  APPEND ls_fcat TO ct_fcat.
+
+  CLEAR: ls_fcat.
+  ls_fcat-fieldname = 'AEDAT'.
+  ls_fcat-no_out = 'X'.
+
+  APPEND ls_fcat TO ct_fcat.
+
+  CLEAR: ls_fcat.
+  ls_fcat-fieldname = 'AEZET'.
+  ls_fcat-no_out = 'X'.
+
+  APPEND ls_fcat TO ct_fcat.
+
+  CLEAR: ls_fcat.
+  ls_fcat-fieldname = 'AENAM'.
+  ls_fcat-no_out = 'X'.
+
+  APPEND ls_fcat TO ct_fcat.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form EVENT_HANDLER_REGISTER
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GO_ALV
+*&---------------------------------------------------------------------*
+FORM event_handler_register USING lo_grid TYPE REF TO cl_gui_alv_grid.
+*- ALV Event Handler
+  CREATE OBJECT go_alv_event_handler.
+
+  SET HANDLER go_alv_event_handler->handle_toolbar      FOR lo_grid.
+  SET HANDLER go_alv_event_handler->handle_user_command FOR lo_grid.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_0101
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM display_alv_0101 .
+
+
+  CALL METHOD go_alv->set_table_for_first_display
+    EXPORTING
+      i_structure_name              = 'ZT34_EMP'
+      is_layout                     = gs_layo
+    CHANGING
+      it_outtab                     = gt_disp
+      it_fieldcatalog               = gt_fcat
+      it_sort                       = gt_sort
+    EXCEPTIONS
+      invalid_parameter_combination = 1
+      program_error                 = 2
+      too_many_lines                = 3
+      OTHERS                        = 4.
+  IF sy-subrc <> 0.
+* Implement suitable error handling here
+  ENDIF.
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

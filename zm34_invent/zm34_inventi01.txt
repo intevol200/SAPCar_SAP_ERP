@@ -1,0 +1,55 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_INVENTI01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+MODULE USER_COMMAND_0100 INPUT.
+
+  CASE GV_OKCODE.
+    WHEN 'BACK'.
+
+      LEAVE TO SCREEN 0.
+
+    WHEN 'CHANGE'.
+
+      PERFORM CHANGE_CHECK.
+      PERFORM REFRESH_ALV.
+
+    WHEN 'SAVE'.
+
+      PERFORM CREATE_INVOICE.
+      PERFORM GET_INIT_DISPLAY_DATA CHANGING GT_HSORDER.
+      PERFORM GET_STOCK CHANGING GT_STOCK.
+      PERFORM REFRESH_ALV.
+      PERFORM REFRESH_ALV_TOP.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  EXIT_COMMAND  INPUT
+*&---------------------------------------------------------------------*
+MODULE EXIT_COMMAND INPUT.
+
+  CASE OK_CODE.
+    WHEN 'EXIT' OR 'CANC'.
+
+      LEAVE TO SCREEN 0.
+
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  SAVE_OKCODE  INPUT
+*&---------------------------------------------------------------------*
+MODULE SAVE_OKCODE INPUT.
+
+  GV_OKCODE = OK_CODE.
+
+  CLEAR: OK_CODE.
+
+ENDMODULE.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

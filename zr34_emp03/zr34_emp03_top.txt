@@ -1,0 +1,41 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_EMP03_TOP                           - Report ZM34_EMP03
+*&---------------------------------------------------------------------*
+REPORT zr34_emp03  MESSAGE-ID me.
+
+*&---------------------------------------------------------------------*
+*& common vartable
+*&---------------------------------------------------------------------*
+DATA: ok_code  TYPE sy-ucomm,
+      gv_subrc TYPE sy-subrc.
+
+*&---------------------------------------------------------------------*
+*& table, structure
+*&---------------------------------------------------------------------*
+TABLES: zt34_emp.
+
+*DATA: gs_emplist TYPE zt34_emp.
+*DATA: gt_emplist LIKE TABLE OF gs_emplist.
+DATA: BEGIN OF gs_emplist.
+      INCLUDE TYPE zt34_emp.
+      DATA: linecolor(4) TYPE c,
+      END OF gs_emplist,
+      gt_emplist LIKE TABLE OF gs_emplist.
+
+*&---------------------------------------------------------------------*
+*& Selection screen
+*&---------------------------------------------------------------------*
+SELECTION-SCREEN BEGIN OF SCREEN 1100 AS SUBSCREEN.
+  SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-s01.
+      SELECT-OPTIONS: s_pernr FOR zt34_emp-pernr NO-EXTENSION NO INTERVALS,
+                       s_vkorg FOR zt34_emp-vkorg NO-EXTENSION NO INTERVALS,
+                       s_eposi FOR zt34_emp-eposi NO-EXTENSION NO INTERVALS,
+                      s_begda FOR zt34_emp-begda,
+                      s_endda FOR zt34_emp-endda.
+      PARAMETERS : p_dflag AS CHECKBOX.
+  SELECTION-SCREEN END OF BLOCK b1.
+
+SELECTION-SCREEN END OF SCREEN 1100.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

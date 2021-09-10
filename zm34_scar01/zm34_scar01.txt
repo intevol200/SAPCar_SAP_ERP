@@ -1,0 +1,53 @@
+*&---------------------------------------------------------------------*
+*& Module Pool      ZM34_SCAR01
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE zm34_scar01_top                         .  " Global Data
+INCLUDE zm34_scar01_c01                         .  "Class
+INCLUDE zm34_scar01_o01                         .  " PBO-Modules
+INCLUDE zm34_scar01_i01                         .  " PAI-Modules
+INCLUDE zm34_scar01_f01                         .  " FORM-Routines
+
+LOAD-OF-PROGRAM.
+  gv_title = 'Maintain SAP Car'.
+  PERFORM search_sapcar_list USING gs_cond
+                                 CHANGING gt_list gv_subrc.
+  IF gv_subrc <> 0.
+    MESSAGE i016(pn) WITH 'Error'.
+    RETURN.
+  ENDIF.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> &
+* T101 --> SAP Car Information
+* T200 --> Change : Sapcar
+* T100 --> &
+* T101 --> SAP Car Information
+* T200 --> Change : Sapcar
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+*
+* Message class: ZM34_MESSAGE
+*001   & Data changed.
+*002   & Data deleted.
+*004   You must select single row.
+*009   Failed to change data.
+*010   Failed to delete data.
+*011   Data is not found.
+*014   Data already deleted.
+*018   Data is same as current version.
+*019   ALV Container Creation ERROR!
+*020   ALV Grid Creation ERROR!
+*021   Canceled
+*032   ERROR!
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

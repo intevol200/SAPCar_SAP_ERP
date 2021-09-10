@@ -1,0 +1,99 @@
+*&---------------------------------------------------------------------*
+*& Include ZR34_CUST03_TOP                          - Report ZR34_CUST03
+*&---------------------------------------------------------------------*
+REPORT zr34_cust03 MESSAGE-ID ZM34_MESSAGE.
+
+TABLES: zt34_cust.
+
+"Event Handler Object
+CLASS lcl_event DEFINITION DEFERRED.
+DATA go_hot TYPE REF TO lcl_event.
+
+" Common
+DATA: ok_code  TYPE sy-ucomm,
+      gv_subrc TYPE sy-subrc.
+
+" Cust List
+DATA: gs_list TYPE zs34_cust,
+      gt_list LIKE TABLE OF gs_list.
+
+DATA: gs_apoint TYPE zs34_acpoint,
+      gt_apoint LIKE TABLE OF gs_apoint.
+
+" Point List
+DATA: BEGIN OF gs_point.
+      INCLUDE TYPE zt34_cpoint.
+DATA: pcode_t TYPE c LENGTH 15,
+      END OF gs_point,
+      gt_point LIKE TABLE OF gs_point.
+
+" Point Code
+DATA: gs_pcode TYPE zt34_pcode,
+      gt_pcode LIKE TABLE OF gs_pcode.
+
+" Cust Condition
+DATA: BEGIN OF gs_cond.
+        INCLUDE TYPE zt34_cust.
+DATA:   point   TYPE n LENGTH 6,
+        gesch_f TYPE c LENGTH 1,
+      END OF gs_cond.
+
+"EMP List
+DATA: gs_emp TYPE zt34_emp,
+      gt_emp LIKE TABLE OF gs_emp.
+
+
+
+
+
+SELECTION-SCREEN BEGIN OF SCREEN 1100 AS SUBSCREEN.
+  SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-h01.
+    SELECT-OPTIONS: pa_cutno FOR gs_list-custno, "####
+                    pa_drnum FOR gs_list-drnum NO-EXTENSION NO INTERVALS. "####
+
+
+    SELECTION-SCREEN BEGIN OF LINE.
+      SELECTION-SCREEN COMMENT 2(10) FOR FIELD pa_ges1.
+      PARAMETERS pa_ges1 AS CHECKBOX DEFAULT 'X'. "MALE
+      SELECTION-SCREEN COMMENT 20(10) FOR FIELD pa_ges2.
+      PARAMETERS pa_ges2 AS CHECKBOX DEFAULT 'X'. "FEMALE
+    SELECTION-SCREEN END OF LINE.
+
+
+    SELECT-OPTIONS: pa_phone FOR zt34_cust-phone NO-EXTENSION NO INTERVALS. " ####
+    "##
+    PARAMETERS pa_state TYPE zt34_cust-state AS LISTBOX VISIBLE LENGTH 15.
+    SELECT-OPTIONS:pa_city FOR zt34_cust-city NO-EXTENSION NO INTERVALS,
+                   pa_strt FOR zt34_cust-street NO-EXTENSION NO INTERVALS,
+                   gv_date FOR zt34_cust-sdate. "## ##
+    PARAMETERS pa_dflag AS CHECKBOX. " ####
+  SELECTION-SCREEN END OF BLOCK b1.
+SELECTION-SCREEN END OF SCREEN 1100.
+
+"ALV
+DATA: go_con       TYPE REF TO cl_gui_custom_container,
+      go_con_point TYPE REF TO cl_gui_custom_container,
+      go_alv       TYPE REF TO cl_gui_alv_grid,
+      go_alv2      TYPE REF TO cl_gui_alv_grid,
+      gv_alv_flag  TYPE c,
+      gv_alv_flag2 TYPE c.
+
+"LAYOUT
+DATA: gs_layout TYPE lvc_s_layo.
+
+"FCAT
+DATA: gt_fcat       TYPE lvc_t_fcat,
+      gs_fcat       LIKE LINE OF gt_fcat,
+      gt_fcat_point TYPE lvc_t_fcat,
+      gs_fcat_point LIKE LINE OF gt_fcat_point.
+
+"SORT
+DATA: gs_sort TYPE LINE OF lvc_t_sort,
+      gt_sort LIKE TABLE OF gs_sort.
+
+"Popup_SORT
+DATA: gs_sort_p TYPE LINE OF lvc_t_sort,
+      gt_sort_p LIKE TABLE OF gs_sort_p.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

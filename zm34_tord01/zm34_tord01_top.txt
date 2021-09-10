@@ -1,0 +1,57 @@
+*&---------------------------------------------------------------------*
+*& Include ZM34_TORD01_TOP                          - Module Pool      ZM34_TORD01
+*&---------------------------------------------------------------------*
+PROGRAM zm34_tord01 MESSAGE-ID ZM34_MESSAGE.
+CLASS lcl_event DEFINITION DEFERRED.
+DATA go_hot TYPE REF TO lcl_event.
+
+"COMMON
+DATA: ok_code  TYPE sy-ucomm,
+      gv_subrc TYPE sy-subrc,
+      gv_title TYPE c LENGTH 30,
+      gv_valid.
+
+"STR
+TABLES: zm34_tord01_s01, zm34_tord01_s02, zm34_tord01_s03, zm34_tord01_s04, zt34_smove.
+
+"LIST
+DATA: gs_cond   TYPE zm34_tord01_s01,
+      gs_create TYPE zm34_tord01_s03,
+      gs_change TYPE zm34_tord01_s03,
+      gs_szone  TYPE zm34_tord01_s04.
+
+DATA: BEGIN OF gs_srent.
+        INCLUDE TYPE zt34_srent.
+DATA:   szname_b  TYPE ze34_szname,
+        szname_e  TYPE ze34_szname,
+        rtime_tot TYPE ze34_rendzet,
+        rtype_t   TYPE ddtext,
+      END OF gs_srent,
+      gt_srent LIKE TABLE OF gs_srent.
+
+DATA: BEGIN OF gs_list.
+        INCLUDE TYPE zm34_tord01_s02.
+DATA:   light TYPE c LENGTH 1,
+        color TYPE c LENGTH 4,
+      END OF gs_list,
+      gt_list     LIKE TABLE OF gs_list,
+      gt_modified TYPE TABLE OF zt34_smove..
+
+"ALV
+DATA: go_con      TYPE REF TO cl_gui_custom_container,
+      go_alv      TYPE REF TO cl_gui_alv_grid,
+      gv_alv_flag TYPE c.
+
+"LAYOUT,SORT,FCAT
+DATA: gs_layout TYPE lvc_s_layo,
+      gs_fcat   TYPE lvc_s_fcat,
+      gt_fcat   TYPE lvc_t_fcat,
+      gs_sort   TYPE lvc_s_sort,
+      gt_sort   TYPE lvc_t_sort.
+
+DATA: gs_scarzone      TYPE zt34_scarzone,
+      gs_scarzone_data TYPE zt34_scarzone,
+      szname_t         TYPE c LENGTH 40.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

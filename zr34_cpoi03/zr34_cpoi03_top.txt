@@ -1,0 +1,45 @@
+*&---------------------------------------------------------------------*
+*& Include ZR34_CPOI03_TOP                          - Report ZR34_CPOI03
+*&---------------------------------------------------------------------*
+REPORT ZR34_CPOI03 MESSAGE-ID ZM34_MESSAGE.
+
+TABLES ZS34_S_POINT.
+
+" Common
+DATA: ok_code  TYPE sy-ucomm,
+      gv_subrc TYPE sy-subrc.
+
+"Cust List
+DATA: gs_list TYPE ZS34_S_POINT,
+      gt_list LIKE TABLE OF gs_list.
+
+
+
+SELECTION-SCREEN BEGIN OF SCREEN 1100 AS SUBSCREEN.
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-h01.
+SELECT-OPTIONS: s_cpdate FOR ZS34_S_POINT-CPDATE, "### ## ##
+                 s_custno FOR ZS34_S_POINT-custno.
+
+SELECT-OPTIONS: s_pcode FOR ZS34_S_POINT-pcode NO-EXTENSION NO INTERVALS. " #####
+
+PARAMETERS pa_state TYPE ZS34_S_POINT-state AS LISTBOX VISIBLE LENGTH 15.
+SELECT-OPTIONS:s_city FOR ZS34_S_POINT-city NO-EXTENSION NO INTERVALS.
+SELECTION-SCREEN END OF BLOCK b1.
+SELECTION-SCREEN END OF SCREEN 1100.
+
+
+"ALV
+DATA: go_con  TYPE REF TO cl_gui_custom_container,
+      go_alv  TYPE REF TO cl_gui_alv_grid,
+      gv_alv_flag TYPE c,
+      gs_layo TYPE lvc_s_layo.
+
+
+DATA: gt_fcat TYPE lvc_t_fcat,
+      gs_fcat LIKE LINE OF gt_fcat.
+
+DATA: gs_sort TYPE LINE OF lvc_t_sort,
+      gt_sort LIKE TABLE OF gs_sort.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

@@ -1,0 +1,256 @@
+*&---------------------------------------------------------------------*
+*& Include          ZM34_CUST01_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form create_cutomer_info
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM create_customer_info .
+
+
+  gs_cust-custno = gs_cond-custno.
+  gs_cust-drnum = gs_cond-drnum.
+  gs_cust-cname = gs_cond-cname.
+  gs_cust-phone = gs_cond-phone.
+  gs_cust-state = gs_cond-state.
+  gs_cust-city = gs_cond-city.
+  gs_cust-street = gs_cond-street.
+  gs_cust-sdate = gs_cond-sdate.
+
+  IF gs_cond-gesch = 'X'.
+    gs_cust-gesch = 1.
+  ELSE.
+    gs_cust-gesch = 2.
+  ENDIF.
+
+  INSERT zt34_cust FROM gs_cust.
+
+  IF sy-subrc <> 0.
+    ROLLBACK WORK.
+    MESSAGE i007.
+    RETURN.
+  ENDIF.
+
+  gs_cpoint-cpdate = gs_cond-sdate.
+  gs_cpoint-custno = gs_cond-custno.
+  gs_cpoint-pcode = 'A01'.
+  gs_cpoint-point = gs_cond-point.
+
+  PERFORM get_seque.
+
+  INSERT zt34_cpoint FROM gs_cpoint.
+
+  IF sy-subrc = 0.
+    COMMIT WORK.
+    MESSAGE i015.
+  ENDIF.
+
+  CLEAR gs_cond.
+  PERFORM set_default.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form set_default
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM set_default .
+  gs_cond-sdate = sy-datum.
+  gs_cond-point = 1000.
+  PERFORM get_custno CHANGING gs_cond-custno.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_seque
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM get_seque .
+  DATA lv_seque TYPE n LENGTH 5.
+
+  SELECT MAX( seque )
+    INTO lv_seque
+    FROM zt34_cpoint
+    WHERE cpdate = sy-datum.
+
+  IF sy-subrc <> 0.
+    lv_seque = 0.
+  ELSE.
+    lv_seque = lv_seque + 1.
+  ENDIF.
+
+  gs_cpoint-seque = lv_seque.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form change_cutomer_info
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM change_customer_info .
+
+  gs_cust-custno = gs_cond-custno.
+  gs_cust-drnum = gs_cond-drnum.
+  gs_cust-cname = gs_cond-cname.
+  gs_cust-phone = gs_cond-phone.
+  gs_cust-state = gs_cond-state.
+  gs_cust-city = gs_cond-city.
+  gs_cust-street = gs_cond-street.
+  IF gs_cond-gesch = 'X'.
+    gs_cust-gesch = '1'.
+  ELSE.
+    gs_cust-gesch = '2'.
+  ENDIF.
+
+  SELECT SINGLE *
+    INTO CORRESPONDING FIELDS OF gs_cust_cond
+    FROM zt34_cust
+    WHERE custno = gs_cust-custno.
+
+  IF    gs_cust-drnum = gs_cust_cond-drnum
+    AND gs_cust-cname = gs_cust_cond-cname
+    AND gs_cust-phone = gs_cust_cond-phone
+    AND gs_cust-state = gs_cust_cond-state
+    AND gs_cust-city = gs_cust_cond-city
+    AND gs_cust-street = gs_cust_cond-street
+    AND gs_cust-gesch = gs_cust_cond-gesch.
+
+    MESSAGE i018.
+
+  ELSE.
+    UPDATE zt34_cust
+      SET custno = gs_cust-custno
+          drnum = gs_cust-drnum
+          cname = gs_cust-cname
+          phone = gs_cust-phone
+          state = gs_cust-state
+          city = gs_cust-city
+          street = gs_cust-street
+          gesch = gs_cust-gesch
+      WHERE custno = gs_cust-custno.
+    IF sy-subrc <> 0.
+      ROLLBACK WORK.
+      MESSAGE i009.
+    ELSE.
+      COMMIT WORK.
+      MESSAGE i001.
+      LEAVE TO SCREEN 0.
+    ENDIF.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form delete_customer_info
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM delete_customer_info .
+  gs_cust-custno = gs_cond-custno.
+
+  IF gs_cond-gesch = 'X'.
+    gs_cust-gesch = '1'.
+  ELSE.
+    gs_cust-gesch = '2'.
+  ENDIF.
+  gs_cust-dflag = 'X'.
+
+  UPDATE zt34_cust
+    SET dflag = gs_cust-dflag
+    WHERE custno = gs_cust-custno.
+  IF sy-subrc <> 0.
+    ROLLBACK WORK.
+    MESSAGE i010.
+  ELSE.
+    COMMIT WORK.
+    LEAVE TO SCREEN 0.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form popup
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> P_
+*&      --> P_
+*&      <-- P_SUBRC
+*&---------------------------------------------------------------------*
+FORM popup  USING    VALUE(p_title)
+                     VALUE(p_message)
+            CHANGING p_subrc.
+
+  DATA: lv_answer.
+  CLEAR: lv_answer,p_subrc.
+  CALL FUNCTION 'POPUP_TO_CONFIRM'
+    EXPORTING
+      titlebar              = p_title
+*     DIAGNOSE_OBJECT       = ' '
+      text_question         = p_message
+      text_button_1         = 'Yes'(001)
+      icon_button_1         = 'ICON_CHECKED'
+      text_button_2         = 'No'(002)
+      icon_button_2         = 'ICON_INCOMPLETE'
+*     DEFAULT_BUTTON        = '1'
+      display_cancel_button = ''
+*     USERDEFINED_F1_HELP   = ' '
+      start_column          = 25
+      start_row             = 6
+*     POPUP_TYPE            =
+*     IV_QUICKINFO_BUTTON_1 = ' '
+*     IV_QUICKINFO_BUTTON_2 = ' '
+    IMPORTING
+      answer                = lv_answer
+*   TABLES
+*     PARAMETER             =
+    EXCEPTIONS
+      text_not_found        = 1
+      OTHERS                = 2.
+  IF sy-subrc <> 0.
+    MESSAGE i016(pn) WITH 'FAIL'.
+  ENDIF.
+
+  CLEAR: p_subrc.
+  IF lv_answer = 1.
+    p_subrc = 0.
+  ELSE.
+    p_subrc = 4.
+    MESSAGE s016(pn) WITH 'CNACEL'.
+    RETURN.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form get_custno
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- GS_CUST_CUSTNO
+*&---------------------------------------------------------------------*
+FORM get_custno CHANGING VALUE(p_custno).
+
+  SELECT SINGLE MAX( custno )
+    INTO p_custno
+    FROM zt34_cust.
+
+    p_custno = p_custno + 1.
+
+ENDFORM.
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>

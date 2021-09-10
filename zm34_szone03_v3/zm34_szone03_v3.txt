@@ -1,0 +1,46 @@
+*&---------------------------------------------------------------------*
+*& Report ZM34_SZONE03_V3
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE ZM34_SZONE03_V3TOP                      .    " Global Data
+
+ INCLUDE ZM34_SZONE03_V3O01                      .  " PBO-Modules
+ INCLUDE ZM34_SZONE03_V3I01                      .  " PAI-Modules
+ INCLUDE ZM34_SZONE03_V3F01                      .  " FORM-Routines
+
+ INITIALIZATION.
+* PERFORM init_listbox.
+ AT SELECTION-SCREEN OUTPUT.
+
+ AT SELECTION-SCREEN.
+
+ START-OF-SELECTION.
+
+   CALL SCREEN 100.
+   PERFORM SELECT_DATA.
+
+*GUI Texts
+*--------------------------------------
+* T100 --> Search SAP Car by Zone
+* T100 --> Search SAP Car by Zone
+
+*Text elements
+*--------------------------------------
+* H01 SAP Car Condition
+
+
+*Selection texts
+*--------------------------------------
+* PA_ST01         Status
+
+
+*Messages
+*---------------------------------------
+*
+* Message class: PN
+*016   & & & &
+
+------------------------------------------
+- 20210910 Extracted by ### @ Hynix <BR> User Name:  CL-A-27 <BR> System:  KYS <BR> HOST:  edu <BR> SAP Release  754 <BR>
