@@ -84,3 +84,15 @@ _개발에 관여한 프로그램 및 기능은 ◉ 문자로 표시_
 - Search Help◉
 - Number Range◉
 - ALV Event(Click, Button)
+
+#### 5. Fiori Application
+| 프로그램명 | 개요 |
+|---|---|
+| ZFIORI_CAR◉ | 자동차모델 조회 |
+| ZFIORI_INVOICE◉ | 송장 처리 및 조회 |
+| ZFIORI_OCHART◉ | 차량 구매주문 현황 차트 |
+###### 주요 기능
+- 데이터 조회(Header, Item)◉
+- Gateway 설정(Entity Set, Association 등)◉
+- Fiori Chart◉
+- AWS 연동(AWS SMS Service를 이용한 메시지 전송)◉
